@@ -3,22 +3,47 @@
 @code_type Go .go
 @comment_type // %s
 
-@s Basic design
-
-Initially we just want to process something through a markdown
-processor.
+@s Application structure
 
 --- main.go
 package main
 
 import (
-	"fmt"
-	"github.com/russross/blackfriday"
+    @{Imports}
 )
 
+@{Functions}
+---
+
+@s Basic design
+
+Initially we just want to process something through a markdown
+processor.
+
+--- Imports
+"fmt"
+"github.com/russross/blackfriday"
+---
+
+--- Functions
 func main() {
-input := []byte("# Hello world\n\nThis is my second literate document")
+    input := []byte("# Hello world\n\nThis is my other literate document")
 	output := blackfriday.Run(input)
 	fmt.Println(string(output))
 }
+
+---
+
+@s Processing content
+
+We have a basic pattern to process our content, which is initially a
+slice bytes. Each line is sent to a line processor function, which
+processes a single line as a string.
+
+--- Functions +=
+func processContent(c []byte, proc func(line string)) {
+    r := string(c)
+    proc(r)
+}
+
 ---
