@@ -9,6 +9,14 @@ import (
 	"strings"
 )
 
+// Package level declarations
+type processing interface {
+	proc(string)
+}
+type state struct {
+	markdown strings.Builder
+}
+
 // Functions
 func main() {
 	input := []byte("# Hello world\n\nThis is my other literate document")
@@ -16,10 +24,21 @@ func main() {
 	fmt.Println(string(output))
 }
 
-func processContent(c []byte, proc func(line string)) {
+func processContent(c []byte, p processing) {
 	r := strings.NewReader(string(c))
 	sc := bufio.NewScanner(r)
 	for sc.Scan() {
-		proc(sc.Text())
+		p.proc(sc.Text())
 	}
+}
+
+func (s *state) proc(line string) {
+	// Ignore lines that start with X
+	if strings.HasPrefix(line, "X") {
+		//return
+	}
+
+	// Do process other lines
+	//markdown.WriteString(line)
+
 }

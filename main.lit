@@ -12,6 +12,8 @@ import (
     @{Imports}
 )
 
+@{Package level declarations}
+
 @{Functions}
 ---
 
@@ -34,24 +36,78 @@ func main() {
 
 ---
 
-@s Processing content
+@s Processing content: Basic structure
 
-We have a basic pattern to process our content, which is initially a
-slice of bytes. Each line is sent to a line processor function, which
-processes that line as a string (without the newline characters).
+We start with a slice of bytes (or input) but it will be processed
+line by line, as strings.
+
+We will have a Processing interface, which is anything that processes
+a line.
+
+Each line will be received for processing without its end of line characters.
 
 --- Imports +=
 "strings"
 "bufio"
 ---
 
+--- Package level declarations
+type processing interface {
+    proc(string)
+}
+
+---
+
 --- Functions +=
-func processContent(c []byte, proc func(line string)) {
+func processContent(c []byte, p processing) {
     r := strings.NewReader(string(c))
     sc := bufio.NewScanner(r)
     for sc.Scan() {
-        proc(sc.Text())
+        p.proc(sc.Text())
     }
 }
 
 ---
+
+For the purposes of both testing and ease of developing our application
+we need a generic way of reacting to lines. The process is:
+
+    Line ->    Code processor    ->  Markdown processor
+            (May add more lines,
+             or drop this line,
+             or change the input
+             in other ways)
+
+The code processor, which is `proc` in the code above,
+should just pass through any markdown, but it
+will need to process special commands and it will need to keep a
+track of the code as it is assembled in non-linear order.
+The markdown will be accumulated in the `processing` state.
+
+--- Package level declarations +=
+type state struct {
+    markdown strings.Builder
+}
+---
+
+--- Functions +=
+func (s *state) proc(line string) {
+    @{Ignore lines that start with X}
+    @{Do process other lines}
+}
+---
+
+@s Processing content: Ignoring lines (as a test)
+
+--- Ignore lines that start with X
+if strings.HasPrefix(line, "X") {
+    //return
+}
+---
+
+@s Processing content: All other lines
+
+--- Do process other lines
+//markdown.WriteString(line)
+---
+
