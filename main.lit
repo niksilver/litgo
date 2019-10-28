@@ -37,13 +37,21 @@ func main() {
 @s Processing content
 
 We have a basic pattern to process our content, which is initially a
-slice bytes. Each line is sent to a line processor function, which
-processes a single line as a string.
+slice of bytes. Each line is sent to a line processor function, which
+processes that line as a string (without the newline characters).
+
+--- Imports +=
+"strings"
+"bufio"
+---
 
 --- Functions +=
 func processContent(c []byte, proc func(line string)) {
-    r := string(c)
-    proc(r)
+    r := strings.NewReader(string(c))
+    sc := bufio.NewScanner(r)
+    for sc.Scan() {
+        proc(sc.Text())
+    }
 }
 
 ---
