@@ -1,3 +1,4 @@
+// main.go
 package main
 
 import (
@@ -6,7 +7,7 @@ import (
 )
 
 func main() {
-	input := []byte("# Hello world\n\nThis is *my* document")
+	input := []byte("# Hello world\n\nThis is my second literate document")
 	output := blackfriday.Run(input)
 	fmt.Println(string(output))
 }

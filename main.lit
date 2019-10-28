@@ -1,0 +1,24 @@
+@title Litgo - A literate programming processor written in Go
+
+@code_type Go .go
+@comment_type // %s
+
+@s Basic design
+
+Initially we just want to process something through a markdown
+processor.
+
+--- main.go
+package main
+
+import (
+	"fmt"
+	"github.com/russross/blackfriday"
+)
+
+func main() {
+input := []byte("# Hello world\n\nThis is my second literate document")
+	output := blackfriday.Run(input)
+	fmt.Println(string(output))
+}
+---
