@@ -13,6 +13,7 @@ import (
 type processing interface {
 	proc(string)
 }
+
 type state struct {
 	markdown strings.Builder
 }
@@ -35,10 +36,10 @@ func processContent(c []byte, p processing) {
 func (s *state) proc(line string) {
 	// Ignore lines that start with X
 	if strings.HasPrefix(line, "X") {
-		//return
+		return
 	}
 
 	// Do process other lines
-	//markdown.WriteString(line)
+	s.markdown.WriteString(line)
 
 }

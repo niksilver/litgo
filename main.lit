@@ -101,13 +101,13 @@ func (s *state) proc(line string) {
 
 --- Ignore lines that start with X
 if strings.HasPrefix(line, "X") {
-    //return
+    return
 }
 ---
 
 @s Processing content: All other lines
 
 --- Do process other lines
-//markdown.WriteString(line)
+s.markdown.WriteString(line)
 ---
 
