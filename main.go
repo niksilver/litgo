@@ -16,6 +16,9 @@ type processing interface {
 
 type state struct {
 	markdown strings.Builder
+	// More state fields
+	inChunk bool
+	code    strings.Builder
 }
 
 // Functions
@@ -34,12 +37,16 @@ func processContent(c []byte, p processing) {
 }
 
 func (s *state) proc(line string) {
-	// Ignore lines that start with X
-	if strings.HasPrefix(line, "X") {
-		return
+	// Collect lines in code chunks
+	if s.inChunk && line == "```" {
+		s.inChunk = false
+	} else if s.inChunk {
+		s.code.WriteString(line + "\n")
+	} else if !s.inChunk && line == "```" {
+		s.inChunk = true
 	}
 
 	// Do process other lines
-	s.markdown.WriteString(line)
+	s.markdown.WriteString(line + "\n")
 
 }

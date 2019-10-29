@@ -87,27 +87,40 @@ The markdown will be accumulated in the `processing` state.
 --- Package level declarations +=
 type state struct {
     markdown strings.Builder
+    @{More state fields}
 }
 ---
 
 --- Functions +=
 func (s *state) proc(line string) {
-    @{Ignore lines that start with X}
+    @{Collect lines in code chunks}
     @{Do process other lines}
 }
 ---
 
-@s Processing content: Ignoring lines (as a test)
+@s Processing content: Collect lines in code chunks
 
---- Ignore lines that start with X
-if strings.HasPrefix(line, "X") {
-    return
+Code chunks start with three backticks, and they end with three
+backticks. Anything within the backticks is to be generated code.
+
+--- More state fields
+inChunk bool
+code strings.Builder
+---
+
+--- Collect lines in code chunks
+if s.inChunk && line == "```" {
+    s.inChunk = false
+} else if s.inChunk {
+    s.code.WriteString(line + "\n")
+} else if !s.inChunk && line == "```" {
+    s.inChunk = true
 }
 ---
 
 @s Processing content: All other lines
 
 --- Do process other lines
-s.markdown.WriteString(line)
+s.markdown.WriteString(line + "\n")
 ---
 

@@ -39,20 +39,38 @@ func TestProcessContent(t *testing.T) {
 func TestProc(t *testing.T) {
 	st := state{}
 	cs := []struct {
-		line string
-		md   string
+		line     string // Next line
+		markdown string // Accumulated fields...
+		inChunk  bool
+		code     string
 	}{
-		{"One", "One"},
-		{"XTwo", "One"},
-		{"Three", "OneThree"},
-		{"XFour", "OneThree"},
+		{"One",
+			"One\n", false, ""},
+		{"```",
+			"One\n```\n", true, ""},
+		{"Code 1",
+			"One\n```\nCode 1\n", true, "Code 1\n"},
+		{"Code 2",
+			"One\n```\nCode 1\nCode 2\n", true, "Code 1\nCode 2\n"},
+		{"```",
+			"One\n```\nCode 1\nCode 2\n```\n", false, "Code 1\nCode 2\n"},
+		{"End",
+			"One\n```\nCode 1\nCode 2\n```\nEnd\n", false, "Code 1\nCode 2\n"},
 	}
 
 	for i, c := range cs {
 		st.proc(c.line)
-		if st.markdown.String() != c.md {
-			t.Errorf("Line index %d: Expected markdown %q but got %q",
-				i, c.md, st.markdown.String())
+		if st.markdown.String() != c.markdown {
+			t.Errorf("Index %d: Expected markdown %q but got %q",
+				i, c.markdown, st.markdown.String())
+		}
+		if st.inChunk != c.inChunk {
+			t.Errorf("Index %d: Expected inChunk=%v but got %v",
+				i, c.inChunk, st.inChunk)
+		}
+		if st.code.String() != c.code {
+			t.Errorf("Index %d: Expected markdown %q but got %q",
+				i, c.code, st.code.String())
 		}
 	}
 }
