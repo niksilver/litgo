@@ -94,7 +94,7 @@ type state struct {
 --- Functions +=
 func (s *state) proc(line string) {
     @{Collect lines in code chunks}
-    @{Do process other lines}
+    @{Send surviving lines to markdown}
 }
 ---
 
@@ -118,9 +118,9 @@ if s.inChunk && line == "```" {
 }
 ---
 
-@s Processing content: All other lines
+@s Processing content: Send surviving lines to markdown
 
---- Do process other lines
+--- Send surviving lines to markdown
 s.markdown.WriteString(line + "\n")
 ---
 

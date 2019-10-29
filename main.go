@@ -46,7 +46,7 @@ func (s *state) proc(line string) {
 		s.inChunk = true
 	}
 
-	// Do process other lines
+	// Send surviving lines to markdown
 	s.markdown.WriteString(line + "\n")
 
 }
