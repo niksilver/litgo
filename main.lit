@@ -87,12 +87,14 @@ The markdown will be accumulated in the `processing` state.
 --- Package level declarations +=
 type state struct {
     markdown strings.Builder
+    lineNum int
     @{More state fields}
 }
 ---
 
 --- Functions +=
 func (s *state) proc(line string) {
+    s.lineNum ++
     @{Collect lines in code chunks}
     @{Send surviving lines to markdown}
 }
@@ -100,20 +102,28 @@ func (s *state) proc(line string) {
 
 @s Processing content: Collect lines in code chunks
 
-Code chunks start with three backticks, and they end with three
-backticks. Anything within the backticks is to be generated code.
+Code chunks start with three backticks, a space, and a name.
+They end with three backticks.
+Anything within the backticks is to be generated code, and that code
+will go into a map, from name to code.
+We'll assemble the chunks later.
 
 --- More state fields
 inChunk bool
-code strings.Builder
+chunkName string
+code map[string]strings.Builder
 ---
 
 --- Collect lines in code chunks
 if s.inChunk && line == "```" {
     s.inChunk = false
 } else if s.inChunk {
-    s.code.WriteString(line + "\n")
-} else if !s.inChunk && line == "```" {
+    b := s.code[s.chunkName]
+    b.WriteString(line + "\n")
+    s.code[s.chunkName] = b
+} else if !s.inChunk && strings.HasPrefix(line, "```") {
+    s.chunkName = strings.TrimSpace(line[3:])
+    s.code[s.chunkName] = strings.Builder{}
     s.inChunk = true
 }
 ---

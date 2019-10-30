@@ -16,9 +16,11 @@ type processing interface {
 
 type state struct {
 	markdown strings.Builder
+	lineNum  int
 	// More state fields
-	inChunk bool
-	code    strings.Builder
+	inChunk   bool
+	chunkName string
+	code      map[string]strings.Builder
 }
 
 // Functions
@@ -37,12 +39,17 @@ func processContent(c []byte, p processing) {
 }
 
 func (s *state) proc(line string) {
+	s.lineNum++
 	// Collect lines in code chunks
 	if s.inChunk && line == "```" {
 		s.inChunk = false
 	} else if s.inChunk {
-		s.code.WriteString(line + "\n")
-	} else if !s.inChunk && line == "```" {
+		b := s.code[s.chunkName]
+		b.WriteString(line + "\n")
+		s.code[s.chunkName] = b
+	} else if !s.inChunk && strings.HasPrefix(line, "```") {
+		s.chunkName = strings.TrimSpace(line[3:])
+		s.code[s.chunkName] = strings.Builder{}
 		s.inChunk = true
 	}
 

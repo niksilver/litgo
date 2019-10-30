@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 type mockProc struct {
 	pr func(s string)
@@ -38,6 +41,7 @@ func TestProcessContent(t *testing.T) {
 
 func TestProcForMarkdown(t *testing.T) {
 	st := state{}
+	st.code = make(map[string]strings.Builder)
 	cs := []struct {
 		line     string // Next line
 		markdown string // Accumulated markdown
@@ -65,25 +69,19 @@ func TestProcForMarkdown(t *testing.T) {
 	}
 }
 
-func TestProcForCodeChunks(t *testing.T) {
+func TestProcForInChunks(t *testing.T) {
 	st := state{}
+	st.code = make(map[string]strings.Builder)
 	cs := []struct {
 		line    string // Next line
 		inChunk bool   // Expected values...
-		code    string
 	}{
-		{"One",
-			false, ""},
-		{"```",
-			true, ""},
-		{"Code 1",
-			true, "Code 1\n"},
-		{"Code 2",
-			true, "Code 1\nCode 2\n"},
-		{"```",
-			false, "Code 1\nCode 2\n"},
-		{"End",
-			false, "Code 1\nCode 2\n"},
+		{"One", false},
+		{"```", true},
+		{"Code 1", true},
+		{"Code 2", true},
+		{"```", false},
+		{"End", false},
 	}
 
 	for i, c := range cs {
@@ -92,9 +90,37 @@ func TestProcForCodeChunks(t *testing.T) {
 			t.Errorf("Line %d: Expected inChunk=%v but got %v",
 				i+1, c.inChunk, st.inChunk)
 		}
-		if st.code.String() != c.code {
-			t.Errorf("Index %d: Expected markdown %q but got %q",
-				i+1, c.code, st.code.String())
-		}
+	}
+}
+
+func TestProcForChunkNames(t *testing.T) {
+	st := state{}
+	st.code = make(map[string]strings.Builder)
+	lines := []string{
+		"``` First",
+		"Code line 1",
+		"Code line 2",
+		"```",
+		"",
+		"``` Second",
+		"Code line 3",
+		"```",
+		"The end",
+	}
+	first := "Code line 1\nCode line 2\n"
+	second := "Code line 3\n"
+
+	for _, line := range lines {
+		st.proc(line)
+	}
+	actFirst := st.code["First"]
+	if actFirst.String() != first {
+		t.Errorf("Chunk First should be %q but got %q",
+			first, actFirst.String())
+	}
+	actSecond := st.code["Second"]
+	if actSecond.String() != second {
+		t.Errorf("Chunk Second should be %q but got %q",
+			first, actSecond.String())
 	}
 }
