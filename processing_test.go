@@ -1,7 +1,6 @@
 package main
 
 import (
-	"strings"
 	"testing"
 )
 
@@ -40,8 +39,7 @@ func TestProcessContent(t *testing.T) {
 }
 
 func TestProcForMarkdown(t *testing.T) {
-	st := state{}
-	st.code = make(map[string]strings.Builder)
+	st := newState()
 	cs := []struct {
 		line     string // Next line
 		markdown string // Accumulated markdown
@@ -70,8 +68,7 @@ func TestProcForMarkdown(t *testing.T) {
 }
 
 func TestProcForInChunks(t *testing.T) {
-	st := state{}
-	st.code = make(map[string]strings.Builder)
+	st := newState()
 	cs := []struct {
 		line    string // Next line
 		inChunk bool   // Expected values...
@@ -94,8 +91,7 @@ func TestProcForInChunks(t *testing.T) {
 }
 
 func TestProcForChunkNames(t *testing.T) {
-	st := state{}
-	st.code = make(map[string]strings.Builder)
+	st := newState()
 	lines := []string{
 		"``` First",
 		"Code line 1",

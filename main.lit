@@ -93,6 +93,12 @@ type state struct {
 ---
 
 --- Functions +=
+func newState() state {
+    return state{
+        @{Required state initialisers}
+    }
+}
+
 func (s *state) proc(line string) {
     s.lineNum ++
     @{Collect lines in code chunks}
@@ -112,6 +118,10 @@ We'll assemble the chunks later.
 inChunk bool
 chunkName string
 code map[string]strings.Builder
+---
+
+--- Required state initialisers
+code: make(map[string]strings.Builder),
 ---
 
 --- Collect lines in code chunks

@@ -38,6 +38,13 @@ func processContent(c []byte, p processing) {
 	}
 }
 
+func newState() state {
+	return state{
+		// Required state initialisers
+		code: make(map[string]strings.Builder),
+	}
+}
+
 func (s *state) proc(line string) {
 	s.lineNum++
 	// Collect lines in code chunks
