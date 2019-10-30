@@ -46,6 +46,9 @@ a line.
 
 Each line will be received for processing without its end of line characters.
 
+We will return warnings, which will accumulate, so we can present
+several of them together at the end of a run.
+
 --- Imports +=
 "strings"
 "bufio"
@@ -53,18 +56,26 @@ Each line will be received for processing without its end of line characters.
 
 --- Package level declarations
 type processing interface {
-    proc(string)
+    proc(string) []warning
+}
+
+type warning struct {
+    line int
+    msg string
 }
 
 ---
 
 --- Functions +=
-func processContent(c []byte, p processing) {
+func processContent(c []byte, p processing) []warning {
+    warnings := make([]warning, 0)
     r := strings.NewReader(string(c))
     sc := bufio.NewScanner(r)
     for sc.Scan() {
-        p.proc(sc.Text())
+        ws := p.proc(sc.Text())
+        warnings = append(warnings, ws...)
     }
+    return warnings
 }
 
 ---
@@ -99,10 +110,12 @@ func newState() state {
     }
 }
 
-func (s *state) proc(line string) {
+func (s *state) proc(line string) []warning {
+    warnings := make([]warning, 0)
     s.lineNum ++
     @{Collect lines in code chunks}
     @{Send surviving lines to markdown}
+    return warnings
 }
 ---
 

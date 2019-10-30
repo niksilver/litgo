@@ -11,7 +11,12 @@ import (
 
 // Package level declarations
 type processing interface {
-	proc(string)
+	proc(string) []warning
+}
+
+type warning struct {
+	line int
+	msg  string
 }
 
 type state struct {
@@ -30,12 +35,15 @@ func main() {
 	fmt.Println(string(output))
 }
 
-func processContent(c []byte, p processing) {
+func processContent(c []byte, p processing) []warning {
+	warnings := make([]warning, 0)
 	r := strings.NewReader(string(c))
 	sc := bufio.NewScanner(r)
 	for sc.Scan() {
-		p.proc(sc.Text())
+		ws := p.proc(sc.Text())
+		warnings = append(warnings, ws...)
 	}
+	return warnings
 }
 
 func newState() state {
@@ -45,7 +53,8 @@ func newState() state {
 	}
 }
 
-func (s *state) proc(line string) {
+func (s *state) proc(line string) []warning {
+	warnings := make([]warning, 0)
 	s.lineNum++
 	// Collect lines in code chunks
 	if s.inChunk && line == "```" {
@@ -63,4 +72,5 @@ func (s *state) proc(line string) {
 	// Send surviving lines to markdown
 	s.markdown.WriteString(line + "\n")
 
+	return warnings
 }
