@@ -21,9 +21,17 @@ type state struct {
 
 	proc func(s *state, line string)
 }
+
 type problem struct {
 	line int
 	msg  string
+}
+
+type set map[string]bool
+
+type tree struct {
+	childrenOf map[string]set
+	parentsOf  map[string]set
 }
 
 // Functions
@@ -55,6 +63,7 @@ func main() {
 	md := []byte(s.markdown.String())
 	output := markdown.ToHTML(md, nil, nil)
 	fmt.Println(string(output))
+	//@{Check code chunks}
 }
 
 func proc(s *state, line string) {
@@ -78,4 +87,50 @@ func proc(s *state, line string) {
 	// Send surviving lines to markdown
 	s.markdown.WriteString(line + "\n")
 
+}
+
+func compileTree(chunks map[string]string) tree {
+	tr := tree{
+		childrenOf: make(map[string]set),
+		parentsOf:  make(map[string]set),
+	}
+	for name, content := range chunks {
+		// Make sure this parent is in the tree
+		if tr.childrenOf[name] == nil {
+			tr.childrenOf[name] = make(map[string]bool)
+		}
+		if tr.parentsOf[name] == nil {
+			tr.parentsOf[name] = make(map[string]bool)
+		}
+
+		sc := bufio.NewScanner(strings.NewReader(content))
+		for sc.Scan() {
+			line := sc.Text()
+			refChunk := referredChunkName(line)
+			if refChunk == "" {
+				continue
+			}
+
+			// Make sure this child is in the tree
+			if tr.childrenOf[refChunk] == nil {
+				tr.childrenOf[refChunk] = make(map[string]bool)
+			}
+			if tr.parentsOf[refChunk] == nil {
+				tr.parentsOf[refChunk] = make(map[string]bool)
+			}
+
+			// Store the parent/child relationship
+			(tr.childrenOf[name])[refChunk] = true
+			(tr.parentsOf[refChunk])[name] = true
+		}
+	}
+	return tr
+}
+
+func referredChunkName(str string) string {
+	str = strings.TrimSpace(str)
+	if strings.HasPrefix(str, "@{") && strings.HasSuffix(str, "}") {
+		return strings.TrimSpace(str[2 : len(str)-1])
+	}
+	return ""
 }
