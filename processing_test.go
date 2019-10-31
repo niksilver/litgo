@@ -5,18 +5,17 @@ import (
 )
 
 type mockProc struct {
-	pr func(s string) []warning
+	pr func(s string)
 }
 
-func (mp mockProc) proc(s string) []warning { return mp.pr(s) }
+func (mp mockProc) proc(s string) { mp.pr(s) }
 
 func TestProcessContent(t *testing.T) {
-	noWarnings := make([]warning, 0)
 
 	// Make sure proc is called at least once normally
 	called := false
 	mp1 := mockProc{
-		pr: func(in string) []warning { called = true; return noWarnings },
+		pr: func(in string) { called = true },
 	}
 	processContent([]byte("Hello"), mp1)
 	if !called {
@@ -26,10 +25,7 @@ func TestProcessContent(t *testing.T) {
 	// Process three lines in order
 	lines := make([]string, 0)
 	mp2 := mockProc{
-		pr: func(in string) []warning {
-			lines = append(lines, in)
-			return noWarnings
-		},
+		pr: func(in string) { lines = append(lines, in) },
 	}
 	processContent([]byte("One\nTwo\nThree"), mp2)
 	if len(lines) != 3 {

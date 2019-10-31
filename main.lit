@@ -3,6 +3,7 @@
 @code_type Go .go
 @comment_type // %s
 
+
 @s Application structure
 
 --- main.go
@@ -16,6 +17,7 @@ import (
 
 @{Functions}
 ---
+
 
 @s Basic design
 
@@ -36,6 +38,7 @@ func main() {
 
 ---
 
+
 @s Processing content: Basic structure
 
 We start with a slice of bytes (or input) but it will be processed
@@ -46,9 +49,6 @@ a line.
 
 Each line will be received for processing without its end of line characters.
 
-We will return warnings, which will accumulate, so we can present
-several of them together at the end of a run.
-
 --- Imports +=
 "strings"
 "bufio"
@@ -56,26 +56,18 @@ several of them together at the end of a run.
 
 --- Package level declarations
 type processing interface {
-    proc(string) []warning
-}
-
-type warning struct {
-    line int
-    msg string
+    proc(string)
 }
 
 ---
 
 --- Functions +=
-func processContent(c []byte, p processing) []warning {
-    warnings := make([]warning, 0)
+func processContent(c []byte, p processing) {
     r := strings.NewReader(string(c))
     sc := bufio.NewScanner(r)
     for sc.Scan() {
-        ws := p.proc(sc.Text())
-        warnings = append(warnings, ws...)
+        p.proc(sc.Text())
     }
-    return warnings
 }
 
 ---
@@ -110,14 +102,31 @@ func newState() state {
     }
 }
 
-func (s *state) proc(line string) []warning {
-    warnings := make([]warning, 0)
+func (s *state) proc(line string) {
     s.lineNum ++
     @{Collect lines in code chunks}
     @{Send surviving lines to markdown}
-    return warnings
 }
 ---
+
+
+@s Processing content: Warnings
+
+As part of our evolving processing state we will collect warnings,
+such as a chunk appearing without a name.
+
+--- Package level declarations +=
+type warning struct {
+    line int
+    msg string
+}
+
+---
+
+--- More state fields
+warnings []warning
+---
+
 
 @s Processing content: Collect lines in code chunks
 
@@ -127,7 +136,7 @@ Anything within the backticks is to be generated code, and that code
 will go into a map, from name to code.
 We'll assemble the chunks later.
 
---- More state fields
+--- More state fields +=
 inChunk bool
 chunkName string
 code map[string]strings.Builder
@@ -150,6 +159,7 @@ if s.inChunk && line == "```" {
     s.inChunk = true
 }
 ---
+
 
 @s Processing content: Send surviving lines to markdown
 
