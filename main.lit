@@ -19,26 +19,6 @@ import (
 ---
 
 
-@s Basic design
-
-Initially we just want to process something through a markdown
-processor.
-
---- Imports
-"fmt"
-"github.com/gomarkdown/markdown"
----
-
---- Functions
-func main() {
-    input := []byte("# Hello world\n\nThis is my other literate document")
-	output := markdown.ToHTML(input, nil, nil)
-	fmt.Println(string(output))
-}
-
----
-
-
 @s Processing content: Basic structure
 
 We start with a slice of bytes (or input) but it will be processed
@@ -48,9 +28,11 @@ updating the state.
 
 Each line will be received for processing without its end of line characters.
 
---- Imports +=
-"strings"
+--- Imports
 "bufio"
+"fmt"
+"github.com/gomarkdown/markdown"
+"strings"
 ---
 
 --- Package level declarations
@@ -62,7 +44,7 @@ type state struct {
 }
 ---
 
---- Functions +=
+--- Functions
 func newState() state {
     return state{
         @{Field initialisers for state}
@@ -76,6 +58,15 @@ func processContent(c []byte, s *state) {
         s.proc(s, sc.Text())
     }
     @{Tidy-up after processing content}
+}
+
+func main() {
+    input := []byte("# Hello world\n\nThis is my other literate document")
+    s := newState()
+    processContent(input, &s)
+    md := []byte(s.markdown.String())
+	output := markdown.ToHTML(md, nil, nil)
+	fmt.Println(string(output))
 }
 
 ---

@@ -27,12 +27,6 @@ type warning struct {
 }
 
 // Functions
-func main() {
-	input := []byte("# Hello world\n\nThis is my other literate document")
-	output := markdown.ToHTML(input, nil, nil)
-	fmt.Println(string(output))
-}
-
 func newState() state {
 	return state{
 		// Field initialisers for state
@@ -52,6 +46,15 @@ func processContent(c []byte, s *state) {
 		s.warnings = append(s.warnings, warning{s.lineNum, "Content finished but chunk not closed"})
 	}
 
+}
+
+func main() {
+	input := []byte("# Hello world\n\nThis is my other literate document")
+	s := newState()
+	processContent(input, &s)
+	md := []byte(s.markdown.String())
+	output := markdown.ToHTML(md, nil, nil)
+	fmt.Println(string(output))
 }
 
 func proc(s *state, line string) {
