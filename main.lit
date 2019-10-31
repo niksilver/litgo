@@ -84,7 +84,9 @@ The code processor, which is `proc` in the code above,
 should just pass through any markdown, but it
 will need to process special commands and it will need to keep a
 track of the code as it is assembled in non-linear order.
-The markdown will be accumulated in the `processing` state.
+
+We will also make `proc` a field of the state struct so that it can
+be overridden in tests.
 
 --- Functions +=
 func proc(s *state, line string) {
