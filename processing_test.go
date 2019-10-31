@@ -15,10 +15,10 @@ func TestProcessContent(t *testing.T) {
 
 	// Make sure proc is called at least once normally
 	called := false
-	st := newState()
-	st.proc = func(st *state, in string) { called = true }
+	s := newState()
+	s.proc = func(s *state, in string) { called = true }
 
-	processContent([]byte("Hello"), &st)
+	processContent([]byte("Hello"), &s)
 
 	if !called {
 		t.Error("proc should have been called at least once")
@@ -26,10 +26,10 @@ func TestProcessContent(t *testing.T) {
 
 	// Process three lines in order
 	lines := make([]string, 0)
-	st = newState()
-	st.proc = func(st *state, in string) { lines = append(lines, in) }
+	s = newState()
+	s.proc = func(s *state, in string) { lines = append(lines, in) }
 
-	processContent([]byte("One\nTwo\nThree"), &st)
+	processContent([]byte("One\nTwo\nThree"), &s)
 
 	if len(lines) != 3 {
 		t.Errorf("Should have returned 3 lines but got %d", len(lines))
@@ -43,7 +43,7 @@ func TestProcessContent(t *testing.T) {
 }
 
 func TestProcForMarkdown(t *testing.T) {
-	st := newState()
+	s := newState()
 	cs := []struct {
 		line     string // Next line
 		markdown string // Accumulated markdown
@@ -63,16 +63,16 @@ func TestProcForMarkdown(t *testing.T) {
 	}
 
 	for i, c := range cs {
-		st.proc(&st, c.line)
-		if st.markdown.String() != c.markdown {
+		s.proc(&s, c.line)
+		if s.markdown.String() != c.markdown {
 			t.Errorf("Line %d: Expected markdown %q but got %q",
-				i+1, c.markdown, st.markdown.String())
+				i+1, c.markdown, s.markdown.String())
 		}
 	}
 }
 
 func TestProcForInChunks(t *testing.T) {
-	st := newState()
+	s := newState()
 	cs := []struct {
 		line    string // Next line
 		inChunk bool   // Expected values...
@@ -86,16 +86,16 @@ func TestProcForInChunks(t *testing.T) {
 	}
 
 	for i, c := range cs {
-		st.proc(&st, c.line)
-		if st.inChunk != c.inChunk {
+		s.proc(&s, c.line)
+		if s.inChunk != c.inChunk {
 			t.Errorf("Line %d: Expected inChunk=%v but got %v",
-				i+1, c.inChunk, st.inChunk)
+				i+1, c.inChunk, s.inChunk)
 		}
 	}
 }
 
 func TestProcForChunkNames(t *testing.T) {
-	st := newState()
+	s := newState()
 	lines := []string{
 		"``` First",
 		"Code line 1",
@@ -111,14 +111,14 @@ func TestProcForChunkNames(t *testing.T) {
 	second := "Code line 3\n"
 
 	for _, line := range lines {
-		st.proc(&st, line)
+		s.proc(&s, line)
 	}
-	actFirst := st.code["First"]
+	actFirst := s.code["First"]
 	if actFirst.String() != first {
 		t.Errorf("Chunk First should be %q but got %q",
 			first, actFirst.String())
 	}
-	actSecond := st.code["Second"]
+	actSecond := s.code["Second"]
 	if actSecond.String() != second {
 		t.Errorf("Chunk Second should be %q but got %q",
 			first, actSecond.String())
@@ -126,7 +126,7 @@ func TestProcForChunkNames(t *testing.T) {
 }
 
 func TestProcForWarningsAroundChunks(t *testing.T) {
-	st := newState()
+	s := newState()
 	lines := []string{
 		"Title",
 		"",
@@ -149,9 +149,9 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 		{11, "chunk not closed"},
 	}
 
-	processContent(content, &st)
+	processContent(content, &s)
 
-	nWarn := len(st.warnings)
+	nWarn := len(s.warnings)
 	if nWarn != len(expected) {
 		t.Errorf("Expected %d warnings, but got %d", len(expected), nWarn)
 	}
@@ -160,10 +160,10 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 			t.Errorf("Warning index %d missing, expected %v", i, w)
 			continue
 		}
-		if expected[i].line != st.warnings[i].line ||
-			!strings.Contains(st.warnings[i].msg, expected[i].subs) {
+		if expected[i].line != s.warnings[i].line ||
+			!strings.Contains(s.warnings[i].msg, expected[i].subs) {
 			t.Errorf("Expected warning index %d to be %v but got %v",
-				i, w, st.warnings)
+				i, w, s.warnings)
 		}
 	}
 }
