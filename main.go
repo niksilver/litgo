@@ -138,7 +138,25 @@ func referredChunkName(str string) string {
 }
 
 func topLevelChunksAreFilenames(tr tree) error {
-	return nil
+	badNames := make([]string, 0)
+	for par, chs := range tr.parentsOf {
+		if len(chs) == 0 {
+			if !isFilename(par) {
+				badNames = append(badNames, par)
+			}
+		}
+	}
+
+	if len(badNames) == 0 {
+		// No error
+		return nil
+	}
+
+	msg := "Found top level chunk which isn't a filename: %s"
+	if len(badNames) > 1 {
+		msg = "Found top level chunks which aren't filenames: %s"
+	}
+	return fmt.Errorf(msg, strings.Join(badNames, ","))
 }
 
 func isFilename(s string) bool {
