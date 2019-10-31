@@ -10,10 +10,6 @@ import (
 )
 
 // Package level declarations
-type processing interface {
-	proc(string)
-}
-
 type state struct {
 	markdown strings.Builder
 	lineNum  int
@@ -22,6 +18,8 @@ type state struct {
 	inChunk   bool
 	chunkName string
 	code      map[string]strings.Builder
+
+	proc func(s *state, line string)
 }
 type warning struct {
 	line int
@@ -35,22 +33,28 @@ func main() {
 	fmt.Println(string(output))
 }
 
-func processContent(c []byte, p processing) {
-	r := strings.NewReader(string(c))
-	sc := bufio.NewScanner(r)
-	for sc.Scan() {
-		p.proc(sc.Text())
-	}
-}
-
 func newState() state {
 	return state{
-		// Required state initialisers
+		// Field initialisers for state
+		proc: proc,
 		code: make(map[string]strings.Builder),
 	}
 }
 
-func (s *state) proc(line string) {
+func processContent(c []byte, s *state) {
+	r := strings.NewReader(string(c))
+	sc := bufio.NewScanner(r)
+	for sc.Scan() {
+		s.proc(s, sc.Text())
+	}
+	// Tidy-up after processing content
+	if s.inChunk {
+		s.warnings = append(s.warnings, warning{s.lineNum, "Content finished but chunk not closed"})
+	}
+
+}
+
+func proc(s *state, line string) {
 	s.lineNum++
 	// Collect lines in code chunks
 	if s.inChunk && line == "```" {
@@ -61,6 +65,9 @@ func (s *state) proc(line string) {
 		s.code[s.chunkName] = b
 	} else if !s.inChunk && strings.HasPrefix(line, "```") {
 		s.chunkName = strings.TrimSpace(line[3:])
+		if s.chunkName == "" {
+			s.warnings = append(s.warnings, warning{s.lineNum, "Chunk has no name"})
+		}
 		s.code[s.chunkName] = strings.Builder{}
 		s.inChunk = true
 	}

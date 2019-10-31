@@ -43,9 +43,8 @@ func main() {
 
 We start with a slice of bytes (or input) but it will be processed
 line by line, as strings.
-
-We will have a Processing interface, which is anything that processes
-a line.
+We will do this by maintaining a state, and process each line by
+updating the state.
 
 Each line will be received for processing without its end of line characters.
 
@@ -55,19 +54,28 @@ Each line will be received for processing without its end of line characters.
 ---
 
 --- Package level declarations
-type processing interface {
-    proc(string)
+type state struct {
+    markdown strings.Builder
+    lineNum int
+    @{More state fields}
+    proc func(s *state, line string)
 }
-
 ---
 
 --- Functions +=
-func processContent(c []byte, p processing) {
+func newState() state {
+    return state{
+        @{Field initialisers for state}
+    }
+}
+
+func processContent(c []byte, s *state) {
     r := strings.NewReader(string(c))
     sc := bufio.NewScanner(r)
     for sc.Scan() {
-        p.proc(sc.Text())
+        s.proc(s, sc.Text())
     }
+    @{Tidy-up after processing content}
 }
 
 ---
@@ -87,26 +95,17 @@ will need to process special commands and it will need to keep a
 track of the code as it is assembled in non-linear order.
 The markdown will be accumulated in the `processing` state.
 
---- Package level declarations +=
-type state struct {
-    markdown strings.Builder
-    lineNum int
-    @{More state fields}
-}
----
-
 --- Functions +=
-func newState() state {
-    return state{
-        @{Required state initialisers}
-    }
-}
-
-func (s *state) proc(line string) {
+func proc(s *state, line string) {
     s.lineNum ++
     @{Collect lines in code chunks}
     @{Send surviving lines to markdown}
 }
+
+---
+
+--- Field initialisers for state
+proc: proc,
 ---
 
 
@@ -142,7 +141,7 @@ chunkName string
 code map[string]strings.Builder
 ---
 
---- Required state initialisers
+--- Field initialisers for state +=
 code: make(map[string]strings.Builder),
 ---
 
@@ -155,8 +154,17 @@ if s.inChunk && line == "```" {
     s.code[s.chunkName] = b
 } else if !s.inChunk && strings.HasPrefix(line, "```") {
     s.chunkName = strings.TrimSpace(line[3:])
+    if s.chunkName == "" {
+        s.warnings = append(s.warnings, warning{ s.lineNum, "Chunk has no name"})
+    }
     s.code[s.chunkName] = strings.Builder{}
     s.inChunk = true
+}
+---
+
+--- Tidy-up after processing content
+if s.inChunk {
+    s.warnings = append(s.warnings, warning{s.lineNum, "Content finished but chunk not closed"})
 }
 ---
 
