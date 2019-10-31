@@ -102,13 +102,15 @@ proc: proc,
 ---
 
 
-@s Processing content: Warnings
+@s Processing content: Errors and warnings
 
 As part of our evolving processing state we will collect warnings,
-such as a chunk appearing without a name.
+such as a chunk appearing without a name. We may also have to stop
+at an error. Both are kinds of problems. Warnings will be problems
+collected in the state; an error will be returned from any processing.
 
 --- Package level declarations +=
-type warning struct {
+type problem struct {
     line int
     msg string
 }
@@ -116,7 +118,7 @@ type warning struct {
 ---
 
 --- More state fields
-warnings []warning
+warnings []problem
 ---
 
 
@@ -148,7 +150,7 @@ if s.inChunk && line == "```" {
 } else if !s.inChunk && strings.HasPrefix(line, "```") {
     s.chunkName = strings.TrimSpace(line[3:])
     if s.chunkName == "" {
-        s.warnings = append(s.warnings, warning{ s.lineNum, "Chunk has no name"})
+        s.warnings = append(s.warnings, problem{ s.lineNum, "Chunk has no name"})
     }
     s.code[s.chunkName] = strings.Builder{}
     s.inChunk = true
@@ -157,7 +159,7 @@ if s.inChunk && line == "```" {
 
 --- Tidy-up after processing content
 if s.inChunk {
-    s.warnings = append(s.warnings, warning{s.lineNum, "Content finished but chunk not closed"})
+    s.warnings = append(s.warnings, problem{s.lineNum, "Content finished but chunk not closed"})
 }
 ---
 
@@ -167,4 +169,5 @@ if s.inChunk {
 --- Send surviving lines to markdown
 s.markdown.WriteString(line + "\n")
 ---
+
 
