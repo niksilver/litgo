@@ -5,7 +5,7 @@ import (
 	// Imports
 	"bufio"
 	"fmt"
-	"github.com/russross/blackfriday"
+	"github.com/gomarkdown/markdown"
 	"strings"
 )
 
@@ -29,7 +29,7 @@ type warning struct {
 // Functions
 func main() {
 	input := []byte("# Hello world\n\nThis is my other literate document")
-	output := blackfriday.Run(input)
+	output := markdown.ToHTML(input, nil, nil)
 	fmt.Println(string(output))
 }
 
