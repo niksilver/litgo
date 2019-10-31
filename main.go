@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/gomarkdown/markdown"
+	"regexp"
 	"strings"
 )
 
@@ -94,6 +95,7 @@ func compileTree(chunks map[string]string) tree {
 		childrenOf: make(map[string]set),
 		parentsOf:  make(map[string]set),
 	}
+
 	for name, content := range chunks {
 		// Make sure this parent is in the tree
 		if tr.childrenOf[name] == nil {
@@ -133,4 +135,13 @@ func referredChunkName(str string) string {
 		return strings.TrimSpace(str[2 : len(str)-1])
 	}
 	return ""
+}
+
+func topLevelChunksAreFilenames(tr tree) error {
+	return nil
+}
+
+func isFilename(s string) bool {
+	match, _ := regexp.MatchString("\\.\\S+$", s)
+	return match
 }

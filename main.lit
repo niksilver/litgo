@@ -175,7 +175,7 @@ s.markdown.WriteString(line + "\n")
 
 @s Outputting the code: Checking code chunks
 
-We don't want to output the code and discover half we through we have
+We don't want to output the code and discover half way through we have
 a problem with the assembly. So we'll do checks on it first. Checks will be:
 
 * Is every top level chunk a named file? [To be implemented]
@@ -200,6 +200,7 @@ func compileTree(chunks map[string]string) tree {
         childrenOf: make(map[string]set),
         parentsOf: make(map[string]set),
     }
+
     for name, content := range chunks {
         // Make sure this parent is in the tree
         if tr.childrenOf[name] == nil {
@@ -240,5 +241,25 @@ func referredChunkName(str string) string {
     }
     return ""
 }
+
+---
+
+How to check if every top level chunk is a filename.
+A chunk is at the top level if it's got no parents.
+
+--- Imports +=
+"regexp"
+---
+
+--- Functions +=
+func topLevelChunksAreFilenames(tr tree) error {
+    return nil
+}
+
+func isFilename(s string) bool {
+    match, _ := regexp.MatchString("\\.\\S+$", s)
+    return match
+}
+
 ---
 
