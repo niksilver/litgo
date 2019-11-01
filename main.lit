@@ -281,3 +281,23 @@ func isFilename(s string) bool {
 
 ---
 
+How to make sure there are no cycles in our chunk inclusion:
+
+1. Select all the top level chunks.
+2. Make a singleton list of each one. This is a list of "paths".
+   These paths are our existing "paths".
+3. As long as we've got some existing paths...
+  1. We will create some new paths. Initially there are no new paths.
+  2. For each existing path:
+    1. Pick the last element.
+    2. Find its children.
+    3. If there are no children continue with the next round of the loop.
+    3. If this child appears earlier in the path that's a cycle.
+       Terminate with an error message.
+    4. Add to our list of new paths: Each new path is the current
+       path plus the child added to the end.
+       For example, if our current path is {a, b, c, d} and the
+       children of d are e1, e2 and e3, then our new paths are
+       {a, b, c, d, e1} and {a, b, c, d, e2} and {a, b, c, d, e3}.
+  3. Our list of new paths becomes our existing paths.
+4. If we've reached this stage then there are no cycles. All is well.
