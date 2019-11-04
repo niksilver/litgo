@@ -108,20 +108,20 @@ func TestProcForChunkNames(t *testing.T) {
 		"```",
 		"The end",
 	}
-	first := "Code line 1\nCode line 2\n"
-	second := "Code line 3\n"
+	first := []string{"Code line 1", "Code line 2"}
+	second := []string{"Code line 3"}
 
 	for _, line := range lines {
 		s.proc(&s, line)
 	}
-	actFirst := strings.Join(s.chunks["First"].code, "")
-	if actFirst != first {
-		t.Errorf("Chunk First should be %q but got %q",
+	actFirst := s.chunks["First"].code
+	if !reflect.DeepEqual(actFirst, first) {
+		t.Errorf("Chunk First should be %#v but got %#v",
 			first, actFirst)
 	}
-	actSecond := strings.Join(s.chunks["Second"].code, "")
-	if actSecond != second {
-		t.Errorf("Chunk Second should be %q but got %q",
+	actSecond := s.chunks["Second"].code
+	if !reflect.DeepEqual(actSecond, second) {
+		t.Errorf("Chunk Second should be %#v but got %#v",
 			first, actSecond)
 	}
 }
@@ -146,12 +146,12 @@ func TestProcForChunkDetails(t *testing.T) {
 	expected := map[string]chunk{
 		"First": chunk{
 			[]int{1, 10},
-			[]string{"Code line 1\n", "Code line 2\n", "Code line 4\n"},
+			[]string{"Code line 1", "Code line 2", "Code line 4"},
 			[]int{2, 3, 11},
 		},
 		"Second": chunk{
 			[]int{6},
-			[]string{"Code line 3\n"},
+			[]string{"Code line 3"},
 			[]int{7},
 		},
 	}

@@ -84,7 +84,7 @@ func proc(s *state, line string) {
 		s.inChunk = false
 	} else if s.inChunk {
 		ch := s.chunks[s.chunkName]
-		s.chunks[s.chunkName].code = append(ch.code, line+"\n")
+		s.chunks[s.chunkName].code = append(ch.code, line)
 		s.chunks[s.chunkName].lines = append(ch.lines, s.lineNum)
 	} else if !s.inChunk && strings.HasPrefix(line, "```") {
 		s.chunkName = strings.TrimSpace(line[3:])
