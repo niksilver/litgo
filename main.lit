@@ -132,29 +132,38 @@ Anything within the backticks is to be generated code, and that code
 will go into a map, from name to code.
 We'll assemble the chunks later.
 
+--- Package level declarations +=
+type chunk struct {
+    line int     // Line number where the chunk defined; -ve if not yet known
+    code []string  // Lines of code
+    lines []int    // Line number for each line of code
+}
+
+---
+
 --- More state fields +=
-inChunk bool
-chunkName string
-code map[string]strings.Builder
+inChunk bool  // If we're currently reading a chunk
+chunkName string  // Name of current chunk
+chunks map[string]*chunk  // All the chunks found so far
 ---
 
 --- Field initialisers for state +=
-code: make(map[string]strings.Builder),
+chunks: make(map[string]*chunk),
 ---
 
 --- Collect lines in code chunks
 if s.inChunk && line == "```" {
     s.inChunk = false
 } else if s.inChunk {
-    b := s.code[s.chunkName]
-    b.WriteString(line + "\n")
-    s.code[s.chunkName] = b
+    ch := s.chunks[s.chunkName]
+    ch.code = append(ch.code, line + "\n")
+    ch.lines = append(ch.lines, s.lineNum)
 } else if !s.inChunk && strings.HasPrefix(line, "```") {
     s.chunkName = strings.TrimSpace(line[3:])
     if s.chunkName == "" {
         s.warnings = append(s.warnings, problem{ s.lineNum, "Chunk has no name"})
     }
-    s.code[s.chunkName] = strings.Builder{}
+    s.chunks[s.chunkName] = &chunk{ s.lineNum, make([]string, 0), make([]int, 0) }
     s.inChunk = true
 }
 ---
@@ -225,7 +234,7 @@ func compileLattice(chunks map[string]string) lattice {
             if lat.childrenOf[refChunk] == nil {
                 lat.childrenOf[refChunk] = make(map[string]bool)
             }
-            if tr.parentsOf[refChunk] == nil {
+            if lat.parentsOf[refChunk] == nil {
                 lat.parentsOf[refChunk] = make(map[string]bool)
             }
 

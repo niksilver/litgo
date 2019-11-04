@@ -16,9 +16,9 @@ type state struct {
 	lineNum  int
 	// More state fields
 	warnings  []problem
-	inChunk   bool
-	chunkName string
-	code      map[string]strings.Builder
+	inChunk   bool              // If we're currently reading a chunk
+	chunkName string            // Name of current chunk
+	chunks    map[string]*chunk // All the chunks found so far
 
 	proc func(s *state, line string)
 }
@@ -26,6 +26,12 @@ type state struct {
 type problem struct {
 	line int
 	msg  string
+}
+
+type chunk struct {
+	line  int      // Line number where the chunk defined; -ve if not yet known
+	code  []string // Lines of code
+	lines []int    // Line number for each line of code
 }
 
 type set map[string]bool
@@ -43,8 +49,8 @@ type cyclicError struct {
 func newState() state {
 	return state{
 		// Field initialisers for state
-		proc: proc,
-		code: make(map[string]strings.Builder),
+		proc:   proc,
+		chunks: make(map[string]*chunk),
 	}
 }
 
@@ -77,15 +83,15 @@ func proc(s *state, line string) {
 	if s.inChunk && line == "```" {
 		s.inChunk = false
 	} else if s.inChunk {
-		b := s.code[s.chunkName]
-		b.WriteString(line + "\n")
-		s.code[s.chunkName] = b
+		ch := s.chunks[s.chunkName]
+		ch.code = append(ch.code, line+"\n")
+		ch.lines = append(ch.lines, s.lineNum)
 	} else if !s.inChunk && strings.HasPrefix(line, "```") {
 		s.chunkName = strings.TrimSpace(line[3:])
 		if s.chunkName == "" {
 			s.warnings = append(s.warnings, problem{s.lineNum, "Chunk has no name"})
 		}
-		s.code[s.chunkName] = strings.Builder{}
+		s.chunks[s.chunkName] = &chunk{s.lineNum, make([]string, 0), make([]int, 0)}
 		s.inChunk = true
 	}
 
@@ -95,18 +101,18 @@ func proc(s *state, line string) {
 }
 
 func compileLattice(chunks map[string]string) lattice {
-	tr := lattice{
+	lat := lattice{
 		childrenOf: make(map[string]set),
 		parentsOf:  make(map[string]set),
 	}
 
 	for name, content := range chunks {
 		// Make sure this parent is in the lattice
-		if tr.childrenOf[name] == nil {
-			tr.childrenOf[name] = make(map[string]bool)
+		if lat.childrenOf[name] == nil {
+			lat.childrenOf[name] = make(map[string]bool)
 		}
-		if tr.parentsOf[name] == nil {
-			tr.parentsOf[name] = make(map[string]bool)
+		if lat.parentsOf[name] == nil {
+			lat.parentsOf[name] = make(map[string]bool)
 		}
 
 		sc := bufio.NewScanner(strings.NewReader(content))
@@ -118,19 +124,19 @@ func compileLattice(chunks map[string]string) lattice {
 			}
 
 			// Make sure this child is in the lattice
-			if tr.childrenOf[refChunk] == nil {
-				tr.childrenOf[refChunk] = make(map[string]bool)
+			if lat.childrenOf[refChunk] == nil {
+				lat.childrenOf[refChunk] = make(map[string]bool)
 			}
-			if tr.parentsOf[refChunk] == nil {
-				tr.parentsOf[refChunk] = make(map[string]bool)
+			if lat.parentsOf[refChunk] == nil {
+				lat.parentsOf[refChunk] = make(map[string]bool)
 			}
 
 			// Store the parent/child relationship
-			(tr.childrenOf[name])[refChunk] = true
-			(tr.parentsOf[refChunk])[name] = true
+			(lat.childrenOf[name])[refChunk] = true
+			(lat.parentsOf[refChunk])[name] = true
 		}
 	}
-	return tr
+	return lat
 }
 
 func referredChunkName(str string) string {

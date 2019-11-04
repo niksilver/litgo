@@ -113,15 +113,15 @@ func TestProcForChunkNames(t *testing.T) {
 	for _, line := range lines {
 		s.proc(&s, line)
 	}
-	actFirst := s.code["First"]
-	if actFirst.String() != first {
+	actFirst := strings.Join(s.chunks["First"].code, "")
+	if actFirst != first {
 		t.Errorf("Chunk First should be %q but got %q",
-			first, actFirst.String())
+			first, actFirst)
 	}
-	actSecond := s.code["Second"]
-	if actSecond.String() != second {
+	actSecond := strings.Join(s.chunks["Second"].code, "")
+	if actSecond != second {
 		t.Errorf("Chunk Second should be %q but got %q",
-			first, actSecond.String())
+			first, actSecond)
 	}
 }
 
