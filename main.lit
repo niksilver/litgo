@@ -134,7 +134,7 @@ We'll assemble the chunks later.
 
 --- Package level declarations +=
 type chunk struct {
-    line int     // Line number where the chunk defined; -ve if not yet known
+    line []int     // Line number where the chunk defined
     code []string  // Lines of code
     lines []int    // Line number for each line of code
 }
@@ -156,14 +156,19 @@ if s.inChunk && line == "```" {
     s.inChunk = false
 } else if s.inChunk {
     ch := s.chunks[s.chunkName]
-    ch.code = append(ch.code, line + "\n")
-    ch.lines = append(ch.lines, s.lineNum)
+    s.chunks[s.chunkName].code = append(ch.code, line + "\n")
+    s.chunks[s.chunkName].lines = append(ch.lines, s.lineNum)
 } else if !s.inChunk && strings.HasPrefix(line, "```") {
     s.chunkName = strings.TrimSpace(line[3:])
     if s.chunkName == "" {
         s.warnings = append(s.warnings, problem{ s.lineNum, "Chunk has no name"})
     }
-    s.chunks[s.chunkName] = &chunk{ s.lineNum, make([]string, 0), make([]int, 0) }
+    ch := s.chunks[s.chunkName]
+    if ch == nil {
+        s.chunks[s.chunkName] = &chunk{}
+        ch = s.chunks[s.chunkName]
+    }
+    s.chunks[s.chunkName].line = append(ch.line, s.lineNum)
     s.inChunk = true
 }
 ---

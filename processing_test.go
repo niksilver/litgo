@@ -1,6 +1,7 @@
 package main
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -122,6 +123,53 @@ func TestProcForChunkNames(t *testing.T) {
 	if actSecond != second {
 		t.Errorf("Chunk Second should be %q but got %q",
 			first, actSecond)
+	}
+}
+
+func TestProcForChunkDetails(t *testing.T) {
+	s := newState()
+	lines := []string{
+		"``` First",
+		"Code line 1",
+		"Code line 2",
+		"```",
+		"",
+		"``` Second",
+		"Code line 3",
+		"```",
+		"",
+		"``` First", // Appending to a chunk
+		"Code line 4",
+		"```",
+		"The end",
+	}
+	expected := map[string]chunk{
+		"First": chunk{
+			[]int{1, 10},
+			[]string{"Code line 1\n", "Code line 2\n", "Code line 4\n"},
+			[]int{2, 3, 11},
+		},
+		"Second": chunk{
+			[]int{6},
+			[]string{"Code line 3\n"},
+			[]int{7},
+		},
+	}
+
+	for _, line := range lines {
+		s.proc(&s, line)
+	}
+
+	if len(s.chunks) != 2 {
+		t.Errorf("Expected 2 chunks but got %d", len(s.chunks))
+	}
+	if !reflect.DeepEqual(expected["First"], *s.chunks["First"]) {
+		t.Errorf("Expected First chunk to be\n%#v\nbut got\n%#v",
+			expected["First"], *s.chunks["First"])
+	}
+	if !reflect.DeepEqual(expected["Second"], *s.chunks["Second"]) {
+		t.Errorf("Expected Second chunk to be\n%#v\nbut got\n%#v",
+			expected["Second"], *s.chunks["Second"])
 	}
 }
 
