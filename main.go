@@ -150,7 +150,7 @@ func referredChunkName(str string) string {
 	return ""
 }
 
-func topLevelChunksAreFilenames(lat lattice) error {
+func assertTopLevelChunksAreFilenames(lat lattice) error {
 	badNames := make([]string, 0)
 	for ch, pars := range lat.parentsOf {
 		if len(pars) == 0 && !isFilename(ch) {
@@ -180,7 +180,7 @@ func (e *cyclicError) Error() string {
 		strings.Join(e.chunks, " -> ")
 }
 
-func errorIfCyclic(lat lattice) error {
+func assertNoCycles(lat lattice) error {
 	// Find the top level chunks
 	top := make([]string, 0)
 	for ch, pars := range lat.parentsOf {

@@ -92,7 +92,7 @@ func TestTopLevelChunksAreFilenames(t *testing.T) {
 			"Top.txt":    {},
 		},
 	}
-	err1 := topLevelChunksAreFilenames(lat1)
+	err1 := assertTopLevelChunksAreFilenames(lat1)
 	if err1 == nil || !strings.Contains(err1.Error(), "Top1") {
 		t.Errorf("Lattice 1 should report error about 'Top1' but got error %q", err1)
 	}
@@ -106,7 +106,7 @@ func TestTopLevelChunksAreFilenames(t *testing.T) {
 			"Middle.txt": {"Top1.txt": true},
 		},
 	}
-	err2 := topLevelChunksAreFilenames(lat2)
+	err2 := assertTopLevelChunksAreFilenames(lat2)
 	if err2 == nil || !strings.Contains(err2.Error(), "Top2-1") {
 		t.Errorf("Lattice 2 should report error about 'Top2-1' but got error %q", err2)
 	}
@@ -123,13 +123,13 @@ func TestTopLevelChunksAreFilenames(t *testing.T) {
 			"Top3-2.txt": {},
 		},
 	}
-	err3 := topLevelChunksAreFilenames(lat3)
+	err3 := assertTopLevelChunksAreFilenames(lat3)
 	if err3 != nil {
 		t.Errorf("Lattice 3 should report no errors but got error %q", err2)
 	}
 }
 
-func TestErrorIfCyclic1NotCyclic(t *testing.T) {
+func TestAssertNoCycles_NotCyclic(t *testing.T) {
 	// Check this lattice isn't cyclic:
 	//
 	// aa -- hh
@@ -163,27 +163,27 @@ func TestErrorIfCyclic1NotCyclic(t *testing.T) {
 		},
 	}
 
-	err := errorIfCyclic(lat)
+	err := assertNoCycles(lat)
 	if err != nil {
 		t.Errorf("Good lattice incorrectly found to be cyclic. Got error %q",
 			err.Error())
 	}
 }
 
-func TestErrorIfCyclic2EmptyLatticeNotCyclic(t *testing.T) {
+func TestAssertNoCycles_EmptyLatticeNotCyclic(t *testing.T) {
 	lat := lattice{
 		parentsOf:  make(map[string]set, 0),
 		childrenOf: make(map[string]set, 0),
 	}
 
-	err := errorIfCyclic(lat)
+	err := assertNoCycles(lat)
 	if err != nil {
 		t.Errorf("Empty lattice incorrectly found to be cyclic. Got error %q",
 			err.Error())
 	}
 }
 
-func TestErrorIfCyclic3IsCyclic(t *testing.T) {
+func TestAssertNoCycles_IsCyclic(t *testing.T) {
 	// Check this lattice is cyclic:
 	//
 	// aa -- hh
@@ -217,7 +217,7 @@ func TestErrorIfCyclic3IsCyclic(t *testing.T) {
 		},
 	}
 
-	err := errorIfCyclic(lat)
+	err := assertNoCycles(lat)
 	if err == nil {
 		t.Errorf("Cyclic lattice not recognised")
 	}
