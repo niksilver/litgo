@@ -7,10 +7,16 @@ import (
 )
 
 func TestBasicLattice(t *testing.T) {
-	chunks := map[string]string{
-		"top":         "top one\n@{chunk two}\n@{chunk three}\ntop four",
-		"chunk three": "three A\nthree B",
-		"chunk two":   "Two A\n  @{chunk three}  \n@chunk three",
+	chunks := map[string]*chunk{
+		"top": &chunk{code: []string{
+			"top one", "@{chunk two}", "@{chunk three}", "top four",
+		}},
+		"chunk three": &chunk{code: []string{
+			"three A", "three B",
+		}},
+		"chunk two": &chunk{code: []string{
+			"Two A", "  @{chunk three}  ", "@chunk three",
+		}},
 	}
 	expected := lattice{
 		childrenOf: map[string]set{
@@ -221,4 +227,83 @@ func TestErrorIfCyclic3IsCyclic(t *testing.T) {
 		t.Errorf("Cyclic lattice gave wrong error. Expected %q but got %q",
 			subs, err.Error())
 	}
+}
+
+func TestAssertAllChunksDefined(t *testing.T) {
+	lit1 := []string{
+		"``` One",
+		"@{Two}",
+		"@{Three}",
+		"```",
+		"",
+		"``` Two",
+		"@{Three}",
+		"```",
+		"``` Three",
+		"Something",
+		"```",
+	}
+	s1 := newState()
+	processContent([]byte(strings.Join(lit1, "\n")), &s1)
+	lat1 := compileLattice(s1.chunks)
+	err1 := assertAllChunksDefined(s1.chunks, lat1)
+	if err1 != nil {
+		t.Errorf("1. Doc should have all chunks defined but got error %q",
+			err1.Error())
+	}
+
+	lit2 := []string{
+		"``` One",
+		"@{Two}",
+		"@{Three}",
+		"```",
+		"",
+		"``` Two",
+		"@{Three}",
+		"```",
+		"``` Thrxx",
+		"Something",
+		"```",
+	}
+	s2 := newState()
+	processContent([]byte(strings.Join(lit2, "\n")), &s2)
+	lat2 := compileLattice(s2.chunks)
+	err2 := assertAllChunksDefined(s2.chunks, lat2)
+	if err2 == nil {
+		t.Errorf("2. Doc should have a chunk defined but got no error")
+	}
+	if err2 != nil && !strings.Contains(err2.Error(), "Three") {
+		t.Errorf("2. Error does not mention missing chunk Three. It is %q",
+			err2.Error())
+	}
+
+	lit3 := []string{
+		"``` One",
+		"@{Two}",
+		"@{Three}",
+		"```",
+		"",
+		"``` Twoxx",
+		"@{Three}",
+		"```",
+		"``` Thrxx",
+		"Something",
+		"```",
+	}
+	s3 := newState()
+	processContent([]byte(strings.Join(lit3, "\n")), &s3)
+	lat3 := compileLattice(s3.chunks)
+	err3 := assertAllChunksDefined(s3.chunks, lat3)
+	if err3 == nil {
+		t.Errorf("3. Doc should have a chunk defined but got no error")
+	}
+	if err3 != nil && !strings.Contains(err3.Error(), "Two") {
+		t.Errorf("3. Error does not mention missing chunk Two. It is %q",
+			err3.Error())
+	}
+	if err3 != nil && !strings.Contains(err3.Error(), "Three") {
+		t.Errorf("3. Error does not mention missing chunk Three. It is %q",
+			err3.Error())
+	}
+
 }

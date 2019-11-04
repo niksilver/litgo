@@ -193,8 +193,8 @@ We don't want to output the code and discover half way through we have
 a problem with the assembly. So we'll do checks on it first. Checks will be:
 
 * Is every top level chunk a named file?
-* Make sure there are no circular inclusions. [To be implemented]
-* Does every named chunk exist? [To be implemented]
+* Make sure there are no circular inclusions.
+* Is every named chunk defined?
 
 (One chunk may have more than one parent, so the structure is more like
 a lattice; it's not a tree.)
@@ -212,13 +212,13 @@ type lattice struct {
 First we'll compile our lattice of chunk names.
 
 --- Functions +=
-func compileLattice(chunks map[string]string) lattice {
+func compileLattice(chunks map[string]*chunk) lattice {
     lat := lattice{
         childrenOf: make(map[string]set),
         parentsOf: make(map[string]set),
     }
 
-    for name, content := range chunks {
+    for name, data := range chunks {
         // Make sure this parent is in the lattice
         if lat.childrenOf[name] == nil {
             lat.childrenOf[name] = make(map[string]bool)
@@ -227,9 +227,7 @@ func compileLattice(chunks map[string]string) lattice {
             lat.parentsOf[name] = make(map[string]bool)
         }
 
-        sc := bufio.NewScanner(strings.NewReader(content))
-        for sc.Scan() {
-            line := sc.Text()
+        for _, line := range data.code {
             refChunk := referredChunkName(line)
             if refChunk == "" {
                 continue
@@ -384,6 +382,32 @@ func errorIfCyclic(lat lattice) error {
 
     // If we've got here, then there are no cycles
     return nil
+}
+
+---
+
+If a named chunk isn't defined then (a) it's in the lattice struct,
+but (b) it doesn't have a key in the `chunks` field of the state struct.
+
+--- Functions +=
+func assertAllChunksDefined(chunks map[string]*chunk, lat lattice) error {
+    missing := make([]string, 0)
+    for par, _ := range lat.childrenOf {
+        if chunks[par] == nil {
+            missing = append(missing, par)
+        }
+    }
+
+    if len(missing) == 0 {
+        return nil
+    }
+
+    s := ""
+    if len(missing) >= 2 {
+        s = "s"
+    }
+    return fmt.Errorf("Chunk%s not defined: %s",
+        s, strings.Join(missing, ", "))
 }
 
 ---

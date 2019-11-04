@@ -105,13 +105,13 @@ func proc(s *state, line string) {
 
 }
 
-func compileLattice(chunks map[string]string) lattice {
+func compileLattice(chunks map[string]*chunk) lattice {
 	lat := lattice{
 		childrenOf: make(map[string]set),
 		parentsOf:  make(map[string]set),
 	}
 
-	for name, content := range chunks {
+	for name, data := range chunks {
 		// Make sure this parent is in the lattice
 		if lat.childrenOf[name] == nil {
 			lat.childrenOf[name] = make(map[string]bool)
@@ -120,9 +120,7 @@ func compileLattice(chunks map[string]string) lattice {
 			lat.parentsOf[name] = make(map[string]bool)
 		}
 
-		sc := bufio.NewScanner(strings.NewReader(content))
-		for sc.Scan() {
-			line := sc.Text()
+		for _, line := range data.code {
 			refChunk := referredChunkName(line)
 			if refChunk == "" {
 				continue
@@ -236,4 +234,24 @@ func errorIfCyclic(lat lattice) error {
 
 	// If we've got here, then there are no cycles
 	return nil
+}
+
+func assertAllChunksDefined(chunks map[string]*chunk, lat lattice) error {
+	missing := make([]string, 0)
+	for par, _ := range lat.childrenOf {
+		if chunks[par] == nil {
+			missing = append(missing, par)
+		}
+	}
+
+	if len(missing) == 0 {
+		return nil
+	}
+
+	s := ""
+	if len(missing) >= 2 {
+		s = "s"
+	}
+	return fmt.Errorf("Chunk%s not defined: %s",
+		s, strings.Join(missing, ", "))
 }
