@@ -315,19 +315,7 @@ How to make sure there are no cycles in our chunk inclusion:
   3. Our list of new paths becomes our existing paths.
 4. If we've reached this stage then there are no cycles. All is well.
 
---- Package level declarations +=
-type cyclicError struct {
-    chunks []string
-}
-
----
-
 --- Functions +=
-func (e *cyclicError) Error() string {
-    return "Found cyclic chunks: " +
-        strings.Join(e.chunks, " -> ")
-}
-
 func assertNoCycles(lat lattice) error {
     // Find the top level chunks
     top := make([]string, 0)
@@ -362,10 +350,11 @@ func assertNoCycles(lat lattice) error {
                 continue
             }
 
-            // Terminate with an error if the appears earlier in the path
+            // Terminate with an error if the elt appears earlier in the path
             for i := 0; i < len(path)-1; i++ {
                 if path[i] == lastElt {
-                    return &cyclicError{path[i:]}
+                    return fmt.Errorf("Found cyclic chunks: %s",
+                        strings.Join(path[i:], " -> "))
                 }
             }
 

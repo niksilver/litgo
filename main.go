@@ -41,10 +41,6 @@ type lattice struct {
 	parentsOf  map[string]set
 }
 
-type cyclicError struct {
-	chunks []string
-}
-
 // Functions
 func newState() state {
 	return state{
@@ -175,11 +171,6 @@ func isFilename(s string) bool {
 	return match
 }
 
-func (e *cyclicError) Error() string {
-	return "Found cyclic chunks: " +
-		strings.Join(e.chunks, " -> ")
-}
-
 func assertNoCycles(lat lattice) error {
 	// Find the top level chunks
 	top := make([]string, 0)
@@ -214,10 +205,11 @@ func assertNoCycles(lat lattice) error {
 				continue
 			}
 
-			// Terminate with an error if the appears earlier in the path
+			// Terminate with an error if the elt appears earlier in the path
 			for i := 0; i < len(path)-1; i++ {
 				if path[i] == lastElt {
-					return &cyclicError{path[i:]}
+					return fmt.Errorf("Found cyclic chunks: %s",
+						strings.Join(path[i:], " -> "))
 				}
 			}
 
