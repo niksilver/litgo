@@ -30,9 +30,13 @@ type problem struct {
 
 type set map[string]bool
 
-type tree struct {
+type lattice struct {
 	childrenOf map[string]set
 	parentsOf  map[string]set
+}
+
+type cyclicError struct {
+	chunks []string
 }
 
 // Functions
@@ -90,14 +94,14 @@ func proc(s *state, line string) {
 
 }
 
-func compileTree(chunks map[string]string) tree {
-	tr := tree{
+func compileLatic(chunks map[string]string) lattice {
+	tr := lattice{
 		childrenOf: make(map[string]set),
 		parentsOf:  make(map[string]set),
 	}
 
 	for name, content := range chunks {
-		// Make sure this parent is in the tree
+		// Make sure this parent is in the lattice
 		if tr.childrenOf[name] == nil {
 			tr.childrenOf[name] = make(map[string]bool)
 		}
@@ -113,7 +117,7 @@ func compileTree(chunks map[string]string) tree {
 				continue
 			}
 
-			// Make sure this child is in the tree
+			// Make sure this child is in the lattice
 			if tr.childrenOf[refChunk] == nil {
 				tr.childrenOf[refChunk] = make(map[string]bool)
 			}
@@ -137,13 +141,11 @@ func referredChunkName(str string) string {
 	return ""
 }
 
-func topLevelChunksAreFilenames(tr tree) error {
+func topLevelChunksAreFilenames(lat lattice) error {
 	badNames := make([]string, 0)
-	for par, chs := range tr.parentsOf {
-		if len(chs) == 0 {
-			if !isFilename(par) {
-				badNames = append(badNames, par)
-			}
+	for ch, pars := range lat.parentsOf {
+		if len(pars) == 0 && !isFilename(ch) {
+			badNames = append(badNames, ch)
 		}
 	}
 
@@ -162,4 +164,65 @@ func topLevelChunksAreFilenames(tr tree) error {
 func isFilename(s string) bool {
 	match, _ := regexp.MatchString("\\.\\S+$", s)
 	return match
+}
+
+func (e *cyclicError) Error() string {
+	return "Found cyclic chunks: " +
+		strings.Join(e.chunks, " -> ")
+}
+
+func errorIfCyclic(lat lattice) error {
+	// Find the top level chunks
+	top := make([]string, 0)
+	for ch, _ := range lat.parentsOf {
+		if len(ch) == 0 {
+			top = append(top, ch)
+		}
+	}
+
+	// Make a singleton list of these, which is our initial list of paths
+	paths := make([][]string, 0)
+	for _, par := range top {
+		paths = append(paths, []string{par})
+	}
+
+	// As long as we've got some existing paths...
+	for len(paths) > 0 {
+		// New paths, initially none
+		nPaths := make([][]string, 0)
+
+		// For each existing path...
+		for _, path := range paths {
+			// Pick the last element and find its children
+			lastElt := path[len(path)-1]
+			chs := make([]string, 0)
+			for key, _ := range lat.childrenOf[lastElt] {
+				chs = append(chs, key)
+			}
+
+			// If there are no children, go on to the next path
+			if len(chs) == 0 {
+				continue
+			}
+
+			// Terminate with an error if the appears earlier in the path
+			for i := 0; i < len(path)-1; i++ {
+				if path[i] == lastElt {
+					return &cyclicError{path}
+				}
+			}
+
+			// Add our list of new paths. One new path for each child
+			for _, ch := range chs {
+				nPath := append(path, ch)
+				nPaths = append(nPaths, nPath)
+			}
+		}
+
+		// Our list of new paths becomes the list of paths to work on
+		paths = nPaths
+	}
+
+	// If we've got here, then there are no cycles
+	return nil
 }
