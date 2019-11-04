@@ -179,8 +179,8 @@ We don't want to output the code and discover half way through we have
 a problem with the assembly. So we'll do checks on it first. Checks will be:
 
 * Is every top level chunk a named file?
-* Does every named chunk exist? [To be implemented]
 * Make sure there are no circular inclusions. [To be implemented]
+* Does every named chunk exist? [To be implemented]
 
 (One chunk may have more than one parent, so the structure is more like
 a lattice; it's not a tree.)
@@ -198,19 +198,19 @@ type lattice struct {
 First we'll compile our lattice of chunk names.
 
 --- Functions +=
-func compileLatic(chunks map[string]string) lattice {
-    tr := lattice{
+func compileLattice(chunks map[string]string) lattice {
+    lat := lattice{
         childrenOf: make(map[string]set),
         parentsOf: make(map[string]set),
     }
 
     for name, content := range chunks {
         // Make sure this parent is in the lattice
-        if tr.childrenOf[name] == nil {
-            tr.childrenOf[name] = make(map[string]bool)
+        if lat.childrenOf[name] == nil {
+            lat.childrenOf[name] = make(map[string]bool)
         }
-        if tr.parentsOf[name] == nil {
-            tr.parentsOf[name] = make(map[string]bool)
+        if lat.parentsOf[name] == nil {
+            lat.parentsOf[name] = make(map[string]bool)
         }
 
         sc := bufio.NewScanner(strings.NewReader(content))
@@ -222,19 +222,19 @@ func compileLatic(chunks map[string]string) lattice {
             }
 
             // Make sure this child is in the lattice
-            if tr.childrenOf[refChunk] == nil {
-                tr.childrenOf[refChunk] = make(map[string]bool)
+            if lat.childrenOf[refChunk] == nil {
+                lat.childrenOf[refChunk] = make(map[string]bool)
             }
             if tr.parentsOf[refChunk] == nil {
-                tr.parentsOf[refChunk] = make(map[string]bool)
+                lat.parentsOf[refChunk] = make(map[string]bool)
             }
 
             // Store the parent/child relationship
-            (tr.childrenOf[name])[refChunk] = true
-            (tr.parentsOf[refChunk])[name] = true
+            (lat.childrenOf[name])[refChunk] = true
+            (lat.parentsOf[refChunk])[name] = true
         }
     }
-    return tr
+    return lat
 }
 
 func referredChunkName(str string) string {

@@ -94,7 +94,7 @@ func proc(s *state, line string) {
 
 }
 
-func compileLatic(chunks map[string]string) lattice {
+func compileLattice(chunks map[string]string) lattice {
 	tr := lattice{
 		childrenOf: make(map[string]set),
 		parentsOf:  make(map[string]set),
@@ -172,71 +172,56 @@ func (e *cyclicError) Error() string {
 }
 
 func errorIfCyclic(lat lattice) error {
-	fmt.Printf("Got lattice %v\n", lat)
 	// Find the top level chunks
 	top := make([]string, 0)
 	for ch, pars := range lat.parentsOf {
-		fmt.Printf("Checking parents of %q\n", ch)
 		if len(pars) == 0 {
 			top = append(top, ch)
 		}
 	}
-	fmt.Printf("Got top level chunks %q\n", top)
 
 	// Make a singleton list of these, which is our initial list of paths
 	paths := make([][]string, 0)
 	for _, par := range top {
 		paths = append(paths, []string{par})
 	}
-	fmt.Printf("Initial list of paths is %q\n", paths)
 
 	// As long as we've got some existing paths...
 	for len(paths) > 0 {
-		fmt.Printf("Got some paths. Looping...\n")
 		// New paths, initially none
 		nPaths := make([][]string, 0)
 
 		// For each existing path...
 		for _, path := range paths {
-			fmt.Printf("In loop. Existing path is %q\n", path)
 			// Pick the last element and find its children
 			lastElt := path[len(path)-1]
 			chs := make([]string, 0)
 			for key, _ := range lat.childrenOf[lastElt] {
 				chs = append(chs, key)
 			}
-			fmt.Printf("Children of this is %q\n", chs)
 
 			// If there are no children, go on to the next path
 			if len(chs) == 0 {
-				fmt.Printf("There are no children. Continuing\n")
 				continue
 			}
-			fmt.Printf("There are children. Checking...\n")
 
 			// Terminate with an error if the appears earlier in the path
 			for i := 0; i < len(path)-1; i++ {
-				fmt.Printf("Checking against earlier child %q\n", path[i])
 				if path[i] == lastElt {
 					return &cyclicError{path[i:]}
 				}
 			}
-			fmt.Printf("Done checking against earlier children, adding to list of new paths\n")
 
 			// Add our list of new paths. One new path for each child
 			for _, ch := range chs {
 				nPath := append(path, ch)
 				nPaths = append(nPaths, nPath)
-				fmt.Printf("Added new path %q\n", nPath)
 			}
-			fmt.Printf("Done adding to list of new paths\n")
 		}
 
 		// Our list of new paths becomes the list of paths to work on
 		paths = nPaths
-		fmt.Printf("New current paths %q\n", paths)
 	}
-	fmt.Printf("No more paths to check. Exiting with no error\n")
 
 	// If we've got here, then there are no cycles
 	return nil
