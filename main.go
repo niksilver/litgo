@@ -67,8 +67,20 @@ func main() {
 	processContent(input, &s, proc)
 	md := []byte(s.markdown.String())
 	output := markdown.ToHTML(md, nil, nil)
+
+	// Check code chunks
+	lat := compileLattice(s.chunks)
+	if err := assertTopLevelChunksAreFilenames(lat); err != nil {
+		panic(err)
+	}
+	if err := assertNoCycles(lat); err != nil {
+		panic(err)
+	}
+	if err := assertAllChunksDefined(s.chunks, lat); err != nil {
+		panic(err)
+	}
+
 	fmt.Println(string(output))
-	//@{Check code chunks}
 }
 
 func proc(s *state, line string) {
