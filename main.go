@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/gomarkdown/markdown"
+	"os"
 	"regexp"
 	"strings"
 )
@@ -78,6 +79,18 @@ func main() {
 	}
 	if err := assertAllChunksDefined(s.chunks, lat); err != nil {
 		panic(err)
+	}
+
+	// Output code chunks
+	for _, name := range topLevelChunks(lat) {
+		w, err := chunkWriter(name)
+		if err != nil {
+			panic(err)
+		}
+		err = writeChunks(w, s.chunks)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	fmt.Println(string(output))
@@ -183,12 +196,7 @@ func isFilename(s string) bool {
 
 func assertNoCycles(lat lattice) error {
 	// Find the top level chunks
-	top := make([]string, 0)
-	for ch, pars := range lat.parentsOf {
-		if len(pars) == 0 {
-			top = append(top, ch)
-		}
-	}
+	top := topLevelChunks(lat)
 
 	// Make a singleton list of these, which is our initial list of paths
 	paths := make([][]string, 0)
@@ -238,6 +246,16 @@ func assertNoCycles(lat lattice) error {
 	return nil
 }
 
+func topLevelChunks(lat lattice) []string {
+	top := make([]string, 0)
+	for ch, pars := range lat.parentsOf {
+		if len(pars) == 0 {
+			top = append(top, ch)
+		}
+	}
+	return top
+}
+
 func assertAllChunksDefined(chunks map[string]*chunk, lat lattice) error {
 	missing := make([]string, 0)
 	for par, _ := range lat.childrenOf {
@@ -256,4 +274,16 @@ func assertAllChunksDefined(chunks map[string]*chunk, lat lattice) error {
 	}
 	return fmt.Errorf("Chunk%s not defined: %s",
 		s, strings.Join(missing, ", "))
+}
+
+func chunkWriter(name string) (*bufio.Writer, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	return bufio.NewWriter(f), nil
+}
+
+func writeChunks(w *bufio.Writer, chunks map[string]*chunk) error {
+	panic("Not yet implemented!")
 }
