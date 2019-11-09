@@ -6,20 +6,14 @@ import (
 	"testing"
 )
 
-type mockProc struct {
-	pr func(s string)
-}
-
-func (mp mockProc) proc(s string) { mp.pr(s) }
-
 func TestProcessContent(t *testing.T) {
 
 	// Make sure proc is called at least once normally
 	called := false
 	s := newState()
-	s.proc = func(s *state, in string) { called = true }
+	mockProc := func(s *state, in string) { called = true }
 
-	processContent([]byte("Hello"), &s)
+	processContent([]byte("Hello"), &s, mockProc)
 
 	if !called {
 		t.Error("proc should have been called at least once")
@@ -28,9 +22,9 @@ func TestProcessContent(t *testing.T) {
 	// Process three lines in order
 	lines := make([]string, 0)
 	s = newState()
-	s.proc = func(s *state, in string) { lines = append(lines, in) }
+	mockProc = func(s *state, in string) { lines = append(lines, in) }
 
-	processContent([]byte("One\nTwo\nThree"), &s)
+	processContent([]byte("One\nTwo\nThree"), &s, mockProc)
 
 	if len(lines) != 3 {
 		t.Errorf("Should have returned 3 lines but got %d", len(lines))
@@ -64,7 +58,7 @@ func TestProcForMarkdown(t *testing.T) {
 	}
 
 	for i, c := range cs {
-		s.proc(&s, c.line)
+		proc(&s, c.line)
 		if s.markdown.String() != c.markdown {
 			t.Errorf("Line %d: Expected markdown %q but got %q",
 				i+1, c.markdown, s.markdown.String())
@@ -87,7 +81,7 @@ func TestProcForInChunks(t *testing.T) {
 	}
 
 	for i, c := range cs {
-		s.proc(&s, c.line)
+		proc(&s, c.line)
 		if s.inChunk != c.inChunk {
 			t.Errorf("Line %d: Expected inChunk=%v but got %v",
 				i+1, c.inChunk, s.inChunk)
@@ -112,7 +106,7 @@ func TestProcForChunkNames(t *testing.T) {
 	second := []string{"Code line 3"}
 
 	for _, line := range lines {
-		s.proc(&s, line)
+		proc(&s, line)
 	}
 	actFirst := s.chunks["First"].code
 	if !reflect.DeepEqual(actFirst, first) {
@@ -157,7 +151,7 @@ func TestProcForChunkDetails(t *testing.T) {
 	}
 
 	for _, line := range lines {
-		s.proc(&s, line)
+		proc(&s, line)
 	}
 
 	if len(s.chunks) != 2 {
@@ -197,7 +191,7 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 		{11, "chunk not closed"},
 	}
 
-	processContent(content, &s)
+	processContent(content, &s, proc)
 
 	nWarn := len(s.warnings)
 	if nWarn != len(expected) {

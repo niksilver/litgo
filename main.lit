@@ -21,10 +21,10 @@ import (
 
 @s Processing content: Basic structure
 
-We start with a slice of bytes (or input) but it will be processed
+We start with a slice of bytes (our input) but it will be processed
 line by line, as strings.
-We will do this by maintaining a state, and process each line by
-updating the state.
+We will do this by maintaining a state, and process each line with
+a given line processor, all the while updating the state.
 
 Each line will be received for processing without its end of line characters.
 
@@ -40,7 +40,6 @@ type state struct {
     markdown strings.Builder
     lineNum int
     @{More state fields}
-    proc func(s *state, line string)
 }
 
 ---
@@ -52,11 +51,11 @@ func newState() state {
     }
 }
 
-func processContent(c []byte, s *state) {
+func processContent(c []byte, s *state, proc func(*state, string)) {
     r := strings.NewReader(string(c))
     sc := bufio.NewScanner(r)
     for sc.Scan() {
-        s.proc(s, sc.Text())
+        proc(s, sc.Text())
     }
     @{Tidy-up after processing content}
 }
@@ -64,7 +63,7 @@ func processContent(c []byte, s *state) {
 func main() {
     input := []byte("# Hello world\n\nThis is my other literate document")
     s := newState()
-    processContent(input, &s)
+    processContent(input, &s, proc)
     md := []byte(s.markdown.String())
 	output := markdown.ToHTML(md, nil, nil)
 	fmt.Println(string(output))
@@ -82,13 +81,10 @@ we need a generic way of reacting to lines. The process is:
              or change the input
              in other ways)
 
-The code processor, which is `proc` in the code above,
+The line processor, which is `proc` in the code above,
 should just pass through any markdown, but it
 will need to process special commands and it will need to keep a
 track of the code as it is assembled in non-linear order.
-
-We will also make `proc` a field of the state struct so that it can
-be overridden in tests.
 
 --- Functions +=
 func proc(s *state, line string) {
@@ -97,10 +93,6 @@ func proc(s *state, line string) {
     @{Send surviving lines to markdown}
 }
 
----
-
---- Field initialisers for state
-proc: proc,
 ---
 
 
@@ -147,7 +139,7 @@ chunkName string  // Name of current chunk
 chunks map[string]*chunk  // All the chunks found so far
 ---
 
---- Field initialisers for state +=
+--- Field initialisers for state
 chunks: make(map[string]*chunk),
 ---
 

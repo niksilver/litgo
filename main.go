@@ -20,7 +20,6 @@ type state struct {
 	chunkName string            // Name of current chunk
 	chunks    map[string]*chunk // All the chunks found so far
 
-	proc func(s *state, line string)
 }
 
 type problem struct {
@@ -45,16 +44,15 @@ type lattice struct {
 func newState() state {
 	return state{
 		// Field initialisers for state
-		proc:   proc,
 		chunks: make(map[string]*chunk),
 	}
 }
 
-func processContent(c []byte, s *state) {
+func processContent(c []byte, s *state, proc func(*state, string)) {
 	r := strings.NewReader(string(c))
 	sc := bufio.NewScanner(r)
 	for sc.Scan() {
-		s.proc(s, sc.Text())
+		proc(s, sc.Text())
 	}
 	// Tidy-up after processing content
 	if s.inChunk {
@@ -66,7 +64,7 @@ func processContent(c []byte, s *state) {
 func main() {
 	input := []byte("# Hello world\n\nThis is my other literate document")
 	s := newState()
-	processContent(input, &s)
+	processContent(input, &s, proc)
 	md := []byte(s.markdown.String())
 	output := markdown.ToHTML(md, nil, nil)
 	fmt.Println(string(output))
