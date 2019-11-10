@@ -434,18 +434,26 @@ To output our code chunks we need three things:
 Then for each filename we create its writer, and write its chunks.
 
 --- Output code chunks
-for _, name := range topLevelChunks(lat) {
-    w, err := chunkWriter(name)
-    if err != nil {
-        fmt.Println(err.Error())
-        return
-    }
-    err = writeChunks(w, s.chunks)
-    if err != nil {
-        fmt.Println(err.Error())
-        return
+top := topLevelChunks(lat)
+outputChunks(top, s.chunks, chunkWriter)
+---
+
+--- Functions +=
+func outputChunks(top []string, chunks map[string]*chunk, wr func(string) (*bufio.Writer, error)) {
+    for _, name := range top {
+        w, err := wr(name)
+        if err != nil {
+            fmt.Println(err.Error())
+            return
+        }
+        err = writeChunks(w, chunks)
+        if err != nil {
+            fmt.Println(err.Error())
+            return
+        }
     }
 }
+
 ---
 
 --- Imports +=
