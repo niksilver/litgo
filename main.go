@@ -69,27 +69,36 @@ func main() {
 	md := []byte(s.markdown.String())
 	output := markdown.ToHTML(md, nil, nil)
 
-	// Check code chunks
+	// Check code chunks and maybe abort
 	lat := compileLattice(s.chunks)
+	errs := make([]error, 0)
 	if err := assertTopLevelChunksAreFilenames(lat); err != nil {
-		panic(err)
+		errs = append(errs, err)
 	}
 	if err := assertNoCycles(lat); err != nil {
-		panic(err)
+		errs = append(errs, err)
 	}
 	if err := assertAllChunksDefined(s.chunks, lat); err != nil {
-		panic(err)
+		errs = append(errs, err)
+	}
+	if len(errs) > 0 {
+		for _, e := range errs {
+			fmt.Println(e.Error())
+		}
+		return
 	}
 
 	// Output code chunks
 	for _, name := range topLevelChunks(lat) {
 		w, err := chunkWriter(name)
 		if err != nil {
-			panic(err)
+			fmt.Println(err.Error())
+			return
 		}
 		err = writeChunks(w, s.chunks)
 		if err != nil {
-			panic(err)
+			fmt.Println(err.Error())
+			return
 		}
 	}
 
