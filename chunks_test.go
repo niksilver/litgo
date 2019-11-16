@@ -4,6 +4,6 @@ import (
 	"testing"
 )
 
-func TestOutputChunks(t *testing.T) {
+func TestWriteChunks(t *testing.T) {
 	t.Errorf("Implement tests here!")
 }

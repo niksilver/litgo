@@ -88,9 +88,9 @@ func main() {
 		return
 	}
 
-	// Output code chunks
+	// Write out code chunks
 	top := topLevelChunks(lat)
-	outputChunks(top, s.chunks, chunkWriter)
+	writeChunks(top, s.chunks, chunkWriter)
 
 	fmt.Println(string(output))
 }
@@ -275,14 +275,14 @@ func assertAllChunksDefined(chunks map[string]*chunk, lat lattice) error {
 		s, strings.Join(missing, ", "))
 }
 
-func outputChunks(top []string, chunks map[string]*chunk, wr func(string) (*bufio.Writer, error)) {
+func writeChunks(top []string, chunks map[string]*chunk, wf func(string) (*bufio.Writer, error)) {
 	for _, name := range top {
-		w, err := wr(name)
+		w, err := wf(name)
 		if err != nil {
 			fmt.Println(err.Error())
 			return
 		}
-		err = writeChunks(w, chunks)
+		err = writeChunk(name, chunks, w)
 		if err != nil {
 			fmt.Println(err.Error())
 			return
@@ -298,6 +298,6 @@ func chunkWriter(name string) (*bufio.Writer, error) {
 	return bufio.NewWriter(f), nil
 }
 
-func writeChunks(w *bufio.Writer, chunks map[string]*chunk) error {
+func writeChunk(name string, chunks map[string]*chunk, w *bufio.Writer) error {
 	panic("Not yet implemented!")
 }

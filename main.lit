@@ -69,7 +69,7 @@ func main() {
 
     @{Check code chunks and maybe abort}
 
-    @{Output code chunks}
+    @{Write out code chunks}
 	fmt.Println(string(output))
 }
 
@@ -427,26 +427,27 @@ func assertAllChunksDefined(chunks map[string]*chunk, lat lattice) error {
 To output our code chunks we need three things:
 * The top level chunks (filenames); and
 * The chunks themselves; and
-* A way to create an appropriate bufio.Writer for a given filename.
-  (This would normally be a file, but might be a string builder for
+* A writer factory: i.e. a way to create an appropriate bufio.Writer
+  for a given filename.
+  (This would normally be to a file, but might be a string builder for
   testing purposes.)
 
 Then for each filename we create its writer, and write its chunks.
 
---- Output code chunks
+--- Write out code chunks
 top := topLevelChunks(lat)
-outputChunks(top, s.chunks, chunkWriter)
+writeChunks(top, s.chunks, chunkWriter)
 ---
 
 --- Functions +=
-func outputChunks(top []string, chunks map[string]*chunk, wr func(string) (*bufio.Writer, error)) {
+func writeChunks(top []string, chunks map[string]*chunk, wf func(string) (*bufio.Writer, error)) {
     for _, name := range top {
-        w, err := wr(name)
+        w, err := wf(name)
         if err != nil {
             fmt.Println(err.Error())
             return
         }
-        err = writeChunks(w, chunks)
+        err = writeChunk(name, chunks, w)
         if err != nil {
             fmt.Println(err.Error())
             return
@@ -469,7 +470,7 @@ func chunkWriter(name string) (*bufio.Writer, error) {
     return bufio.NewWriter(f), nil
 }
 
-func writeChunks(w *bufio.Writer, chunks map[string]*chunk) error {
+func writeChunk(name string, chunks map[string]*chunk, w *bufio.Writer) error {
     panic("Not yet implemented!")
 }
 ---
