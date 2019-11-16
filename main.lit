@@ -433,6 +433,10 @@ To output our code chunks we need three things:
   testing purposes.)
 
 Then for each filename we create its writer, and write its chunks.
+Each time we include a chunk we should indent it by the same indent
+as the chunk reference was indented by---the actual string (tabs or spaces),
+not just what we think the indent count is.
+
 The writing process will return any error.
 
 --- Write out code chunks
@@ -456,7 +460,7 @@ func writeChunks(top []string, chunks map[string]*chunk, wf func(string) (io.Str
         if err != nil {
             return err
         }
-        err = writeChunk(name, chunks, w)
+        err = writeChunk(name, chunks, w, "")
         if err != nil {
             return err
         }
@@ -480,14 +484,19 @@ When we write one chunk we need to follow references to other chunks
 which are included in that.
 
 --- Functions +=
-func writeChunk(name string, chunks map[string]*chunk, w io.StringWriter) error {
+func writeChunk(name string,
+        chunks map[string]*chunk,
+        w io.StringWriter,
+        indent string) error {
+
     chunk := *chunks[name]
     for _, line := range chunk.code {
         var err error
         if ref := referredChunkName(line); ref != "" {
-            err = writeChunk(ref, chunks, w)
+            iPos := strings.Index(line, "@")
+            err = writeChunk(ref, chunks, w, line[0:iPos] + indent)
         } else {
-            _, err = w.WriteString(line + "\n")
+            _, err = w.WriteString(indent + line + "\n")
         }
         if err != nil {
             return err

@@ -159,3 +159,65 @@ func TestWriteChunks_ErrorWriting(t *testing.T) {
 		t.Errorf("Should have produced an error, did not")
 	}
 }
+
+func TestWriteChunks_IndentProperly(t *testing.T) {
+	// Test code that looks like this (with line numbers):
+	//
+	// ``` One      1
+	//   Line 1.1   2
+	//   @{Two}     3  Indent Two by two spaces
+	//   Line 1.3   4
+	//   @{Three}   5  Indent Three by two spaces where here
+	// ```
+	// Gap line
+	// ``` Two      8
+	// Line 2.1     9
+	//   @{Three}   10 Indent Three by two more spaces where here
+	// Line 2.2     11
+	// ```
+	// Another gap
+	// ``` Three    14
+	// Line 3.1     15
+	// ```
+
+	expected := `  Line 1.1
+  Line 2.1
+    Line 3.1
+  Line 2.2
+  Line 1.3
+  Line 3.1
+`
+
+	b := strings.Builder{}
+	wFact := func(n string) (io.StringWriter, error) { return &b, nil }
+	top := []string{"One"}
+	chunks := map[string]*chunk{
+		"One": &chunk{
+			[]int{1},
+			[]string{"  Line 1.1", "  @{Two}", "  Line 1.3", "  @{Three}"},
+			[]int{2, 3, 4, 5},
+		},
+		"Two": &chunk{
+			[]int{8},
+			[]string{"Line 2.1", "  @{Three}", "Line 2.2"},
+			[]int{9, 10, 11},
+		},
+		"Three": &chunk{
+			[]int{14},
+			[]string{"Line 3.1"},
+			[]int{15},
+		},
+	}
+
+	err := writeChunks(top, chunks, wFact)
+
+	if err != nil {
+		t.Errorf("Should not have produced an error, but got %q",
+			err.Error())
+	}
+
+	if b.String() != expected {
+		t.Errorf("Expected\n%q\nbut got\n%q",
+			expected, b.String())
+	}
+}

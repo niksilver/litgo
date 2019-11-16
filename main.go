@@ -286,7 +286,7 @@ func writeChunks(top []string, chunks map[string]*chunk, wf func(string) (io.Str
 		if err != nil {
 			return err
 		}
-		err = writeChunk(name, chunks, w)
+		err = writeChunk(name, chunks, w, "")
 		if err != nil {
 			return err
 		}
@@ -304,14 +304,19 @@ func makeChunkWriter(name string) (io.StringWriter, error) {
 	return bufio.NewWriter(f), nil
 }
 
-func writeChunk(name string, chunks map[string]*chunk, w io.StringWriter) error {
+func writeChunk(name string,
+	chunks map[string]*chunk,
+	w io.StringWriter,
+	indent string) error {
+
 	chunk := *chunks[name]
 	for _, line := range chunk.code {
 		var err error
 		if ref := referredChunkName(line); ref != "" {
-			err = writeChunk(ref, chunks, w)
+			iPos := strings.Index(line, "@")
+			err = writeChunk(ref, chunks, w, line[0:iPos]+indent)
 		} else {
-			_, err = w.WriteString(line + "\n")
+			_, err = w.WriteString(indent + line + "\n")
 		}
 		if err != nil {
 			return err
