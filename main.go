@@ -90,7 +90,11 @@ func main() {
 
 	// Write out code chunks
 	top := topLevelChunks(lat)
-	writeChunks(top, s.chunks, chunkWriter)
+	err := writeChunks(top, s.chunks, chunkWriter)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
 	fmt.Println(string(output))
 }
@@ -275,19 +279,20 @@ func assertAllChunksDefined(chunks map[string]*chunk, lat lattice) error {
 		s, strings.Join(missing, ", "))
 }
 
-func writeChunks(top []string, chunks map[string]*chunk, wf func(string) (*bufio.Writer, error)) {
+func writeChunks(top []string, chunks map[string]*chunk, wf func(string) (*bufio.Writer, error)) error {
 	for _, name := range top {
 		w, err := wf(name)
 		if err != nil {
-			fmt.Println(err.Error())
-			return
+			return err
 		}
 		err = writeChunk(name, chunks, w)
 		if err != nil {
-			fmt.Println(err.Error())
-			return
+			return err
 		}
 	}
+
+	// No errors - all okay
+	return nil
 }
 
 func chunkWriter(name string) (*bufio.Writer, error) {
