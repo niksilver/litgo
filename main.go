@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/gomarkdown/markdown"
+	"io"
 	"os"
 	"regexp"
 	"strings"
@@ -30,7 +31,7 @@ type problem struct {
 
 type chunk struct {
 	line  []int    // Line number where the chunk defined
-	code  []string // Lines of code
+	code  []string // Lines of code, without newlines
 	lines []int    // Line number for each line of code
 }
 
@@ -90,7 +91,7 @@ func main() {
 
 	// Write out code chunks
 	top := topLevelChunks(lat)
-	err := writeChunks(top, s.chunks, chunkWriter)
+	err := writeChunks(top, s.chunks, makeChunkWriter)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -279,7 +280,7 @@ func assertAllChunksDefined(chunks map[string]*chunk, lat lattice) error {
 		s, strings.Join(missing, ", "))
 }
 
-func writeChunks(top []string, chunks map[string]*chunk, wf func(string) (*bufio.Writer, error)) error {
+func writeChunks(top []string, chunks map[string]*chunk, wf func(string) (io.StringWriter, error)) error {
 	for _, name := range top {
 		w, err := wf(name)
 		if err != nil {
@@ -295,7 +296,7 @@ func writeChunks(top []string, chunks map[string]*chunk, wf func(string) (*bufio
 	return nil
 }
 
-func chunkWriter(name string) (*bufio.Writer, error) {
+func makeChunkWriter(name string) (io.StringWriter, error) {
 	f, err := os.Open(name)
 	if err != nil {
 		return nil, err
@@ -303,6 +304,18 @@ func chunkWriter(name string) (*bufio.Writer, error) {
 	return bufio.NewWriter(f), nil
 }
 
-func writeChunk(name string, chunks map[string]*chunk, w *bufio.Writer) error {
-	panic("Not yet implemented!")
+func writeChunk(name string, chunks map[string]*chunk, w io.StringWriter) error {
+	chunk := *chunks[name]
+	for _, line := range chunk.code {
+		var err error
+		if ref := referredChunkName(line); ref != "" {
+			err = writeChunk(ref, chunks, w)
+		} else {
+			_, err = w.WriteString(line + "\n")
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

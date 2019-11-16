@@ -130,7 +130,7 @@ We'll assemble the chunks later.
 --- Package level declarations +=
 type chunk struct {
     line []int     // Line number where the chunk defined
-    code []string  // Lines of code
+    code []string  // Lines of code, without newlines
     lines []int    // Line number for each line of code
 }
 
@@ -427,7 +427,7 @@ func assertAllChunksDefined(chunks map[string]*chunk, lat lattice) error {
 To output our code chunks we need three things:
 * The top level chunks (filenames); and
 * The chunks themselves; and
-* A writer factory: i.e. a way to create an appropriate bufio.Writer
+* A writer factory: i.e. a way to create an appropriate io.StringWriter
   for a given filename.
   (This would normally be to a file, but might be a string builder for
   testing purposes.)
@@ -437,15 +437,20 @@ The writing process will return any error.
 
 --- Write out code chunks
 top := topLevelChunks(lat)
-err := writeChunks(top, s.chunks, chunkWriter)
+err := writeChunks(top, s.chunks, makeChunkWriter)
 if err != nil {
     fmt.Println(err.Error())
     return
 }
 ---
 
+--- Imports +=
+"io"
+"os"
+---
+
 --- Functions +=
-func writeChunks(top []string, chunks map[string]*chunk, wf func(string) (*bufio.Writer, error)) error {
+func writeChunks(top []string, chunks map[string]*chunk, wf func(string) (io.StringWriter, error)) error {
     for _, name := range top {
         w, err := wf(name)
         if err != nil {
@@ -461,14 +466,7 @@ func writeChunks(top []string, chunks map[string]*chunk, wf func(string) (*bufio
     return nil
 }
 
----
-
---- Imports +=
-"os"
----
-
---- Functions +=
-func chunkWriter(name string) (*bufio.Writer, error) {
+func makeChunkWriter(name string) (io.StringWriter, error) {
     f, err := os.Open(name)
     if err != nil {
         return nil, err
@@ -476,7 +474,26 @@ func chunkWriter(name string) (*bufio.Writer, error) {
     return bufio.NewWriter(f), nil
 }
 
-func writeChunk(name string, chunks map[string]*chunk, w *bufio.Writer) error {
-    panic("Not yet implemented!")
+---
+
+When we write one chunk we need to follow references to other chunks
+which are included in that.
+
+--- Functions +=
+func writeChunk(name string, chunks map[string]*chunk, w io.StringWriter) error {
+    chunk := *chunks[name]
+    for _, line := range chunk.code {
+        var err error
+        if ref := referredChunkName(line); ref != "" {
+            err = writeChunk(ref, chunks, w)
+        } else {
+            _, err = w.WriteString(line + "\n")
+        }
+        if err != nil {
+            return err
+        }
+    }
+    return nil
 }
+
 ---
