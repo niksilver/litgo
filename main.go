@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/gomarkdown/markdown"
 	"io"
+	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
@@ -14,7 +15,8 @@ import (
 
 // Package level declarations
 type state struct {
-	markdown strings.Builder
+	fname    string          // Name of file being processed, relative to working dir
+	markdown strings.Builder // Markdown output
 	lineNum  int
 	// More state fields
 	warnings  []problem
@@ -64,8 +66,13 @@ func processContent(c []byte, s *state, proc func(*state, string)) {
 }
 
 func main() {
-	input := []byte("# Hello world\n\nThis is my other literate document")
 	s := newState()
+	input, err := inputBytes(s.fname)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
 	processContent(input, &s, proc)
 	md := []byte(s.markdown.String())
 	output := markdown.ToHTML(md, nil, nil)
@@ -91,13 +98,26 @@ func main() {
 
 	// Write out code chunks
 	top := topLevelChunks(lat)
-	err := writeChunks(top, s.chunks, makeChunkWriter)
+	err = writeChunks(top, s.chunks, makeChunkWriter)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 
 	fmt.Println(string(output))
+}
+
+func inputBytes(fname string) (input []byte, e error) {
+	f, err := os.Open(fname)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			e = err
+		}
+	}()
+	return ioutil.ReadAll(f)
 }
 
 func proc(s *state, line string) {

@@ -21,8 +21,11 @@ import (
 
 @s Processing content: Basic structure
 
-We start with a slice of bytes (our input) but it will be processed
+We start with a file, from which we get a
+slice of bytes (our input) but it will be processed
 line by line, as strings.
+We need to keep track of the (current) file, so we can include
+references to it in the generated source.
 We will do this by maintaining a state, and process each line with
 a given line processor, all the while updating the state.
 
@@ -31,13 +34,16 @@ Each line will be received for processing without its end of line characters.
 --- Imports
 "bufio"
 "fmt"
+"io/ioutil"
 "github.com/gomarkdown/markdown"
+"os"
 "strings"
 ---
 
 --- Package level declarations
 type state struct {
-    markdown strings.Builder
+    fname string  // Name of file being processed, relative to working dir
+    markdown strings.Builder  // Markdown output
     lineNum int
     @{More state fields}
 }
@@ -61,8 +67,13 @@ func processContent(c []byte, s *state, proc func(*state, string)) {
 }
 
 func main() {
-    input := []byte("# Hello world\n\nThis is my other literate document")
     s := newState()
+    input, err := inputBytes(s.fname)
+    if err != nil {
+        fmt.Println(err.Error())
+        return
+    }
+
     processContent(input, &s, proc)
     md := []byte(s.markdown.String())
 	output := markdown.ToHTML(md, nil, nil)
@@ -71,6 +82,19 @@ func main() {
 
     @{Write out code chunks}
 	fmt.Println(string(output))
+}
+
+func inputBytes(fname string) (input []byte, e error) {
+    f, err := os.Open(fname)
+    if err != nil {
+        return nil, err
+    }
+    defer func() {
+        if err := f.Close(); err != nil {
+            e = err
+        }
+    }()
+    return ioutil.ReadAll(f)
 }
 
 ---
@@ -441,7 +465,7 @@ The writing process will return any error.
 
 --- Write out code chunks
 top := topLevelChunks(lat)
-err := writeChunks(top, s.chunks, makeChunkWriter)
+err = writeChunks(top, s.chunks, makeChunkWriter)
 if err != nil {
     fmt.Println(err.Error())
     return
@@ -450,7 +474,6 @@ if err != nil {
 
 --- Imports +=
 "io"
-"os"
 ---
 
 --- Functions +=
