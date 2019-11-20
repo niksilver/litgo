@@ -169,6 +169,7 @@ func TestProcForChunkDetails(t *testing.T) {
 
 func TestProcForWarningsAroundChunks(t *testing.T) {
 	s := newState()
+	s.fname = "testfile.lit"
 	lines := []string{
 		"Title",
 		"",
@@ -184,11 +185,12 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 	}
 	content := []byte(strings.Join(lines, "\n"))
 	expected := []struct {
-		line int
-		subs string
+		fname string
+		line  int
+		subs  string
 	}{
-		{7, "no name"},
-		{11, "chunk not closed"},
+		{"testfile.lit", 7, "no name"},
+		{"testfile.lit", 11, "chunk not closed"},
 	}
 
 	processContent(content, &s, proc)
@@ -203,6 +205,7 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 			continue
 		}
 		if expected[i].line != s.warnings[i].line ||
+			expected[i].fname != s.warnings[i].fname ||
 			!strings.Contains(s.warnings[i].msg, expected[i].subs) {
 			t.Errorf("Expected warning index %d to be %v but got %v",
 				i, w, s.warnings)

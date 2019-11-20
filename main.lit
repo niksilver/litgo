@@ -133,6 +133,7 @@ collected in the state; an error will be returned from any processing.
 
 --- Package level declarations +=
 type problem struct {
+    fname string
     line int
     msg string
 }
@@ -181,7 +182,8 @@ if s.inChunk && line == "```" {
 } else if !s.inChunk && strings.HasPrefix(line, "```") {
     s.chunkName = strings.TrimSpace(line[3:])
     if s.chunkName == "" {
-        s.warnings = append(s.warnings, problem{ s.lineNum, "Chunk has no name"})
+        s.warnings = append(s.warnings,
+            problem{s.fname, s.lineNum, "Chunk has no name"})
     }
     ch := s.chunks[s.chunkName]
     if ch == nil {
@@ -195,7 +197,8 @@ if s.inChunk && line == "```" {
 
 --- Tidy-up after processing content
 if s.inChunk {
-    s.warnings = append(s.warnings, problem{s.lineNum, "Content finished but chunk not closed"})
+    s.warnings = append(s.warnings,
+        problem{s.fname, s.lineNum, "Content finished but chunk not closed"})
 }
 ---
 
