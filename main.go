@@ -96,6 +96,11 @@ func main() {
 		return
 	}
 
+	// Write out warnings
+	for _, w := range s.warnings {
+		fmt.Printf("%s: %d: %s\n", w.fname, w.line, w.msg)
+	}
+
 	// Write out code chunks
 	top := topLevelChunks(lat)
 	err = writeChunks(top, s.chunks, makeChunkWriter)

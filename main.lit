@@ -148,7 +148,7 @@ warnings []problem
 
 --- Write out warnings
 for _, w := range s.warnings {
-    fmt.Printf("%s: %s: %s\n", w.fname, w.line, w.msg)
+    fmt.Printf("%s: %d: %s\n", w.fname, w.line, w.msg)
 }
 ---
 
