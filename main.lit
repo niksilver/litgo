@@ -75,12 +75,13 @@ func main() {
     }
 
     processContent(input, &s, proc)
-    md := []byte(s.markdown.String())
-	output := markdown.ToHTML(md, nil, nil)
 
     @{Check code chunks and maybe abort}
 
     @{Write out code chunks}
+
+    md := []byte(s.markdown.String())
+	output := markdown.ToHTML(md, nil, nil)
 	fmt.Println(string(output))
 }
 

@@ -74,8 +74,6 @@ func main() {
 	}
 
 	processContent(input, &s, proc)
-	md := []byte(s.markdown.String())
-	output := markdown.ToHTML(md, nil, nil)
 
 	// Check code chunks and maybe abort
 	lat := compileLattice(s.chunks)
@@ -104,6 +102,8 @@ func main() {
 		return
 	}
 
+	md := []byte(s.markdown.String())
+	output := markdown.ToHTML(md, nil, nil)
 	fmt.Println(string(output))
 }
 
