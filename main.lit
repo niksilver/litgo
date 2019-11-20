@@ -78,6 +78,8 @@ func main() {
 
     @{Check code chunks and maybe abort}
 
+    @{Write out warnings}
+
     @{Write out code chunks}
 
     md := []byte(s.markdown.String())
@@ -142,6 +144,12 @@ type problem struct {
 
 --- More state fields
 warnings []problem
+---
+
+--- Write out warnings
+for _, w := range s.warnings {
+    fmt.Printf("%s: %s: %s\n", w.fname, w.line, w.msg)
+}
 ---
 
 
