@@ -126,15 +126,13 @@ func proc(s *state, line string) {
 ---
 
 
-@s Processing content: Errors and warnings
+@s Processing content: Warnings
 
 As part of our evolving processing state we will collect warnings,
-such as a chunk appearing without a name. We may also have to stop
-at an error. Both are kinds of problems. Warnings will be problems
-collected in the state; an error will be returned from any processing.
+such as a chunk appearing without a name.
 
 --- Package level declarations +=
-type problem struct {
+type warning struct {
     fname string
     line int
     msg string
@@ -143,7 +141,7 @@ type problem struct {
 ---
 
 --- More state fields
-warnings []problem
+warnings []warning
 ---
 
 --- Write out warnings
@@ -191,7 +189,7 @@ if s.inChunk && line == "```" {
     s.chunkName = strings.TrimSpace(line[3:])
     if s.chunkName == "" {
         s.warnings = append(s.warnings,
-            problem{s.fname, s.lineNum, "Chunk has no name"})
+            warning{s.fname, s.lineNum, "Chunk has no name"})
     }
     ch := s.chunks[s.chunkName]
     if ch == nil {
@@ -206,7 +204,7 @@ if s.inChunk && line == "```" {
 --- Tidy-up after processing content
 if s.inChunk {
     s.warnings = append(s.warnings,
-        problem{s.fname, s.lineNum, "Content finished but chunk not closed"})
+        warning{s.fname, s.lineNum, "Content finished but chunk not closed"})
 }
 ---
 

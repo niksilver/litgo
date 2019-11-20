@@ -19,14 +19,14 @@ type state struct {
 	markdown strings.Builder // Markdown output
 	lineNum  int
 	// More state fields
-	warnings  []problem
+	warnings  []warning
 	inChunk   bool              // If we're currently reading a chunk
 	chunkName string            // Name of current chunk
 	chunks    map[string]*chunk // All the chunks found so far
 
 }
 
-type problem struct {
+type warning struct {
 	fname string
 	line  int
 	msg   string
@@ -62,7 +62,7 @@ func processContent(c []byte, s *state, proc func(*state, string)) {
 	// Tidy-up after processing content
 	if s.inChunk {
 		s.warnings = append(s.warnings,
-			problem{s.fname, s.lineNum, "Content finished but chunk not closed"})
+			warning{s.fname, s.lineNum, "Content finished but chunk not closed"})
 	}
 
 }
@@ -140,7 +140,7 @@ func proc(s *state, line string) {
 		s.chunkName = strings.TrimSpace(line[3:])
 		if s.chunkName == "" {
 			s.warnings = append(s.warnings,
-				problem{s.fname, s.lineNum, "Chunk has no name"})
+				warning{s.fname, s.lineNum, "Chunk has no name"})
 		}
 		ch := s.chunks[s.chunkName]
 		if ch == nil {
