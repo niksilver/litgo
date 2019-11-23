@@ -23,7 +23,7 @@ type state struct {
 	inChunk   bool              // If we're currently reading a chunk
 	chunkName string            // Name of current chunk
 	chunks    map[string]*chunk // All the chunks found so far
-
+	lineDir   string
 }
 
 type warning struct {
@@ -33,7 +33,7 @@ type warning struct {
 }
 
 type chunk struct {
-	line  []int    // Line number where the chunk defined
+	line  []int    // Line numbers where the chunk is defined
 	code  []string // Lines of code, without newlines
 	lines []int    // Line number for each line of code
 }
@@ -103,7 +103,7 @@ func main() {
 
 	// Write out code chunks
 	top := topLevelChunks(lat)
-	err = writeChunks(top, s.chunks, makeChunkWriter)
+	err = writeChunks(top, s, makeChunkWriter)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -308,13 +308,13 @@ func assertAllChunksDefined(chunks map[string]*chunk, lat lattice) error {
 		s, strings.Join(missing, ", "))
 }
 
-func writeChunks(top []string, chunks map[string]*chunk, wf func(string) (io.StringWriter, error)) error {
+func writeChunks(top []string, s state, wf func(string) (io.StringWriter, error)) error {
 	for _, name := range top {
 		w, err := wf(name)
 		if err != nil {
 			return err
 		}
-		err = writeChunk(name, chunks, w, "")
+		err = writeChunk(name, s, w, "")
 		if err != nil {
 			return err
 		}
@@ -333,22 +333,54 @@ func makeChunkWriter(name string) (io.StringWriter, error) {
 }
 
 func writeChunk(name string,
-	chunks map[string]*chunk,
+	s state,
 	w io.StringWriter,
 	indent string) error {
 
-	chunk := *chunks[name]
-	for _, line := range chunk.code {
+	chunk := *s.chunks[name]
+	for i, code := range chunk.code {
 		var err error
-		if ref := referredChunkName(line); ref != "" {
-			iPos := strings.Index(line, "@")
-			err = writeChunk(ref, chunks, w, line[0:iPos]+indent)
+		if ref := referredChunkName(code); ref != "" {
+			iPos := strings.Index(code, "@")
+			err = writeChunk(ref, s, w, code[0:iPos]+indent)
 		} else {
-			_, err = w.WriteString(indent + line + "\n")
+			lnum := chunk.lines[i]
+			dir := lineDirective(s.lineDir, s.fname, lnum)
+			_, err = w.WriteString(indent + dir + code + "\n")
 		}
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func lineDirective(dir string, fname string, n int) string {
+	if dir == "" {
+		return ""
+	}
+
+	out := ""
+	perc := false
+	for _, r := range dir {
+		if perc {
+			switch r {
+			case '%':
+				out += "%"
+			case 'f':
+				out += fname
+			case 'l':
+				out += fmt.Sprintf("%d", n)
+			default:
+				out += string(r)
+			}
+			perc = false
+		} else if r == '%' {
+			perc = true
+		} else {
+			out += string(r)
+			perc = false
+		}
+	}
+	return out + "\n"
 }

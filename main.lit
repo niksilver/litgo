@@ -161,7 +161,7 @@ We'll assemble the chunks later.
 
 --- Package level declarations +=
 type chunk struct {
-    line []int     // Line number where the chunk defined
+    line []int     // Line numbers where the chunk is defined
     code []string  // Lines of code, without newlines
     lines []int    // Line number for each line of code
 }
@@ -460,7 +460,8 @@ func assertAllChunksDefined(chunks map[string]*chunk, lat lattice) error {
 
 To output our code chunks we need three things:
 * The top level chunks (filenames); and
-* The chunks themselves; and
+* The state, including chunks themselves and the wider data about
+  whether line directives should be printed, the current filename, etc; and
 * A writer factory: i.e. a way to create an appropriate io.StringWriter
   for a given filename.
   (This would normally be to a file, but might be a string builder for
@@ -471,11 +472,18 @@ Each time we include a chunk we should indent it by the same indent
 as the chunk reference was indented by---the actual string (tabs or spaces),
 not just what we think the indent count is.
 
+If the line directive string (`lineDir`) is anything other than an empty string
+that means we need to output them in that format.
+
 The writing process will return any error.
+
+--- More state fields +=
+lineDir string
+---
 
 --- Write out code chunks
 top := topLevelChunks(lat)
-err = writeChunks(top, s.chunks, makeChunkWriter)
+err = writeChunks(top, s, makeChunkWriter)
 if err != nil {
     fmt.Println(err.Error())
     return
@@ -487,13 +495,13 @@ if err != nil {
 ---
 
 --- Functions +=
-func writeChunks(top []string, chunks map[string]*chunk, wf func(string) (io.StringWriter, error)) error {
+func writeChunks(top []string, s state, wf func(string) (io.StringWriter, error)) error {
     for _, name := range top {
         w, err := wf(name)
         if err != nil {
             return err
         }
-        err = writeChunk(name, chunks, w, "")
+        err = writeChunk(name, s, w, "")
         if err != nil {
             return err
         }
@@ -513,29 +521,66 @@ func makeChunkWriter(name string) (io.StringWriter, error) {
 
 ---
 
-When we write one chunk we need to follow references to other chunks
-which are included in that.
+When we write one chunk we need to
+
+* Include a line directive, if any
+* follow references to other chunks which are included in that.
 
 --- Functions +=
 func writeChunk(name string,
-        chunks map[string]*chunk,
+        s state,
         w io.StringWriter,
         indent string) error {
 
-    chunk := *chunks[name]
-    for _, line := range chunk.code {
+    chunk := *s.chunks[name]
+    for i, code := range chunk.code {
         var err error
-        if ref := referredChunkName(line); ref != "" {
-            iPos := strings.Index(line, "@")
-            err = writeChunk(ref, chunks, w, line[0:iPos] + indent)
+        if ref := referredChunkName(code); ref != "" {
+            iPos := strings.Index(code, "@")
+            err = writeChunk(ref, s, w, code[0:iPos] + indent)
         } else {
-            _, err = w.WriteString(indent + line + "\n")
+            lnum := chunk.lines[i]
+            dir := lineDirective(s.lineDir, s.fname, lnum)
+            _, err = w.WriteString(indent + dir + code + "\n")
         }
         if err != nil {
             return err
         }
     }
     return nil
+}
+
+---
+
+@s Outputting chunks: Line directives
+
+A line directive is only output if it's non-empty.
+
+--- Functions +=
+func lineDirective(dir string, fname string, n int) string {
+    if dir == "" {
+        return ""
+    }
+
+    out := ""
+    perc := false
+    for _, r := range dir {
+        if perc {
+            switch r {
+            case '%': out += "%"
+            case 'f': out += fname
+            case 'l': out += fmt.Sprintf("%d", n)
+            default: out += string(r)
+            }
+            perc = false
+        } else if r == '%' {
+            perc = true
+        } else {
+            out += string(r)
+            perc = false
+        }
+    }
+    return out + "\n"
 }
 
 ---
