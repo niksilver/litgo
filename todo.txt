@@ -1,0 +1,4 @@
+- Track current section
+- Add section number to markup headings
+- Add text after chunk "Added to in sections X, Y and Z"
+- Add text after chunk "Used in sections X, Y and Z"
