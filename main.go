@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -43,6 +44,11 @@ type set map[string]bool
 type lattice struct {
 	childrenOf map[string]set
 	parentsOf  map[string]set
+}
+
+type section struct {
+	nums []int
+	text string
 }
 
 // Functions
@@ -383,4 +389,20 @@ func lineDirective(dir string, fname string, n int) string {
 		}
 	}
 	return out + "\n"
+}
+
+func (s *section) toString() string {
+	if len(s.nums) == 0 {
+		return ""
+	}
+
+	num := ""
+	for _, n := range s.nums {
+		num += strconv.Itoa(n) + "."
+	}
+	return num + " " + s.text
+}
+
+func (s *section) next(line string) section {
+	return section{}
 }

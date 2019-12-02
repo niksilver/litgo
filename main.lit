@@ -552,6 +552,7 @@ func writeChunk(name string,
 
 ---
 
+
 @s Outputting chunks: Line directives
 
 A line directive is only output if it's non-empty.
@@ -581,6 +582,47 @@ func lineDirective(dir string, fname string, n int) string {
         }
     }
     return out + "\n"
+}
+
+---
+
+
+@s Sections
+
+We need to track sections to be able to explain where code chunks are used
+and added to.
+
+A line represents a new section (or subsection) when it starts with a number
+of `#`s, some whitespace, and some text. So a section will
+be a structured object with functions to convert to and from strings.
+
+--- Imports +=
+"strconv"
+---
+
+--- Package level declarations +=
+type section struct {
+    nums []int
+    text string
+}
+
+---
+
+--- Functions +=
+func (s *section) toString() string {
+    if len(s.nums) == 0 {
+        return ""
+    }
+
+    num := ""
+    for _, n := range s.nums {
+        num += strconv.Itoa(n) + "."
+    }
+    return num + " " + s.text
+}
+
+func (s *section) next(line string) section {
+    return section{}
 }
 
 ---
