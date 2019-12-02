@@ -404,5 +404,33 @@ func (s *section) toString() string {
 }
 
 func (s *section) next(line string) section {
-	return section{}
+	re, _ := regexp.Compile("(#+)\\s+(.*)")
+	find := re.FindStringSubmatch(line)
+	if len(find) < 2 {
+		return *s
+	}
+
+	oldLevel := len(s.nums)
+	newLevel := len(find[1])
+	nums := make([]int, newLevel)
+	if oldLevel < newLevel {
+		for i := 0; i < oldLevel; i++ {
+			nums[i] = s.nums[i]
+		}
+		nums[newLevel-1] = 1
+	}
+	if oldLevel == newLevel {
+		for i := 0; i < oldLevel-1; i++ {
+			nums[i] = s.nums[i]
+		}
+		nums[newLevel-1] = s.nums[oldLevel-1] + 1
+	}
+	if newLevel < oldLevel {
+		for i := 0; i < newLevel-1; i++ {
+			nums[i] = s.nums[i]
+		}
+		nums[newLevel-1] = s.nums[newLevel-1] + 1
+	}
+
+	return section{nums, find[2]}
 }
