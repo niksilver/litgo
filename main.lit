@@ -636,14 +636,7 @@ func (s *section) next(line string) section {
             nums[i] = s.nums[i]
         }
         nums[newLevel-1] = 1
-    }
-    if oldLevel == newLevel {
-        for i := 0; i < oldLevel-1; i++ {
-            nums[i] = s.nums[i]
-        }
-        nums[newLevel-1] = s.nums[oldLevel-1] + 1
-    }
-    if newLevel < oldLevel {
+    } else {
         for i := 0; i < newLevel-1; i++ {
             nums[i] = s.nums[i]
         }
