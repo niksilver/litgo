@@ -25,6 +25,7 @@ type state struct {
 	chunkName string            // Name of current chunk
 	chunks    map[string]*chunk // All the chunks found so far
 	lineDir   string
+	sec       section
 }
 
 type warning struct {
@@ -135,6 +136,11 @@ func inputBytes(fname string) (input []byte, e error) {
 
 func proc(s *state, line string) {
 	s.lineNum++
+	// Track section changes
+	if !s.inChunk && strings.HasPrefix(line, "#") {
+		s.sec = s.sec.next(line)
+	}
+
 	// Collect lines in code chunks
 	if s.inChunk && line == "```" {
 		s.inChunk = false

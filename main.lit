@@ -119,6 +119,7 @@ track of the code as it is assembled in non-linear order.
 --- Functions +=
 func proc(s *state, line string) {
     s.lineNum ++
+    @{Track section changes}
     @{Collect lines in code chunks}
     @{Send surviving lines to markdown}
 }
@@ -587,7 +588,7 @@ func lineDirective(dir string, fname string, n int) string {
 ---
 
 
-@s Sections
+@s Sections: Definitions and basic functions
 
 We need to track sections to be able to explain where code chunks are used
 and added to.
@@ -595,6 +596,7 @@ and added to.
 A line represents a new section (or subsection) when it starts with a number
 of `#`s, some whitespace, and some text. So a section will
 be a structured object with functions to convert to and from strings.
+
 
 --- Imports +=
 "strconv"
@@ -646,4 +648,19 @@ func (s *section) next(line string) section {
     return section{nums, find[2]}
 }
 
+---
+
+
+@s Sections: Tracking
+
+We will track section changes in our state.
+
+--- More state fields +=
+sec section
+---
+
+--- Track section changes
+if !s.inChunk && strings.HasPrefix(line, "#") {
+    s.sec = s.sec.next(line)
+}
 ---
