@@ -152,6 +152,89 @@ for _, w := range s.warnings {
 ---
 
 
+@s Sections: Definitions and basic functions
+
+We need to track sections to be able to explain where code chunks are used
+and added to.
+
+A line represents a new section (or subsection) when it starts with a number
+of `#`s, some whitespace, and some text. So a section will
+be a structured object with functions to convert to and from strings.
+
+
+--- Imports +=
+"strconv"
+---
+
+--- Package level declarations +=
+type section struct {
+    nums []int
+    text string
+}
+
+---
+
+--- Functions +=
+func (s *section) toString() string {
+    if len(s.nums) == 0 {
+        return "0."
+    }
+
+    num := ""
+    for _, n := range s.nums {
+        num += strconv.Itoa(n) + "."
+    }
+    return num + " " + s.text
+}
+
+// next returns the section, and if it's changed, given a line of markdown.
+func (s *section) next(line string) (section, bool) {
+    re, _ := regexp.Compile("(#+)\\s+(.*)")
+    find := re.FindStringSubmatch(line)
+    if len(find) < 2 {
+        return *s, false
+    }
+
+    oldLevel := len(s.nums)
+    newLevel := len(find[1])
+    nums := make([]int, newLevel)
+    if oldLevel < newLevel {
+        for i := 0; i < oldLevel; i++ {
+            nums[i] = s.nums[i]
+        }
+        nums[newLevel-1] = 1
+    } else {
+        for i := 0; i < newLevel-1; i++ {
+            nums[i] = s.nums[i]
+        }
+        nums[newLevel-1] = s.nums[newLevel-1] + 1
+    }
+
+    return section{nums, find[2]}, true
+}
+
+---
+
+
+@s Sections: Tracking
+
+We will track section changes in our state.
+
+--- More state fields +=
+sec section
+---
+
+--- Track section changes
+if !s.inChunk && strings.HasPrefix(line, "#") {
+    var changed bool
+    s.sec, changed = s.sec.next(line)
+    if changed {
+        line = strings.Repeat("#", len(s.sec.nums)) + " " + s.sec.toString()
+    }
+}
+---
+
+
 @s Processing content: Collect lines in code chunks
 
 Code chunks start with three backticks, a space, and a name.
@@ -587,87 +670,4 @@ func lineDirective(dir string, fname string, n int) string {
     return out + "\n"
 }
 
----
-
-
-@s Sections: Definitions and basic functions
-
-We need to track sections to be able to explain where code chunks are used
-and added to.
-
-A line represents a new section (or subsection) when it starts with a number
-of `#`s, some whitespace, and some text. So a section will
-be a structured object with functions to convert to and from strings.
-
-
---- Imports +=
-"strconv"
----
-
---- Package level declarations +=
-type section struct {
-    nums []int
-    text string
-}
-
----
-
---- Functions +=
-func (s *section) toString() string {
-    if len(s.nums) == 0 {
-        return "0."
-    }
-
-    num := ""
-    for _, n := range s.nums {
-        num += strconv.Itoa(n) + "."
-    }
-    return num + " " + s.text
-}
-
-// next returns the section, and if it's changed, given a line of markdown.
-func (s *section) next(line string) (section, bool) {
-    re, _ := regexp.Compile("(#+)\\s+(.*)")
-    find := re.FindStringSubmatch(line)
-    if len(find) < 2 {
-        return *s, false
-    }
-
-    oldLevel := len(s.nums)
-    newLevel := len(find[1])
-    nums := make([]int, newLevel)
-    if oldLevel < newLevel {
-        for i := 0; i < oldLevel; i++ {
-            nums[i] = s.nums[i]
-        }
-        nums[newLevel-1] = 1
-    } else {
-        for i := 0; i < newLevel-1; i++ {
-            nums[i] = s.nums[i]
-        }
-        nums[newLevel-1] = s.nums[newLevel-1] + 1
-    }
-
-    return section{nums, find[2]}, true
-}
-
----
-
-
-@s Sections: Tracking
-
-We will track section changes in our state.
-
---- More state fields +=
-sec section
----
-
---- Track section changes
-if !s.inChunk && strings.HasPrefix(line, "#") {
-    var changed bool
-    s.sec, changed = s.sec.next(line)
-    if changed {
-        line = strings.Repeat("#", len(s.sec.nums)) + " " + s.sec.toString()
-    }
-}
 ---

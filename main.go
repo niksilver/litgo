@@ -21,17 +21,22 @@ type state struct {
 	lineNum  int
 	// More state fields
 	warnings  []warning
+	sec       section
 	inChunk   bool              // If we're currently reading a chunk
 	chunkName string            // Name of current chunk
 	chunks    map[string]*chunk // All the chunks found so far
 	lineDir   string
-	sec       section
 }
 
 type warning struct {
 	fname string
 	line  int
 	msg   string
+}
+
+type section struct {
+	nums []int
+	text string
 }
 
 type chunk struct {
@@ -46,11 +51,6 @@ type set map[string]bool
 type lattice struct {
 	childrenOf map[string]set
 	parentsOf  map[string]set
-}
-
-type section struct {
-	nums []int
-	text string
 }
 
 // Functions
@@ -172,6 +172,44 @@ func proc(s *state, line string) {
 	// Send surviving lines to markdown
 	s.markdown.WriteString(line + "\n")
 
+}
+
+func (s *section) toString() string {
+	if len(s.nums) == 0 {
+		return "0."
+	}
+
+	num := ""
+	for _, n := range s.nums {
+		num += strconv.Itoa(n) + "."
+	}
+	return num + " " + s.text
+}
+
+// next returns the section, and if it's changed, given a line of markdown.
+func (s *section) next(line string) (section, bool) {
+	re, _ := regexp.Compile("(#+)\\s+(.*)")
+	find := re.FindStringSubmatch(line)
+	if len(find) < 2 {
+		return *s, false
+	}
+
+	oldLevel := len(s.nums)
+	newLevel := len(find[1])
+	nums := make([]int, newLevel)
+	if oldLevel < newLevel {
+		for i := 0; i < oldLevel; i++ {
+			nums[i] = s.nums[i]
+		}
+		nums[newLevel-1] = 1
+	} else {
+		for i := 0; i < newLevel-1; i++ {
+			nums[i] = s.nums[i]
+		}
+		nums[newLevel-1] = s.nums[newLevel-1] + 1
+	}
+
+	return section{nums, find[2]}, true
 }
 
 func compileLattice(chunks map[string]*chunk) lattice {
@@ -401,42 +439,4 @@ func lineDirective(dir string, fname string, n int) string {
 		}
 	}
 	return out + "\n"
-}
-
-func (s *section) toString() string {
-	if len(s.nums) == 0 {
-		return "0."
-	}
-
-	num := ""
-	for _, n := range s.nums {
-		num += strconv.Itoa(n) + "."
-	}
-	return num + " " + s.text
-}
-
-// next returns the section, and if it's changed, given a line of markdown.
-func (s *section) next(line string) (section, bool) {
-	re, _ := regexp.Compile("(#+)\\s+(.*)")
-	find := re.FindStringSubmatch(line)
-	if len(find) < 2 {
-		return *s, false
-	}
-
-	oldLevel := len(s.nums)
-	newLevel := len(find[1])
-	nums := make([]int, newLevel)
-	if oldLevel < newLevel {
-		for i := 0; i < oldLevel; i++ {
-			nums[i] = s.nums[i]
-		}
-		nums[newLevel-1] = 1
-	} else {
-		for i := 0; i < newLevel-1; i++ {
-			nums[i] = s.nums[i]
-		}
-		nums[newLevel-1] = s.nums[newLevel-1] + 1
-	}
-
-	return section{nums, find[2]}, true
 }
