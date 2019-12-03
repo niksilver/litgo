@@ -138,7 +138,11 @@ func proc(s *state, line string) {
 	s.lineNum++
 	// Track section changes
 	if !s.inChunk && strings.HasPrefix(line, "#") {
-		s.sec = s.sec.next(line)
+		var changed bool
+		s.sec, changed = s.sec.next(line)
+		if changed {
+			line = strings.Repeat("#", len(s.sec.nums)) + " " + s.sec.toString()
+		}
 	}
 
 	// Collect lines in code chunks
@@ -409,11 +413,12 @@ func (s *section) toString() string {
 	return num + " " + s.text
 }
 
-func (s *section) next(line string) section {
+// next returns the section, and if it's changed, given a line of markdown.
+func (s *section) next(line string) (section, bool) {
 	re, _ := regexp.Compile("(#+)\\s+(.*)")
 	find := re.FindStringSubmatch(line)
 	if len(find) < 2 {
-		return *s
+		return *s, false
 	}
 
 	oldLevel := len(s.nums)
@@ -431,5 +436,5 @@ func (s *section) next(line string) section {
 		nums[newLevel-1] = s.nums[newLevel-1] + 1
 	}
 
-	return section{nums, find[2]}
+	return section{nums, find[2]}, true
 }
