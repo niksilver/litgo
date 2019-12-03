@@ -127,7 +127,7 @@ func TestProcForChunkDetails(t *testing.T) {
 		"Code line 1",
 		"Code line 2",
 		"```",
-		"",
+		"# Heading",
 		"``` Second",
 		"Code line 3",
 		"```",
@@ -137,14 +137,18 @@ func TestProcForChunkDetails(t *testing.T) {
 		"```",
 		"The end",
 	}
+	sec0 := section{[]int(nil), ""}
+	sec1 := section{[]int{1}, "Heading"}
 	expected := map[string]chunk{
 		"First": chunk{
 			[]int{1, 10},
+			[]section{sec0, sec1},
 			[]string{"Code line 1", "Code line 2", "Code line 4"},
 			[]int{2, 3, 11},
 		},
 		"Second": chunk{
 			[]int{6},
+			[]section{sec1},
 			[]string{"Code line 3"},
 			[]int{7},
 		},

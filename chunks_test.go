@@ -35,7 +35,7 @@ func TestWriteChunks_Okay(t *testing.T) {
 	// @{Three}   8
 	// Line 2.2   9
 	// ```
-	// Another gap
+	// Gap line
 	// ``` Three  12
 	// Line 3.1   13
 	// Line 3.2   14
@@ -65,16 +65,19 @@ Line 2.2
 	chunks := map[string]*chunk{
 		"One": &chunk{
 			[]int{1, 16},
+			[]section{},
 			[]string{"Line 1.1", "@{Three}", "Line 1.3", "Line 1.4"},
 			[]int{2, 3, 4, 17},
 		},
 		"Two": &chunk{
 			[]int{7},
+			[]section{},
 			[]string{"@{Three}", "Line 2.2"},
 			[]int{8, 9},
 		},
 		"Three": &chunk{
 			[]int{12},
+			[]section{},
 			[]string{"Line 3.1", "Line 3.2"},
 			[]int{13, 14},
 		},
@@ -139,16 +142,19 @@ func TestWriteChunks_ErrorWriting(t *testing.T) {
 	chunks := map[string]*chunk{
 		"One": &chunk{
 			[]int{1, 16},
+			[]section{},
 			[]string{"Line 1.1", "@{Three}", "Line 1.3", "Line 1.4"},
 			[]int{2, 3, 4, 17},
 		},
 		"Two": &chunk{
 			[]int{7},
+			[]section{},
 			[]string{"@{Three}", "Line 2.2"},
 			[]int{8, 9},
 		},
 		"Three": &chunk{
 			[]int{12},
+			[]section{},
 			[]string{"Line 3.1", "Line 3.2"},
 			[]int{13, 14},
 		},
@@ -194,16 +200,19 @@ func TestWriteChunks_IndentProperly(t *testing.T) {
 	chunks := map[string]*chunk{
 		"One": &chunk{
 			[]int{1},
+			[]section{},
 			[]string{"  Line 1.1", "  @{Two}", "  Line 1.3", "  @{Three}"},
 			[]int{2, 3, 4, 5},
 		},
 		"Two": &chunk{
 			[]int{8},
+			[]section{},
 			[]string{"Line 2.1", "  @{Three}", "Line 2.2"},
 			[]int{9, 10, 11},
 		},
 		"Three": &chunk{
 			[]int{14},
+			[]section{},
 			[]string{"Line 3.1"},
 			[]int{15},
 		},
@@ -273,16 +282,19 @@ Line 2.2
 	chunks := map[string]*chunk{
 		"One": &chunk{
 			[]int{1, 16},
+			[]section{},
 			[]string{"Line 1.1", "@{Three}", "Line 1.3", "Line 1.4"},
 			[]int{2, 3, 4, 17},
 		},
 		"Two": &chunk{
 			[]int{7},
+			[]section{},
 			[]string{"@{Three}", "Line 2.2"},
 			[]int{8, 9},
 		},
 		"Three": &chunk{
 			[]int{12},
+			[]section{},
 			[]string{"Line 3.1", "Line 3.2"},
 			[]int{13, 14},
 		},

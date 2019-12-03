@@ -35,9 +35,10 @@ type warning struct {
 }
 
 type chunk struct {
-	line  []int    // Line numbers where the chunk is defined
-	code  []string // Lines of code, without newlines
-	lines []int    // Line number for each line of code
+	line  []int     // Line numbers where the chunk is defined
+	sec   []section // Sections where the chunk is defined
+	code  []string  // Lines of code, without newlines
+	lines []int     // Line number for each line of code
 }
 
 type set map[string]bool
@@ -164,6 +165,7 @@ func proc(s *state, line string) {
 			ch = s.chunks[s.chunkName]
 		}
 		s.chunks[s.chunkName].line = append(ch.line, s.lineNum)
+		s.chunks[s.chunkName].sec = append(ch.sec, s.sec)
 		s.inChunk = true
 	}
 
@@ -403,7 +405,7 @@ func lineDirective(dir string, fname string, n int) string {
 
 func (s *section) toString() string {
 	if len(s.nums) == 0 {
-		return ""
+		return "0."
 	}
 
 	num := ""

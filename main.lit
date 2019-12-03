@@ -163,6 +163,7 @@ We'll assemble the chunks later.
 --- Package level declarations +=
 type chunk struct {
     line []int     // Line numbers where the chunk is defined
+    sec []section  // Sections where the chunk is defined
     code []string  // Lines of code, without newlines
     lines []int    // Line number for each line of code
 }
@@ -198,6 +199,7 @@ if s.inChunk && line == "```" {
         ch = s.chunks[s.chunkName]
     }
     s.chunks[s.chunkName].line = append(ch.line, s.lineNum)
+    s.chunks[s.chunkName].sec = append(ch.sec, s.sec)
     s.inChunk = true
 }
 ---
@@ -613,7 +615,7 @@ type section struct {
 --- Functions +=
 func (s *section) toString() string {
     if len(s.nums) == 0 {
-        return ""
+        return "0."
     }
 
     num := ""
