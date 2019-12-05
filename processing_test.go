@@ -216,3 +216,43 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 		}
 	}
 }
+
+func TestProcForChunkRefs(t *testing.T) {
+	s := newState()
+	s.fname = "testfile.lit"
+	lines := []string{
+		"Opening text", // Line 1
+		"",
+		"``` Chunk one",
+		"Chunk content",
+		"```", // Line 5
+		"# First section",
+		"``` Chunk two",
+		"# Comment, not section heading",
+		"```", // Line 9
+		"",
+		"``` Chunk three",
+		"More chunk content",
+		"```", // Line 13
+	}
+	content := []byte(strings.Join(lines, "\n"))
+	expected := map[int]string{
+		5:  "Chunk one",
+		9:  "Chunk two",
+		13: "Chunk three",
+	}
+
+	processContent(content, &s, proc)
+
+	if len(s.chunkRefs) != len(expected) {
+		t.Errorf("Expected %d chunk refs but got %d. Map is %#v",
+			len(expected), len(s.chunkRefs), s.chunkRefs)
+		return
+	}
+	for lNum, chName := range expected {
+		if s.chunkRefs[lNum] != chName {
+			t.Errorf("For line %d expected chunk %q but got %q",
+				lNum, chName, s.chunkRefs[lNum])
+		}
+	}
+}

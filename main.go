@@ -25,6 +25,7 @@ type state struct {
 	inChunk   bool              // If we're currently reading a chunk
 	chunkName string            // Name of current chunk
 	chunks    map[string]*chunk // All the chunks found so far
+	chunkRefs map[int]string
 	lineDir   string
 }
 
@@ -57,7 +58,8 @@ type lattice struct {
 func newState() state {
 	return state{
 		// Field initialisers for state
-		chunks: make(map[string]*chunk),
+		chunks:    make(map[string]*chunk),
+		chunkRefs: make(map[int]string),
 	}
 }
 
@@ -149,6 +151,9 @@ func proc(s *state, line string) {
 	// Collect lines in code chunks
 	if s.inChunk && line == "```" {
 		s.inChunk = false
+		// Capture data for post-chunk references
+		s.chunkRefs[s.lineNum] = s.chunkName
+
 	} else if s.inChunk {
 		ch := s.chunks[s.chunkName]
 		s.chunks[s.chunkName].code = append(ch.code, line)

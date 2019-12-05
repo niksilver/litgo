@@ -266,6 +266,7 @@ chunks: make(map[string]*chunk),
 --- Collect lines in code chunks
 if s.inChunk && line == "```" {
     s.inChunk = false
+    @{Capture data for post-chunk references}
 } else if s.inChunk {
     ch := s.chunks[s.chunkName]
     s.chunks[s.chunkName].code = append(ch.code, line)
@@ -292,6 +293,28 @@ if s.inChunk {
     s.warnings = append(s.warnings,
         warning{s.fname, s.lineNum, "Content finished but chunk not closed"})
 }
+---
+
+
+@s Processing content: Post-chunk references
+
+After each code chunk we want some text to say it was "Added to in
+sections X, Y and Z." However, as we process the content the first
+time through we don't know what X, Y and Z are, so the best we
+can do is note the fact that "after line number A we want to say something
+about chunk B in section C." Then when we output markdown line number A
+we follow it with the appropriate text.
+
+--- More state fields +=
+chunkRefs map[int]string
+---
+
+--- Field initialisers for state +=
+chunkRefs: make(map[int]string),
+---
+
+--- Capture data for post-chunk references
+s.chunkRefs[s.lineNum] = s.chunkName
 ---
 
 
