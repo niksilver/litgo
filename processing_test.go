@@ -259,6 +259,42 @@ func TestProcForChunkRefs(t *testing.T) {
 	}
 }
 
+func TestProcForMarkdownWithChunkRefs_AddedToNowhereElse(t *testing.T) {
+	s := newState()
+	lines := []string{
+		"# Title", // Line 1
+		"",
+		"``` Chunk one",
+		"Chunk content",
+		"```", // Line 5
+		"# T2",
+		"``` Chunk two",
+		"```", // Line 8
+		// Plus one line after the final \n // Line 9
+	}
+	expected := map[int]string{
+		5: "```",
+		6: "# 2 T2",
+		8: "```",
+	}
+	content := []byte(strings.Join(lines, "\n"))
+
+	processContent(content, &s, proc)
+	b := markdownWithChunkRefs(&s)
+	out := strings.Split(b.String(), "\n")
+
+	if len(out) != 9 {
+		t.Errorf("Expected %d lines but got %d:\n%q",
+			9, len(out), b.String())
+	}
+	for n, s := range expected {
+		if out[n-1] != s {
+			t.Errorf("Expected line %d to be %q but got %q",
+				n, s, out[n-1])
+		}
+	}
+}
+
 func TestProcForMarkdownWithChunkRefs_AddedToOnce(t *testing.T) {
 	s := newState()
 	lines := []string{
@@ -266,11 +302,16 @@ func TestProcForMarkdownWithChunkRefs_AddedToOnce(t *testing.T) {
 		"",
 		"``` Chunk one",
 		"Chunk content",
-		"```",  // Line 5
-		"# T2", // Line 6 (becoming 9 after the post-chunk ref)
+		"```",
+		// Post-chunk blank // Line 6
+		// Post-chunk ref
+		// Post-chunk blank
+		"# T2",
 		"``` Chunk one",
-		"```", // Line 8 (becoming 11)
-		// Three lines of post-chunk refs, making last line number 14
+		"```",
+		// Post-chunk blank // Line 12
+		// Post-chunk ref
+		// Post-chunk blank
 		// plus another (15) when the processor adds a final \n
 	}
 	expected := map[int]string{

@@ -491,9 +491,8 @@ func addedToChunkRef(s *state, ref chunkRef) string {
 		}
 	}
 
-	suffix := " "
-	if len(secs) > 1 {
-		suffix = "s "
+	if len(secs) == 0 {
+		return ""
 	}
 
 	list := ""
@@ -504,6 +503,11 @@ func addedToChunkRef(s *state, ref chunkRef) string {
 		} else if i == len(secs)-2 {
 			list += " and "
 		}
+	}
+
+	suffix := " "
+	if len(secs) > 1 {
+		suffix = "s "
 	}
 
 	return "\nAdded to in section" + suffix + list + ".\n\n"

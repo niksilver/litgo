@@ -2,9 +2,8 @@ To do
 -----
 
 Sections
-- Add text after chunk "Added to in sections X, Y and Z"
 - Add text after chunk "Used in sections X, Y and Z"
-- Remove the current section from the list "Added to in..." and "Used in..."
+- Remove the current section from the list "Used in..."
 - Keep track of a contents list (section and its name)
 - Add a directive for including the contents list
 - Enable each section to be linkable
@@ -17,3 +16,5 @@ Done
 Sections
 - Track current section
 - Add section number to markdown headings
+- Add text after chunk "Added to in sections X, Y and Z"
+- Remove the current section from the list "Added to in..."
