@@ -762,14 +762,28 @@ func addedToChunkRef(s *state, ref chunkRef) string {
     chunk := s.chunks[ref.name]
     secs := make([]section, len(chunk.sec))
     copy(secs, chunk.sec)
+
     for i, sec := range secs {
         if reflect.DeepEqual(ref.thisSec, sec) {
             secs = append(secs[:i], secs[i+1:]...)
             break
         }
     }
-    str := secs[0].numsToString()
-    return "\nAdded to in section " + str + "\n\n"
+
+    suffix := " "
+    if len(secs) > 1 {
+        suffix = "s "
+    }
+
+    list := ""
+    for i, sec := range secs {
+        list +=sec.numsToString()
+        if i < len(secs)-1 {
+            list += " and "
+        }
+    }
+
+    return "\nAdded to in section" + suffix + list + "\n\n"
 }
 
 ---
