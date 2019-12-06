@@ -235,11 +235,13 @@ func TestProcForChunkRefs(t *testing.T) {
 		"More chunk content",
 		"```", // Line 13
 	}
+	sec0 := section{[]int(nil), ""}
+	sec1 := section{[]int{1}, "First section"}
 	content := []byte(strings.Join(lines, "\n"))
-	expected := map[int]string{
-		5:  "Chunk one",
-		9:  "Chunk two",
-		13: "Chunk three",
+	expected := map[int]chunkRef{
+		5:  chunkRef{"Chunk one", sec0},
+		9:  chunkRef{"Chunk two", sec1},
+		13: chunkRef{"Chunk three", sec1},
 	}
 
 	processContent(content, &s, proc)
@@ -249,15 +251,15 @@ func TestProcForChunkRefs(t *testing.T) {
 			len(expected), len(s.chunkRefs), s.chunkRefs)
 		return
 	}
-	for lNum, chName := range expected {
-		if s.chunkRefs[lNum] != chName {
-			t.Errorf("For line %d expected chunk %q but got %q",
-				lNum, chName, s.chunkRefs[lNum])
+	for lNum, ref := range expected {
+		if !reflect.DeepEqual(s.chunkRefs[lNum], ref) {
+			t.Errorf("For line %d expected chunk %#v but got %#v",
+				lNum, ref, s.chunkRefs[lNum])
 		}
 	}
 }
 
-func TestProcForMarkdownWithChunkRefs(t *testing.T) {
+func TestProcForMarkdownWithChunkRefs_AddedToOnce(t *testing.T) {
 	s := newState()
 	lines := []string{
 		"# Title", // Line 1
@@ -273,10 +275,10 @@ func TestProcForMarkdownWithChunkRefs(t *testing.T) {
 	}
 	expected := map[int]string{
 		6:  "",
-		7:  "Added to in sections 1 and 2.",
+		7:  "Added to in section 2.",
 		8:  "",
 		12: "",
-		13: "Added to in sections 1 and 2.",
+		13: "Added to in section 1.",
 		14: "",
 	}
 	content := []byte(strings.Join(lines, "\n"))

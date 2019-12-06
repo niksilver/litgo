@@ -125,7 +125,7 @@ func proc(s *state, line string) {
 ---
 
 
-@s Writing out the markdown
+@s Writing out the markdown: Basic output
 
 In theory we can just write out the markdown as one big string in the
 `markdown` field of the state. But we also want to insert post-chunk
@@ -147,16 +147,9 @@ func markdownWithChunkRefs(s *state) *strings.Builder {
     for sc.Scan() {
         count ++
         b.WriteString(sc.Text() + "\n")
-        if ref, ok := s.chunkRefs[count]; ok {
-            str := addedToChunkRef(s, ref)
-            b.WriteString("\n" + str + "\n\n")
-        }
+        @{Include post-chunk reference if necessary}
     }
     return &b
-}
-
-func addedToChunkRef(s *state, ref string) string {
-    return "Added to in sections 1 and 2."
 }
 
 ---
@@ -215,11 +208,15 @@ func (s *section) toString() string {
         return "0."
     }
 
+    return s.numsToString() + " " + s.text
+}
+
+func (s *section) numsToString() string {
     num := ""
     for _, n := range s.nums {
         num += strconv.Itoa(n) + "."
     }
-    return num + " " + s.text
+    return num
 }
 
 // next returns the section, and if it's changed, given a line of markdown.
@@ -340,16 +337,24 @@ can do is note the fact that "after line number A we want to say something
 about chunk B in section C." Then when we output markdown line number A
 we follow it with the appropriate text.
 
+--- Package level declarations +=
+type chunkRef struct {
+    name string
+    thisSec section
+}
+
+---
+
 --- More state fields +=
-chunkRefs map[int]string
+chunkRefs map[int]chunkRef
 ---
 
 --- Field initialisers for state +=
-chunkRefs: make(map[int]string),
+chunkRefs: make(map[int]chunkRef),
 ---
 
 --- Capture data for post-chunk references
-s.chunkRefs[s.lineNum] = s.chunkName
+s.chunkRefs[s.lineNum] = chunkRef{ s.chunkName, s.sec }
 ---
 
 
@@ -726,6 +731,45 @@ func lineDirective(dir string, fname string, n int) string {
         }
     }
     return out + "\n"
+}
+
+---
+
+
+@s Writing out the markdown: Including "Added to in..." chunk references
+
+Here we return a string (possibly empty) to reference where this chunk
+is added to.
+
+We will know in which sections a chunk is built up, and we need to know
+which section the current text appears in. Then we can remove the current
+section from the list of where it's build up. But we should only do that
+once, in case a chunk is built up two or more times in one section.
+
+--- Include post-chunk reference if necessary
+if ref, ok := s.chunkRefs[count]; ok {
+    str := addedToChunkRef(s, ref)
+    b.WriteString(str)
+}
+---
+
+--- Imports +=
+"reflect"
+---
+
+--- Functions +=
+func addedToChunkRef(s *state, ref chunkRef) string {
+    chunk := s.chunks[ref.name]
+    secs := make([]section, len(chunk.sec))
+    copy(secs, chunk.sec)
+    for i, sec := range secs {
+        if reflect.DeepEqual(ref.thisSec, sec) {
+            secs = append(secs[:i], secs[i+1:]...)
+            break
+        }
+    }
+    str := secs[0].numsToString()
+    return "\nAdded to in section " + str + "\n\n"
 }
 
 ---

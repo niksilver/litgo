@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -25,7 +26,7 @@ type state struct {
 	inChunk   bool              // If we're currently reading a chunk
 	chunkName string            // Name of current chunk
 	chunks    map[string]*chunk // All the chunks found so far
-	chunkRefs map[int]string
+	chunkRefs map[int]chunkRef
 	lineDir   string
 }
 
@@ -47,6 +48,11 @@ type chunk struct {
 	lines []int     // Line number for each line of code
 }
 
+type chunkRef struct {
+	name    string
+	thisSec section
+}
+
 type set map[string]bool
 
 type lattice struct {
@@ -59,7 +65,7 @@ func newState() state {
 	return state{
 		// Field initialisers for state
 		chunks:    make(map[string]*chunk),
-		chunkRefs: make(map[int]string),
+		chunkRefs: make(map[int]chunkRef),
 	}
 }
 
@@ -154,7 +160,7 @@ func proc(s *state, line string) {
 	if s.inChunk && line == "```" {
 		s.inChunk = false
 		// Capture data for post-chunk references
-		s.chunkRefs[s.lineNum] = s.chunkName
+		s.chunkRefs[s.lineNum] = chunkRef{s.chunkName, s.sec}
 
 	} else if s.inChunk {
 		ch := s.chunks[s.chunkName]
@@ -189,16 +195,14 @@ func markdownWithChunkRefs(s *state) *strings.Builder {
 	for sc.Scan() {
 		count++
 		b.WriteString(sc.Text() + "\n")
+		// Include post-chunk reference if necessary
 		if ref, ok := s.chunkRefs[count]; ok {
 			str := addedToChunkRef(s, ref)
-			b.WriteString("\n" + str + "\n\n")
+			b.WriteString(str)
 		}
+
 	}
 	return &b
-}
-
-func addedToChunkRef(s *state, ref string) string {
-	return "Added to in sections 1 and 2."
 }
 
 func (s *section) toString() string {
@@ -206,11 +210,15 @@ func (s *section) toString() string {
 		return "0."
 	}
 
+	return s.numsToString() + " " + s.text
+}
+
+func (s *section) numsToString() string {
 	num := ""
 	for _, n := range s.nums {
 		num += strconv.Itoa(n) + "."
 	}
-	return num + " " + s.text
+	return num
 }
 
 // next returns the section, and if it's changed, given a line of markdown.
@@ -466,4 +474,18 @@ func lineDirective(dir string, fname string, n int) string {
 		}
 	}
 	return out + "\n"
+}
+
+func addedToChunkRef(s *state, ref chunkRef) string {
+	chunk := s.chunks[ref.name]
+	secs := make([]section, len(chunk.sec))
+	copy(secs, chunk.sec)
+	for i, sec := range secs {
+		if reflect.DeepEqual(ref.thisSec, sec) {
+			secs = append(secs[:i], secs[i+1:]...)
+			break
+		}
+	}
+	str := secs[0].numsToString()
+	return "\nAdded to in section " + str + "\n\n"
 }
