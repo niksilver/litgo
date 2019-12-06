@@ -207,7 +207,7 @@ func markdownWithChunkRefs(s *state) *strings.Builder {
 
 func (s *section) toString() string {
 	if len(s.nums) == 0 {
-		return "0."
+		return "0"
 	}
 
 	return s.numsToString() + " " + s.text
@@ -215,8 +215,11 @@ func (s *section) toString() string {
 
 func (s *section) numsToString() string {
 	num := ""
-	for _, n := range s.nums {
-		num += strconv.Itoa(n) + "."
+	for i, n := range s.nums {
+		num += strconv.Itoa(n)
+		if i < len(s.nums)-1 {
+			num += "."
+		}
 	}
 	return num
 }
@@ -501,5 +504,5 @@ func addedToChunkRef(s *state, ref chunkRef) string {
 		}
 	}
 
-	return "\nAdded to in section" + suffix + list + "\n\n"
+	return "\nAdded to in section" + suffix + list + ".\n\n"
 }

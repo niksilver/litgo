@@ -326,13 +326,13 @@ func TestProcForMarkdownWithChunkRefs_AddedToTwice(t *testing.T) {
 	}
 	expected := map[int]string{
 		6:  "",
-		7:  "Added to in sections 2. and 2.",
+		7:  "Added to in sections 2 and 2.",
 		8:  "",
 		12: "",
-		13: "Added to in sections 1. and 2.",
+		13: "Added to in sections 1 and 2.",
 		14: "",
 		18: "",
-		19: "Added to in sections 1. and 2.",
+		19: "Added to in sections 1 and 2.",
 		20: "",
 	}
 	content := []byte(strings.Join(lines, "\n"))
