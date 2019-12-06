@@ -82,9 +82,7 @@ func main() {
 
     @{Write out code chunks}
 
-    md := []byte(s.markdown.String())
-	output := markdown.ToHTML(md, nil, nil)
-	fmt.Println(string(output))
+    @{Write out the markdown}
 }
 
 func inputBytes(fname string) (input []byte, e error) {
@@ -122,6 +120,43 @@ func proc(s *state, line string) {
     @{Track section changes}
     @{Collect lines in code chunks}
     @{Send surviving lines to markdown}
+}
+
+---
+
+
+@s Writing out the markdown
+
+In theory we can just write out the markdown as one big string in the
+`markdown` field of the state. But we also want to insert post-chunk
+references, and we can do that only if we output the markdown a line
+at a time.
+
+--- Write out the markdown
+md := markdownWithChunkRefs(&s).String()
+output := markdown.ToHTML([]byte(md), nil, nil)
+fmt.Println(string(output))
+---
+
+--- Functions +=
+func markdownWithChunkRefs(s *state) *strings.Builder {
+    b := strings.Builder{}
+    r := strings.NewReader(s.markdown.String())
+    sc := bufio.NewScanner(r)
+    count := 0
+    for sc.Scan() {
+        count ++
+        b.WriteString(sc.Text() + "\n")
+        if ref, ok := s.chunkRefs[count]; ok {
+            str := addedToChunkRef(s, ref)
+            b.WriteString("\n" + str + "\n\n")
+        }
+    }
+    return &b
+}
+
+func addedToChunkRef(s *state, ref string) string {
+    return "Added to in sections 1 and 2."
 }
 
 ---

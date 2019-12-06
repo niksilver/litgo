@@ -119,9 +119,11 @@ func main() {
 		return
 	}
 
-	md := []byte(s.markdown.String())
-	output := markdown.ToHTML(md, nil, nil)
+	// Write out the markdown
+	md := markdownWithChunkRefs(&s).String()
+	output := markdown.ToHTML([]byte(md), nil, nil)
 	fmt.Println(string(output))
+
 }
 
 func inputBytes(fname string) (input []byte, e error) {
@@ -177,6 +179,26 @@ func proc(s *state, line string) {
 	// Send surviving lines to markdown
 	s.markdown.WriteString(line + "\n")
 
+}
+
+func markdownWithChunkRefs(s *state) *strings.Builder {
+	b := strings.Builder{}
+	r := strings.NewReader(s.markdown.String())
+	sc := bufio.NewScanner(r)
+	count := 0
+	for sc.Scan() {
+		count++
+		b.WriteString(sc.Text() + "\n")
+		if ref, ok := s.chunkRefs[count]; ok {
+			str := addedToChunkRef(s, ref)
+			b.WriteString("\n" + str + "\n\n")
+		}
+	}
+	return &b
+}
+
+func addedToChunkRef(s *state, ref string) string {
+	return "Added to in sections 1 and 2."
 }
 
 func (s *section) toString() string {

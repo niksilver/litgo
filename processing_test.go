@@ -256,3 +256,43 @@ func TestProcForChunkRefs(t *testing.T) {
 		}
 	}
 }
+
+func TestProcForMarkdownWithChunkRefs(t *testing.T) {
+	s := newState()
+	lines := []string{
+		"# Title", // Line 1
+		"",
+		"``` Chunk one",
+		"Chunk content",
+		"```",  // Line 5
+		"# T2", // Line 6 (becoming 9 after the post-chunk ref)
+		"``` Chunk one",
+		"```", // Line 8 (becoming 11)
+		// Three lines of post-chunk refs, making last line number 14
+		// plus another (15) when the processor adds a final \n
+	}
+	expected := map[int]string{
+		6:  "",
+		7:  "Added to in sections 1 and 2.",
+		8:  "",
+		12: "",
+		13: "Added to in sections 1 and 2.",
+		14: "",
+	}
+	content := []byte(strings.Join(lines, "\n"))
+
+	processContent(content, &s, proc)
+	b := markdownWithChunkRefs(&s)
+	out := strings.Split(b.String(), "\n")
+
+	if len(out) != 15 {
+		t.Errorf("Expected %d lines but got %d:\n%q",
+			15, len(out), b.String())
+	}
+	for n, s := range expected {
+		if out[n-1] != s {
+			t.Errorf("Expected line %d to be %q but got %q",
+				n, s, out[n-1])
+		}
+	}
+}
