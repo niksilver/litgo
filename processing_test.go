@@ -352,3 +352,63 @@ func TestProcForMarkdownWithChunkRefs_AddedToTwice(t *testing.T) {
 		}
 	}
 }
+
+func TestProcForMarkdownWithChunkRefs_AddedToThrice(t *testing.T) {
+	s := newState()
+	lines := []string{
+		"# Title", // Line 1
+		"",
+		"``` Chunk one",
+		"Chunk content",
+		"```",
+		// Post-chunk blank // Line 6
+		// Post-chunk ref
+		// Post-chunk blank
+		"# T2",
+		"``` Chunk one",
+		"```",
+		// Post-chunk blank // Line 12
+		// Post-chunk ref
+		// Post-chunk blank
+		"",
+		"``` Chunk one",
+		"```",
+		// Post-chunk blank // Line 18
+		// Post-chunk ref
+		// Post-chunk blank
+		"# Title 3",
+		"``` Chunk one",
+		"```",
+		// Post-chunk blank // Line 24
+		// Post-chunk ref
+		// Post-chunk blank
+		// Spare line after final \n // Line 27
+	}
+	expected := map[int]string{
+		6:  "",
+		7:  "Added to in sections 2, 2 and 3.",
+		8:  "",
+		12: "",
+		13: "Added to in sections 1, 2 and 3.",
+		14: "",
+		24: "",
+		25: "Added to in sections 1, 2 and 2.",
+		26: "",
+	}
+	content := []byte(strings.Join(lines, "\n"))
+
+	processContent(content, &s, proc)
+	b := markdownWithChunkRefs(&s)
+	out := strings.Split(b.String(), "\n")
+
+	if len(out) != 27 {
+		t.Errorf("Expected %d lines but got %d:\n%q",
+			27, len(out), b.String())
+	}
+	for n, s := range expected {
+		if out[n-1] != s {
+			t.Errorf("Expected line %d to be %q but got %q",
+				n, s, out[n-1])
+		}
+	}
+}
