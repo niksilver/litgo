@@ -125,7 +125,7 @@ func proc(s *state, line string) {
 ---
 
 
-@s Writing out the markdown: Basic output
+@s Outputting the markdown: Basic output
 
 In theory we can just write out the markdown as one big string in the
 `markdown` field of the state. But we also want to insert post-chunk
@@ -608,7 +608,7 @@ func assertAllChunksDefined(chunks map[string]*chunk, lat lattice) error {
 ---
 
 
-@s Outputting: Code chunks
+@s Outputting the code: Basic output
 
 To output our code chunks we need three things:
 * The top level chunks (filenames); and
@@ -705,7 +705,7 @@ func writeChunk(name string,
 ---
 
 
-@s Outputting chunks: Line directives
+@s Outputting the code: Line directives
 
 A line directive is only output if it's non-empty.
 
@@ -739,7 +739,7 @@ func lineDirective(dir string, fname string, n int) string {
 ---
 
 
-@s Writing out the markdown: Including "Added to in..." chunk references
+@s Outputting the markdown: Including "Added to in..." chunk references
 
 Here we return a string (possibly empty) to reference where this chunk
 is added to.
