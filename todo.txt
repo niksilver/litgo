@@ -3,12 +3,16 @@ To do
 
 Sections
 - Add text after chunk "Used in sections X, Y and Z"
+- For "Used in..." make sure the sections come out in order.
 - Remove the current section from the list "Used in..."
 - Keep track of a contents list (section and its name)
 - Add a directive for including the contents list
 - Enable each section to be linkable
 - Link from each section reference to the section
 - Warning when a section jumps a level (e.g. 1 to 3, or nothing to 2)
+
+Refactoring
+- Put the lattice into the state.
 
 Done
 ----

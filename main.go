@@ -126,7 +126,7 @@ func main() {
 	}
 
 	// Write out the markdown
-	md := markdownWithChunkRefs(&s).String()
+	md := markdownWithChunkRefs(&s, &lat).String()
 	output := markdown.ToHTML([]byte(md), nil, nil)
 	fmt.Println(string(output))
 
@@ -187,7 +187,7 @@ func proc(s *state, line string) {
 
 }
 
-func markdownWithChunkRefs(s *state) *strings.Builder {
+func markdownWithChunkRefs(s *state, lat *lattice) *strings.Builder {
 	b := strings.Builder{}
 	r := strings.NewReader(s.markdown.String())
 	sc := bufio.NewScanner(r)
@@ -197,8 +197,10 @@ func markdownWithChunkRefs(s *state) *strings.Builder {
 		b.WriteString(sc.Text() + "\n")
 		// Include post-chunk reference if necessary
 		if ref, ok := s.chunkRefs[count]; ok {
-			str := addedToChunkRef(s, ref)
-			b.WriteString(str)
+			str1 := addedToChunkRef(s, ref)
+			b.WriteString(str1)
+			str2 := usedInChunkRef(s, lat, ref)
+			b.WriteString(str2)
 		}
 
 	}
@@ -495,6 +497,10 @@ func addedToChunkRef(s *state, ref chunkRef) string {
 		return ""
 	}
 
+	return "\nAdded to in " + sectionsAsEnglish(secs) + ".\n\n"
+}
+
+func sectionsAsEnglish(secs []section) string {
 	list := ""
 	for i, sec := range secs {
 		list += sec.numsToString()
@@ -505,10 +511,36 @@ func addedToChunkRef(s *state, ref chunkRef) string {
 		}
 	}
 
-	suffix := " "
+	prefix := "section "
 	if len(secs) > 1 {
-		suffix = "s "
+		prefix = "sections "
 	}
 
-	return "\nAdded to in section" + suffix + list + ".\n\n"
+	return prefix + list
+}
+
+func usedInChunkRef(s *state, lat *lattice, ref chunkRef) string {
+	secs := make([]section, 0)
+
+	for parName, _ := range lat.parentsOf[ref.name] {
+		chunk := s.chunks[parName]
+		for i, code := range chunk.code {
+			if referredChunkName(code) == ref.name {
+				lnum := chunk.lines[i]
+				var sec section
+				for j, chLine := range chunk.line {
+					if chLine < lnum {
+						sec = chunk.sec[j]
+					}
+				}
+				secs = append(secs, sec)
+			}
+		}
+	}
+
+	if len(secs) == 0 {
+		return ""
+	}
+
+	return "\nUsed in " + sectionsAsEnglish(secs) + ".\n\n"
 }

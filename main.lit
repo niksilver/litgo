@@ -133,13 +133,13 @@ references, and we can do that only if we output the markdown a line
 at a time.
 
 --- Write out the markdown
-md := markdownWithChunkRefs(&s).String()
+md := markdownWithChunkRefs(&s, &lat).String()
 output := markdown.ToHTML([]byte(md), nil, nil)
 fmt.Println(string(output))
 ---
 
 --- Functions +=
-func markdownWithChunkRefs(s *state) *strings.Builder {
+func markdownWithChunkRefs(s *state, lat *lattice) *strings.Builder {
     b := strings.Builder{}
     r := strings.NewReader(s.markdown.String())
     sc := bufio.NewScanner(r)
@@ -331,7 +331,7 @@ if s.inChunk {
 ---
 
 
-@s Processing content: Post-chunk references
+@s Processing content: Flagging lines for post-chunk references
 
 After each code chunk we want some text to say it was "Added to in
 sections X, Y and Z." However, as we process the content the first
@@ -739,26 +739,32 @@ func lineDirective(dir string, fname string, n int) string {
 ---
 
 
-@s Outputting the markdown: Including "Added to in..." chunk references
+@s Outputting the markdown: Including chunk references
 
-Here we return a string (possibly empty) to reference where this chunk
-is added to.
+When outputting the markdown we may be outputting a line that's the
+end of a chunk, in which case we'll see what post-chunk references
+need to be inserted. It may be an empty string.
 
-We will know in which sections a chunk is built up, and we need to know
-which section the current text appears in. Then we can remove the current
-section from the list of where it's build up. But we should only do that
-once, in case a chunk is built up two or more times in one section.
-
---- Include post-chunk reference if necessary
-if ref, ok := s.chunkRefs[count]; ok {
-    str := addedToChunkRef(s, ref)
-    b.WriteString(str)
-}
----
+There are two kinds of post-chunk references: "Added to in..."
+(siblings) and "Used in..." (parents). Both will be presented
+in its own paragraph.
 
 --- Imports +=
 "reflect"
 ---
+
+--- Include post-chunk reference if necessary
+if ref, ok := s.chunkRefs[count]; ok {
+    str1 := addedToChunkRef(s, ref)
+    b.WriteString(str1)
+    str2 := usedInChunkRef(s, lat, ref)
+    b.WriteString(str2)
+}
+---
+
+For "Added to in...", when we list the
+section references for we want to omit this chunk,
+but only once in case the chunk is added to elsewhere in this section.
 
 --- Functions +=
 func addedToChunkRef(s *state, ref chunkRef) string {
@@ -777,6 +783,10 @@ func addedToChunkRef(s *state, ref chunkRef) string {
         return ""
     }
 
+    return "\nAdded to in " + sectionsAsEnglish(secs) + ".\n\n"
+}
+
+func sectionsAsEnglish(secs []section) string {
     list := ""
     for i, sec := range secs {
         list +=sec.numsToString()
@@ -787,12 +797,55 @@ func addedToChunkRef(s *state, ref chunkRef) string {
         }
     }
 
-    suffix := " "
+    prefix := "section "
     if len(secs) > 1 {
-        suffix = "s "
+        prefix = "sections "
     }
 
-    return "\nAdded to in section" + suffix + list + ".\n\n"
+    return prefix + list
 }
 
 ---
+
+For "Used in..." we want to list the parent(s) of this chunk.
+We will use the chunk lattice for that.
+However, the lattice only gives the names of a chunk's parents;
+we need to know which section(s) it's mentioned in, and a
+chunk may be split over several sections. So
+we'll need to scan through the lines of a named parent, and
+find any line including the child. For each line found:
+
+* find its corresponding line number,
+* track back to where that chunk starts, and
+* find the section.
+
+Then add that to the list of parent sections. Phew!
+
+--- Functions +=
+func usedInChunkRef(s *state, lat *lattice, ref chunkRef) string {
+    secs := make([]section, 0)
+
+    for parName, _ := range lat.parentsOf[ref.name] {
+        chunk := s.chunks[parName]
+        for i, code := range chunk.code {
+            if referredChunkName(code) == ref.name {
+                lnum := chunk.lines[i]
+                var sec section
+                for j, chLine := range chunk.line {
+                    if chLine < lnum {
+                        sec = chunk.sec[j]
+                    }
+                }
+                secs = append(secs, sec)
+            }
+        }
+    }
+
+    if len(secs) == 0 {
+        return ""
+    }
+
+    return "\nUsed in " + sectionsAsEnglish(secs) + ".\n\n"
+}
+---
+
