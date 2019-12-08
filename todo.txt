@@ -11,8 +11,12 @@ Sections
 - Link from each section reference to the section
 - Warning when a section jumps a level (e.g. 1 to 3, or nothing to 2)
 
-Refactoring
-- Put the lattice into the state.
+I/O
+- Use command line args
+- Read from a file
+- Read from stdin
+- Write to a file
+- Write to stdout
 
 Done
 ----
@@ -22,3 +26,6 @@ Sections
 - Add section number to markdown headings
 - Add text after chunk "Added to in sections X, Y and Z"
 - Remove the current section from the list "Added to in..."
+
+Refactoring
+- Put the lattice into the state.

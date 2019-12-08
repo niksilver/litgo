@@ -27,6 +27,7 @@ type state struct {
 	chunkName string            // Name of current chunk
 	chunks    map[string]*chunk // All the chunks found so far
 	chunkRefs map[int]chunkRef
+	lat       lattice
 	lineDir   string
 }
 
@@ -94,15 +95,15 @@ func main() {
 	processContent(input, &s, proc)
 
 	// Check code chunks and maybe abort
-	lat := compileLattice(s.chunks)
+	s.lat = compileLattice(s.chunks)
 	errs := make([]error, 0)
-	if err := assertTopLevelChunksAreFilenames(lat); err != nil {
+	if err := assertTopLevelChunksAreFilenames(s.lat); err != nil {
 		errs = append(errs, err)
 	}
-	if err := assertNoCycles(lat); err != nil {
+	if err := assertNoCycles(s.lat); err != nil {
 		errs = append(errs, err)
 	}
-	if err := assertAllChunksDefined(s.chunks, lat); err != nil {
+	if err := assertAllChunksDefined(s.chunks, s.lat); err != nil {
 		errs = append(errs, err)
 	}
 	if len(errs) > 0 {
@@ -118,7 +119,7 @@ func main() {
 	}
 
 	// Write out code chunks
-	top := topLevelChunks(lat)
+	top := topLevelChunks(s.lat)
 	err = writeChunks(top, s, makeChunkWriter)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -126,7 +127,7 @@ func main() {
 	}
 
 	// Write out the markdown
-	md := markdownWithChunkRefs(&s, &lat).String()
+	md := markdownWithChunkRefs(&s).String()
 	output := markdown.ToHTML([]byte(md), nil, nil)
 	fmt.Println(string(output))
 
@@ -187,7 +188,7 @@ func proc(s *state, line string) {
 
 }
 
-func markdownWithChunkRefs(s *state, lat *lattice) *strings.Builder {
+func markdownWithChunkRefs(s *state) *strings.Builder {
 	b := strings.Builder{}
 	r := strings.NewReader(s.markdown.String())
 	sc := bufio.NewScanner(r)
@@ -199,7 +200,7 @@ func markdownWithChunkRefs(s *state, lat *lattice) *strings.Builder {
 		if ref, ok := s.chunkRefs[count]; ok {
 			str1 := addedToChunkRef(s, ref)
 			b.WriteString(str1)
-			str2 := usedInChunkRef(s, lat, ref)
+			str2 := usedInChunkRef(s, ref)
 			b.WriteString(str2)
 		}
 
@@ -519,10 +520,10 @@ func sectionsAsEnglish(secs []section) string {
 	return prefix + list
 }
 
-func usedInChunkRef(s *state, lat *lattice, ref chunkRef) string {
+func usedInChunkRef(s *state, ref chunkRef) string {
 	secs := make([]section, 0)
 
-	for parName, _ := range lat.parentsOf[ref.name] {
+	for parName, _ := range s.lat.parentsOf[ref.name] {
 		chunk := s.chunks[parName]
 		for i, code := range chunk.code {
 			if referredChunkName(code) == ref.name {

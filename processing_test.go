@@ -280,8 +280,8 @@ func TestProcForMarkdownWithChunkRefs_AddedToNowhereElse(t *testing.T) {
 	content := []byte(strings.Join(lines, "\n"))
 
 	processContent(content, &s, proc)
-	lat := compileLattice(s.chunks)
-	b := markdownWithChunkRefs(&s, &lat)
+	s.lat = compileLattice(s.chunks)
+	b := markdownWithChunkRefs(&s)
 	out := strings.Split(b.String(), "\n")
 
 	if len(out) != 9 {
@@ -326,8 +326,8 @@ func TestProcForMarkdownWithChunkRefs_AddedToOnce(t *testing.T) {
 	content := []byte(strings.Join(lines, "\n"))
 
 	processContent(content, &s, proc)
-	lat := compileLattice(s.chunks)
-	b := markdownWithChunkRefs(&s, &lat)
+	s.lat = compileLattice(s.chunks)
+	b := markdownWithChunkRefs(&s)
 	out := strings.Split(b.String(), "\n")
 
 	if len(out) != 15 {
@@ -381,8 +381,8 @@ func TestProcForMarkdownWithChunkRefs_AddedToTwice(t *testing.T) {
 	content := []byte(strings.Join(lines, "\n"))
 
 	processContent(content, &s, proc)
-	lat := compileLattice(s.chunks)
-	b := markdownWithChunkRefs(&s, &lat)
+	s.lat = compileLattice(s.chunks)
+	b := markdownWithChunkRefs(&s)
 	out := strings.Split(b.String(), "\n")
 
 	if len(out) != 21 {
@@ -442,8 +442,8 @@ func TestProcForMarkdownWithChunkRefs_AddedToThrice(t *testing.T) {
 	content := []byte(strings.Join(lines, "\n"))
 
 	processContent(content, &s, proc)
-	lat := compileLattice(s.chunks)
-	b := markdownWithChunkRefs(&s, &lat)
+	s.lat = compileLattice(s.chunks)
+	b := markdownWithChunkRefs(&s)
 	out := strings.Split(b.String(), "\n")
 
 	if len(out) != 27 {
@@ -470,8 +470,8 @@ func TestProcForMarkdownWithChunkRefs_UsedNowhere(t *testing.T) {
 	content := []byte(strings.Join(lines, "\n"))
 
 	processContent(content, &s, proc)
-	lat := compileLattice(s.chunks)
-	b := markdownWithChunkRefs(&s, &lat)
+	s.lat = compileLattice(s.chunks)
+	b := markdownWithChunkRefs(&s)
 	out := strings.Split(b.String(), "\n")
 
 	if len(out) != 5 {
@@ -505,8 +505,8 @@ func TestProcForMarkdownWithChunkRefs_UsedOnce(t *testing.T) {
 	content := []byte(strings.Join(lines, "\n"))
 
 	processContent(content, &s, proc)
-	lat := compileLattice(s.chunks)
-	b := markdownWithChunkRefs(&s, &lat)
+	s.lat = compileLattice(s.chunks)
+	b := markdownWithChunkRefs(&s)
 	out := strings.Split(b.String(), "\n")
 
 	if len(out) != 13 {
@@ -552,8 +552,8 @@ func TestProcForMarkdownWithChunkRefs_UsedTwice(t *testing.T) {
 	content := []byte(strings.Join(lines, "\n"))
 
 	processContent(content, &s, proc)
-	lat := compileLattice(s.chunks)
-	b := markdownWithChunkRefs(&s, &lat)
+	s.lat = compileLattice(s.chunks)
+	b := markdownWithChunkRefs(&s)
 	out := strings.Split(b.String(), "\n")
 
 	if len(out) != 19 {
@@ -601,8 +601,8 @@ func TestProcForMarkdownWithChunkRefs_UsedThrice(t *testing.T) {
 	content := []byte(strings.Join(lines, "\n"))
 
 	processContent(content, &s, proc)
-	lat := compileLattice(s.chunks)
-	b := markdownWithChunkRefs(&s, &lat)
+	s.lat = compileLattice(s.chunks)
+	b := markdownWithChunkRefs(&s)
 	out := strings.Split(b.String(), "\n")
 
 	if len(out) != 21 {
