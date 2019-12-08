@@ -11,6 +11,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -523,6 +524,7 @@ func sectionsAsEnglish(secs []section) string {
 func usedInChunkRef(s *state, ref chunkRef) string {
 	secs := make([]section, 0)
 
+	// Get the sections
 	for parName, _ := range s.lat.parentsOf[ref.name] {
 		chunk := s.chunks[parName]
 		for i, code := range chunk.code {
@@ -543,5 +545,28 @@ func usedInChunkRef(s *state, ref chunkRef) string {
 		return ""
 	}
 
+	// Sort the sections
+	sort.Slice(secs, func(i, j int) bool { return secs[i].less(secs[j]) })
+
 	return "\nUsed in " + sectionsAsEnglish(secs) + ".\n\n"
+}
+
+func (s1 *section) less(s2 section) bool {
+	n1, n2 := s1.nums, s2.nums
+	var limit int
+	if len(n1) < len(n2) {
+		limit = len(n1)
+	} else {
+		limit = len(n2)
+	}
+
+	for i := 0; i < limit; i++ {
+		switch {
+		case n1[i] < n2[i]:
+			return true
+		case n1[i] > n2[i]:
+			return false
+		}
+	}
+	return len(n1) < len(n2)
 }

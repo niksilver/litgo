@@ -151,3 +151,56 @@ func TestProcForNumsInSectionHeadings(t *testing.T) {
 		}
 	}
 }
+
+func TestLess(t *testing.T) {
+	s0 := section{[]int(nil), ""}
+	s1 := section{[]int{1}, ""}
+	s2 := section{[]int{2}, ""}
+	s2_4 := section{[]int{2, 4}, ""}
+	s2_5 := section{[]int{2, 5}, ""}
+	s3 := section{[]int{3}, ""}
+	s3_4 := section{[]int{3, 4}, ""}
+	s3_4_2 := section{[]int{3, 4, 2}, ""}
+	s3_4_3 := section{[]int{3, 4, 3}, ""}
+	data := []struct {
+		a   section
+		b   section
+		exp bool
+	}{
+		// Zero comparitors
+		{s0, s0, false},
+		{s0, s1, true},
+		{s1, s0, false},
+		{s0, s3_4_2, true},
+		{s3_4_2, s0, false},
+		// 1 comparitors
+		{s1, s1, false},
+		{s2, s2, false},
+		{s1, s2, true},
+		{s2, s1, false},
+		{s2, s2_4, true},
+		{s2_4, s2, false},
+		{s2, s3_4_3, true},
+		{s3_4_3, s2, false},
+		{s3, s3_4_3, true},
+		{s3_4_3, s3, false},
+		// 2 comparitors
+		{s2_4, s2_4, false},
+		{s2_4, s2_5, true},
+		{s2_5, s2_4, false},
+		{s3_4, s3_4_2, true},
+		{s3_4_2, s3_4, false},
+		// 3 comparitors
+		{s3_4_2, s3_4_2, false},
+		{s3_4_2, s3_4_3, true},
+		{s3_4_3, s3_4_2, false},
+	}
+
+	for _, d := range data {
+		act := d.a.less(d.b)
+		if act != d.exp {
+			t.Errorf("%#v < %#v? Expected %t but got %t",
+				d.a.nums, d.b.nums, d.exp, act)
+		}
+	}
+}
