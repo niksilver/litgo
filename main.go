@@ -63,27 +63,6 @@ type lattice struct {
 }
 
 // Functions
-func newState() state {
-	return state{
-		// Field initialisers for state
-		chunks:    make(map[string]*chunk),
-		chunkRefs: make(map[int]chunkRef),
-	}
-}
-
-func processContent(c []byte, s *state, proc func(*state, string)) {
-	r := strings.NewReader(string(c))
-	sc := bufio.NewScanner(r)
-	for sc.Scan() {
-		proc(s, sc.Text())
-	}
-	// Tidy-up after processing content
-	if s.inChunk {
-		s.warnings = append(s.warnings,
-			warning{s.fname, s.lineNum, "Content finished but chunk not closed"})
-	}
-
-}
 
 func main() {
 	s := newState()
@@ -145,6 +124,28 @@ func inputBytes(fname string) (input []byte, e error) {
 		}
 	}()
 	return ioutil.ReadAll(f)
+}
+
+func newState() state {
+	return state{
+		// Field initialisers for state
+		chunks:    make(map[string]*chunk),
+		chunkRefs: make(map[int]chunkRef),
+	}
+}
+
+func processContent(c []byte, s *state, proc func(*state, string)) {
+	r := strings.NewReader(string(c))
+	sc := bufio.NewScanner(r)
+	for sc.Scan() {
+		proc(s, sc.Text())
+	}
+	// Tidy-up after processing content
+	if s.inChunk {
+		s.warnings = append(s.warnings,
+			warning{s.fname, s.lineNum, "Content finished but chunk not closed"})
+	}
+
 }
 
 func proc(s *state, line string) {

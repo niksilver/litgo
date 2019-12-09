@@ -18,6 +18,44 @@ import (
 @{Functions}
 ---
 
+And here is the main loop:
+
+--- Functions
+
+func main() {
+    s := newState()
+    input, err := inputBytes(s.fname)
+    if err != nil {
+        fmt.Println(err.Error())
+        return
+    }
+
+    processContent(input, &s, proc)
+
+    @{Check code chunks and maybe abort}
+
+    @{Write out warnings}
+
+    @{Write out code chunks}
+
+    @{Write out the markdown}
+}
+
+func inputBytes(fname string) (input []byte, e error) {
+    f, err := os.Open(fname)
+    if err != nil {
+        return nil, err
+    }
+    defer func() {
+        if err := f.Close(); err != nil {
+            e = err
+        }
+    }()
+    return ioutil.ReadAll(f)
+}
+
+---
+
 
 @s Processing content: Basic structure
 
@@ -50,7 +88,7 @@ type state struct {
 
 ---
 
---- Functions
+--- Functions +=
 func newState() state {
     return state{
         @{Field initialisers for state}
@@ -64,38 +102,6 @@ func processContent(c []byte, s *state, proc func(*state, string)) {
         proc(s, sc.Text())
     }
     @{Tidy-up after processing content}
-}
-
-func main() {
-    s := newState()
-    input, err := inputBytes(s.fname)
-    if err != nil {
-        fmt.Println(err.Error())
-        return
-    }
-
-    processContent(input, &s, proc)
-
-    @{Check code chunks and maybe abort}
-
-    @{Write out warnings}
-
-    @{Write out code chunks}
-
-    @{Write out the markdown}
-}
-
-func inputBytes(fname string) (input []byte, e error) {
-    f, err := os.Open(fname)
-    if err != nil {
-        return nil, err
-    }
-    defer func() {
-        if err := f.Close(); err != nil {
-            e = err
-        }
-    }()
-    return ioutil.ReadAll(f)
 }
 
 ---
