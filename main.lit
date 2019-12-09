@@ -877,6 +877,7 @@ func (s1 *section) less(s2 section) bool {
 We simply read the input from a file. Initially it has a fixed name.
 
 --- Read input in main loop
+s.fname = "input.lit"
 input, err := inputBytes(s.fname)
 if err != nil {
     fmt.Println(err.Error())

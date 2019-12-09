@@ -68,6 +68,7 @@ func main() {
 	s := newState()
 
 	// Read input in main loop
+	s.fname = "input.lit"
 	input, err := inputBytes(s.fname)
 	if err != nil {
 		fmt.Println(err.Error())
