@@ -66,6 +66,8 @@ type lattice struct {
 
 func main() {
 	s := newState()
+
+	// Read input in main loop
 	input, err := inputBytes(s.fname)
 	if err != nil {
 		fmt.Println(err.Error())

@@ -24,11 +24,8 @@ And here is the main loop:
 
 func main() {
     s := newState()
-    input, err := inputBytes(s.fname)
-    if err != nil {
-        fmt.Println(err.Error())
-        return
-    }
+
+    @{Read input in main loop}
 
     processContent(input, &s, proc)
 
@@ -41,6 +38,22 @@ func main() {
     @{Write out the markdown}
 }
 
+---
+
+
+@s Read input
+
+We simply read the input from a file. Initially it has a fixed name.
+
+--- Read input in main loop
+input, err := inputBytes(s.fname)
+if err != nil {
+    fmt.Println(err.Error())
+    return
+}
+---
+
+--- Functions +=
 func inputBytes(fname string) (input []byte, e error) {
     f, err := os.Open(fname)
     if err != nil {
