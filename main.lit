@@ -41,35 +41,6 @@ func main() {
 ---
 
 
-@s Read input
-
-We simply read the input from a file. Initially it has a fixed name.
-
---- Read input in main loop
-input, err := inputBytes(s.fname)
-if err != nil {
-    fmt.Println(err.Error())
-    return
-}
----
-
---- Functions +=
-func inputBytes(fname string) (input []byte, e error) {
-    f, err := os.Open(fname)
-    if err != nil {
-        return nil, err
-    }
-    defer func() {
-        if err := f.Close(); err != nil {
-            e = err
-        }
-    }()
-    return ioutil.ReadAll(f)
-}
-
----
-
-
 @s Processing content: Basic structure
 
 We start with a file, from which we get a
@@ -139,36 +110,6 @@ func proc(s *state, line string) {
     @{Track section changes}
     @{Collect lines in code chunks}
     @{Send surviving lines to markdown}
-}
-
----
-
-
-@s Outputting the markdown: Basic output
-
-In theory we can just write out the markdown as one big string in the
-`markdown` field of the state. But we also want to insert post-chunk
-references, and we can do that only if we output the markdown a line
-at a time.
-
---- Write out the markdown
-md := markdownWithChunkRefs(&s).String()
-output := markdown.ToHTML([]byte(md), nil, nil)
-fmt.Println(string(output))
----
-
---- Functions +=
-func markdownWithChunkRefs(s *state) *strings.Builder {
-    b := strings.Builder{}
-    r := strings.NewReader(s.markdown.String())
-    sc := bufio.NewScanner(r)
-    count := 0
-    for sc.Scan() {
-        count ++
-        b.WriteString(sc.Text() + "\n")
-        @{Include post-chunk reference if necessary}
-    }
-    return &b
 }
 
 ---
@@ -762,6 +703,36 @@ func lineDirective(dir string, fname string, n int) string {
 ---
 
 
+@s Outputting the markdown: Basic output
+
+In theory we can just write out the markdown as one big string in the
+`markdown` field of the state. But we also want to insert post-chunk
+references, and we can do that only if we output the markdown a line
+at a time.
+
+--- Write out the markdown
+md := markdownWithChunkRefs(&s).String()
+output := markdown.ToHTML([]byte(md), nil, nil)
+fmt.Println(string(output))
+---
+
+--- Functions +=
+func markdownWithChunkRefs(s *state) *strings.Builder {
+    b := strings.Builder{}
+    r := strings.NewReader(s.markdown.String())
+    sc := bufio.NewScanner(r)
+    count := 0
+    for sc.Scan() {
+        count ++
+        b.WriteString(sc.Text() + "\n")
+        @{Include post-chunk reference if necessary}
+    }
+    return &b
+}
+
+---
+
+
 @s Outputting the markdown: Including chunk references
 
 When outputting the markdown we may be outputting a line that's the
@@ -900,4 +871,33 @@ func (s1 *section) less(s2 section) bool {
 }
 
 ---
+
+@s Reading the input
+
+We simply read the input from a file. Initially it has a fixed name.
+
+--- Read input in main loop
+input, err := inputBytes(s.fname)
+if err != nil {
+    fmt.Println(err.Error())
+    return
+}
+---
+
+--- Functions +=
+func inputBytes(fname string) (input []byte, e error) {
+    f, err := os.Open(fname)
+    if err != nil {
+        return nil, err
+    }
+    defer func() {
+        if err := f.Close(); err != nil {
+            e = err
+        }
+    }()
+    return ioutil.ReadAll(f)
+}
+
+---
+
 

@@ -115,19 +115,6 @@ func main() {
 
 }
 
-func inputBytes(fname string) (input []byte, e error) {
-	f, err := os.Open(fname)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			e = err
-		}
-	}()
-	return ioutil.ReadAll(f)
-}
-
 func newState() state {
 	return state{
 		// Field initialisers for state
@@ -190,26 +177,6 @@ func proc(s *state, line string) {
 	// Send surviving lines to markdown
 	s.markdown.WriteString(line + "\n")
 
-}
-
-func markdownWithChunkRefs(s *state) *strings.Builder {
-	b := strings.Builder{}
-	r := strings.NewReader(s.markdown.String())
-	sc := bufio.NewScanner(r)
-	count := 0
-	for sc.Scan() {
-		count++
-		b.WriteString(sc.Text() + "\n")
-		// Include post-chunk reference if necessary
-		if ref, ok := s.chunkRefs[count]; ok {
-			str1 := addedToChunkRef(s, ref)
-			b.WriteString(str1)
-			str2 := usedInChunkRef(s, ref)
-			b.WriteString(str2)
-		}
-
-	}
-	return &b
 }
 
 func (s *section) toString() string {
@@ -486,6 +453,26 @@ func lineDirective(dir string, fname string, n int) string {
 	return out + "\n"
 }
 
+func markdownWithChunkRefs(s *state) *strings.Builder {
+	b := strings.Builder{}
+	r := strings.NewReader(s.markdown.String())
+	sc := bufio.NewScanner(r)
+	count := 0
+	for sc.Scan() {
+		count++
+		b.WriteString(sc.Text() + "\n")
+		// Include post-chunk reference if necessary
+		if ref, ok := s.chunkRefs[count]; ok {
+			str1 := addedToChunkRef(s, ref)
+			b.WriteString(str1)
+			str2 := usedInChunkRef(s, ref)
+			b.WriteString(str2)
+		}
+
+	}
+	return &b
+}
+
 func addedToChunkRef(s *state, ref chunkRef) string {
 	chunk := s.chunks[ref.name]
 	secs := make([]section, len(chunk.sec))
@@ -572,4 +559,17 @@ func (s1 *section) less(s2 section) bool {
 		}
 	}
 	return len(n1) < len(n2)
+}
+
+func inputBytes(fname string) (input []byte, e error) {
+	f, err := os.Open(fname)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			e = err
+		}
+	}()
+	return ioutil.ReadAll(f)
 }
