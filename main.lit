@@ -25,6 +25,8 @@ And here is the main loop:
 func main() {
     s := newState()
 
+    @{Update the state according to the command line}
+
     @{Read input in main loop}
 
     processContent(input, &s, proc)
@@ -872,12 +874,48 @@ func (s1 *section) less(s2 section) bool {
 
 ---
 
+
+@s Read the command line
+
+The command line is:
+
+    cmd <input-file>
+
+      <input-file> can be - (or omit it) to indicate stdin.
+
+--- Imports +=
+"flag"
+---
+
+--- Update the state according to the command line
+flag.Parse()
+if flag.NArg() == 0 {
+    s.fname = "-"
+} else if flag.NArg() == 1 {
+    s.fname = flag.Arg(0)
+} else if flag.NArg() > 1 {
+    fmt.Print("Too many arguments\n\n")
+    printHelp()
+    return
+}
+---
+
+--- Functions +=
+func printHelp() {
+    fmt.Print(`litgo <input-file>
+    <input-file> can be - (or be omitted) to indicate stdin.
+`)
+}
+
+---
+
+
 @s Reading the input
 
-We simply read the input from a file. Initially it has a fixed name.
+We simply read the input from a file. If the filename is `"-"` then
+we use Stdin.
 
 --- Read input in main loop
-s.fname = "input.lit"
 input, err := inputBytes(s.fname)
 if err != nil {
     fmt.Println(err.Error())
@@ -887,7 +925,14 @@ if err != nil {
 
 --- Functions +=
 func inputBytes(fname string) (input []byte, e error) {
-    f, err := os.Open(fname)
+    var f *os.File
+    var err error
+    if fname == "-" {
+        f = os.Stdin
+    } else {
+        f, err = os.Open(fname)
+    }
+
     if err != nil {
         return nil, err
     }

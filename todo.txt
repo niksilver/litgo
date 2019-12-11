@@ -9,11 +9,9 @@ Sections
 - Warning when a section jumps a level (e.g. 1 to 3, or nothing to 2)
 
 I/O
-- Use command line args
-- Read from a file
-- Read from stdin
-- Write to a file
-- Write to stdout
+- Write markup to a file specified by the command line
+- Write markup to stdout
+- Write code to files
 
 Done
 ----
@@ -28,3 +26,7 @@ Sections
 
 Refactoring
 - Put the lattice into the state.
+
+I/O
+- Read from a file specified by the command line
+- Read from stdin

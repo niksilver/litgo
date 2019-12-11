@@ -4,6 +4,7 @@ package main
 import (
 	// Imports
 	"bufio"
+	"flag"
 	"fmt"
 	"github.com/gomarkdown/markdown"
 	"io"
@@ -67,8 +68,19 @@ type lattice struct {
 func main() {
 	s := newState()
 
+	// Update the state according to the command line
+	flag.Parse()
+	if flag.NArg() == 0 {
+		s.fname = "-"
+	} else if flag.NArg() == 1 {
+		s.fname = flag.Arg(0)
+	} else if flag.NArg() > 1 {
+		fmt.Print("Too many arguments\n\n")
+		printHelp()
+		return
+	}
+
 	// Read input in main loop
-	s.fname = "input.lit"
 	input, err := inputBytes(s.fname)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -562,8 +574,21 @@ func (s1 *section) less(s2 section) bool {
 	return len(n1) < len(n2)
 }
 
+func printHelp() {
+	fmt.Print(`litgo <input-file>
+    <input-file> can be - (or be omitted) to indicate stdin.
+`)
+}
+
 func inputBytes(fname string) (input []byte, e error) {
-	f, err := os.Open(fname)
+	var f *os.File
+	var err error
+	if fname == "-" {
+		f = os.Stdin
+	} else {
+		f, err = os.Open(fname)
+	}
+
 	if err != nil {
 		return nil, err
 	}
