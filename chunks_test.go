@@ -8,18 +8,31 @@ import (
 	"testing"
 )
 
+// A string.Builder we can also close
+type builderWriteCloser struct {
+	*strings.Builder
+}
+
+func (bwc builderWriteCloser) Close() error {
+	return nil
+}
+
 // A writer that will eventually produce an error
-type BadBuilder struct {
-	sb     strings.Builder
+type badWriteCloser struct {
+	sb     *strings.Builder
 	writes int
 }
 
-func (b *BadBuilder) WriteString(s string) (int, error) {
-	if b.writes >= 3 {
-		return 0, fmt.Errorf("BadBuilder has given up writing")
+func (bwc badWriteCloser) Write(p []byte) (n int, err error) {
+	if bwc.writes+len(p) >= 12 {
+		return 0, fmt.Errorf("Bad writer has given up writing")
 	}
-	b.writes++
-	return b.sb.WriteString(s)
+	bwc.writes += len(p)
+	return bwc.sb.Write(p)
+}
+
+func (bwc badWriteCloser) Close() error {
+	return nil
 }
 
 func TestWriteChunks_Okay(t *testing.T) {
@@ -56,10 +69,10 @@ Line 2.2
 `
 
 	outputs := make(map[string]*strings.Builder)
-	wFact := func(name string) (io.StringWriter, error) {
+	wFact := func(name string) (io.WriteCloser, error) {
 		outputs[name] = &strings.Builder{}
-		w := outputs[name]
-		return w, nil
+		b := outputs[name]
+		return builderWriteCloser{b}, nil
 	}
 	top := []string{"One", "Two"}
 	chunks := map[string]*chunk{
@@ -132,10 +145,11 @@ func TestWriteChunks_ErrorWriting(t *testing.T) {
 	// Line 1.4   17
 	// ```        18
 
-	outputs := make(map[string]*BadBuilder)
-	wFact := func(name string) (io.StringWriter, error) {
-		outputs[name] = &BadBuilder{}
-		return outputs[name], nil
+	outputs := make(map[string]*strings.Builder)
+	wFact := func(name string) (io.WriteCloser, error) {
+		outputs[name] = &strings.Builder{}
+		w := outputs[name]
+		return badWriteCloser{w, 0}, nil
 	}
 
 	top := []string{"One", "Two"}
@@ -195,7 +209,9 @@ func TestWriteChunks_IndentProperly(t *testing.T) {
 `
 
 	b := strings.Builder{}
-	wFact := func(n string) (io.StringWriter, error) { return &b, nil }
+	wFact := func(n string) (io.WriteCloser, error) {
+		return builderWriteCloser{&b}, nil
+	}
 	top := []string{"One"}
 	chunks := map[string]*chunk{
 		"One": &chunk{
@@ -273,10 +289,10 @@ Line 2.2
 `
 
 	outputs := make(map[string]*strings.Builder)
-	wFact := func(name string) (io.StringWriter, error) {
+	wFact := func(name string) (io.WriteCloser, error) {
 		outputs[name] = &strings.Builder{}
-		w := outputs[name]
-		return w, nil
+		b := outputs[name]
+		return builderWriteCloser{b}, nil
 	}
 	top := []string{"One", "Two"}
 	chunks := map[string]*chunk{

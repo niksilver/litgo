@@ -580,12 +580,13 @@ To output our code chunks we need three things:
 * The top level chunks (filenames); and
 * The state, including chunks themselves and the wider data about
   whether line directives should be printed, the current filename, etc; and
-* A writer factory: i.e. a way to create an appropriate io.StringWriter
-  for a given filename.
-  (This would normally be to a file, but might be a string builder for
-  testing purposes.)
+* A way to get a WriteCloser:
+  i.e. a way to create something that will open a writable file for
+  a given filename (or string buffer for testing) and then close it later.
 
-Then for each filename we create its writer, and write its chunks.
+Then for each filename we create its create its WriteCloser,
+and write its chunk strings.
+
 Each time we include a chunk we should indent it by the same indent
 as the chunk reference was indented by---the actual string (tabs or spaces),
 not just what we think the indent count is.
@@ -601,7 +602,7 @@ lineDir string
 
 --- Write out code chunks
 top := topLevelChunks(s.lat)
-err = writeChunks(top, s, makeChunkWriter)
+err = writeChunks(top, s, getWriteCloser)
 if err != nil {
     fmt.Println(err.Error())
     return
@@ -613,14 +614,27 @@ if err != nil {
 ---
 
 --- Functions +=
-func writeChunks(top []string, s state, wf func(string) (io.StringWriter, error)) error {
+func writeChunks(
+        top []string,
+        s state,
+        getWC func(string) (io.WriteCloser, error)) error {
+
     for _, name := range top {
-        w, err := wf(name)
+        wc, err := getWC(name)
         if err != nil {
             return err
         }
-        err = writeChunk(name, s, w, "")
+        bw := bufio.NewWriter(wc)
+        err = writeChunk(name, s, bw, "")
         if err != nil {
+            wc.Close()
+            return err
+        }
+        if err := bw.Flush(); err != nil {
+            wc.Close()
+            return err
+        }
+        if err := wc.Close(); err != nil {
             return err
         }
     }
@@ -629,12 +643,12 @@ func writeChunks(top []string, s state, wf func(string) (io.StringWriter, error)
     return nil
 }
 
-func makeChunkWriter(name string) (io.StringWriter, error) {
-    f, err := os.Open(name)
+func getWriteCloser(name string) (io.WriteCloser, error) {
+    f, err := os.Create(name)
     if err != nil {
         return nil, err
     }
-    return bufio.NewWriter(f), nil
+    return f, nil
 }
 
 ---
@@ -647,7 +661,7 @@ When we write one chunk we need to
 --- Functions +=
 func writeChunk(name string,
         s state,
-        w io.StringWriter,
+        w *bufio.Writer,
         indent string) error {
 
     chunk := *s.chunks[name]

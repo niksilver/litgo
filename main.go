@@ -115,7 +115,7 @@ func main() {
 
 	// Write out code chunks
 	top := topLevelChunks(s.lat)
-	err = writeChunks(top, s, makeChunkWriter)
+	err = writeChunks(top, s, getWriteCloser)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -389,14 +389,27 @@ func assertAllChunksDefined(chunks map[string]*chunk, lat lattice) error {
 		s, strings.Join(missing, ", "))
 }
 
-func writeChunks(top []string, s state, wf func(string) (io.StringWriter, error)) error {
+func writeChunks(
+	top []string,
+	s state,
+	getWC func(string) (io.WriteCloser, error)) error {
+
 	for _, name := range top {
-		w, err := wf(name)
+		wc, err := getWC(name)
 		if err != nil {
 			return err
 		}
-		err = writeChunk(name, s, w, "")
+		bw := bufio.NewWriter(wc)
+		err = writeChunk(name, s, bw, "")
 		if err != nil {
+			wc.Close()
+			return err
+		}
+		if err := bw.Flush(); err != nil {
+			wc.Close()
+			return err
+		}
+		if err := wc.Close(); err != nil {
 			return err
 		}
 	}
@@ -405,17 +418,17 @@ func writeChunks(top []string, s state, wf func(string) (io.StringWriter, error)
 	return nil
 }
 
-func makeChunkWriter(name string) (io.StringWriter, error) {
-	f, err := os.Open(name)
+func getWriteCloser(name string) (io.WriteCloser, error) {
+	f, err := os.Create(name)
 	if err != nil {
 		return nil, err
 	}
-	return bufio.NewWriter(f), nil
+	return f, nil
 }
 
 func writeChunk(name string,
 	s state,
-	w io.StringWriter,
+	w *bufio.Writer,
 	indent string) error {
 
 	chunk := *s.chunks[name]
