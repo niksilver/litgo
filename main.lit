@@ -254,10 +254,12 @@ type chunk struct {
 inChunk bool  // If we're currently reading a chunk
 chunkName string  // Name of current chunk
 chunks map[string]*chunk  // All the chunks found so far
+chunkStarts map[int]string  // Lines where a named chunk starts
 ---
 
 --- Field initialisers for state
 chunks: make(map[string]*chunk),
+chunkStarts: make(map[int]string),
 ---
 
 --- Collect lines in code chunks
@@ -279,6 +281,7 @@ if s.inChunk && line == "```" {
         s.chunks[s.chunkName] = &chunk{}
         ch = s.chunks[s.chunkName]
     }
+    s.chunkStarts[s.lineNum] = s.chunkName
     s.chunks[s.chunkName].line = append(ch.line, s.lineNum)
     s.chunks[s.chunkName].sec = append(ch.sec, s.sec)
     s.inChunk = true
@@ -722,25 +725,30 @@ func lineDirective(dir string, fname string, n int) string {
 @s Outputting the markdown: Basic output
 
 In theory we can just write out the markdown as one big string in the
-`markdown` field of the state. But we also want to insert post-chunk
-references, and we can do that only if we output the markdown a line
-at a time.
+`markdown` field of the state. But we also want to:
+
+* Amend each start-of-chunk section so it includes the coding language;
+* insert post-chunk references;
+
+and we can do that only if we output the markdown a line at a time.
 
 --- Write out the markdown
-md := markdownWithChunkRefs(&s).String()
+md := finalMarkdown(&s).String()
 output := markdown.ToHTML([]byte(md), nil, nil)
 fmt.Println(string(output))
 ---
 
 --- Functions +=
-func markdownWithChunkRefs(s *state) *strings.Builder {
+func finalMarkdown(s *state) *strings.Builder {
     b := strings.Builder{}
     r := strings.NewReader(s.markdown.String())
     sc := bufio.NewScanner(r)
     count := 0
     for sc.Scan() {
         count ++
-        b.WriteString(sc.Text() + "\n")
+        mkup := sc.Text()
+        @{Amend chunk starts to include coding language}
+        b.WriteString(mkup + "\n")
         @{Include post-chunk reference if necessary}
     }
     return &b
@@ -748,6 +756,52 @@ func markdownWithChunkRefs(s *state) *strings.Builder {
 
 ---
 
+
+@s Outputting the markdown: Including the coding language per chunk
+
+The start of any code chunk should be the backticks followed immediately
+(no spaces) by the language. For top level chunks this is the suffix
+of the filename. For other chunks we need to work up the lattice until
+we find the top chunk.
+
+--- Amend chunk starts to include coding language
+if name, okay := s.chunkStarts[count]; okay {
+    mkup = backticks(mkup)
+    top := topOf(name, s.lat)
+    re, _ := regexp.Compile("[-_a-zA-Z0-9]*$")
+    langs := re.FindStringSubmatch(top)
+    if langs != nil {
+        mkup += langs[0]
+    }
+}
+---
+
+--- Functions +=
+// topOf takes a chunk name and returns the top-most parent name
+func topOf(name string, lat lattice) string {
+    for len(lat.parentsOf[name]) > 0 {
+        // Get any parent of this chunk
+        for par := range lat.parentsOf[name] {
+            name = par
+            break
+        }
+    }
+    return name
+}
+
+// backticks gets all the backticks at the start of a string
+func backticks(mkup string) string {
+    out := ""
+    for _, roon := range mkup {
+        if roon != '`' {
+            return out
+        }
+        out += "`"
+    }
+    return out
+}
+
+---
 
 @s Outputting the markdown: Including chunk references
 

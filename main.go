@@ -23,14 +23,15 @@ type state struct {
 	markdown strings.Builder // Markdown output
 	lineNum  int
 	// More state fields
-	warnings  []warning
-	sec       section
-	inChunk   bool              // If we're currently reading a chunk
-	chunkName string            // Name of current chunk
-	chunks    map[string]*chunk // All the chunks found so far
-	chunkRefs map[int]chunkRef
-	lat       lattice
-	lineDir   string
+	warnings    []warning
+	sec         section
+	inChunk     bool              // If we're currently reading a chunk
+	chunkName   string            // Name of current chunk
+	chunks      map[string]*chunk // All the chunks found so far
+	chunkStarts map[int]string    // Lines where a named chunk starts
+	chunkRefs   map[int]chunkRef
+	lat         lattice
+	lineDir     string
 }
 
 type warning struct {
@@ -122,7 +123,7 @@ func main() {
 	}
 
 	// Write out the markdown
-	md := markdownWithChunkRefs(&s).String()
+	md := finalMarkdown(&s).String()
 	output := markdown.ToHTML([]byte(md), nil, nil)
 	fmt.Println(string(output))
 
@@ -131,8 +132,9 @@ func main() {
 func newState() state {
 	return state{
 		// Field initialisers for state
-		chunks:    make(map[string]*chunk),
-		chunkRefs: make(map[int]chunkRef),
+		chunks:      make(map[string]*chunk),
+		chunkStarts: make(map[int]string),
+		chunkRefs:   make(map[int]chunkRef),
 	}
 }
 
@@ -182,6 +184,7 @@ func proc(s *state, line string) {
 			s.chunks[s.chunkName] = &chunk{}
 			ch = s.chunks[s.chunkName]
 		}
+		s.chunkStarts[s.lineNum] = s.chunkName
 		s.chunks[s.chunkName].line = append(ch.line, s.lineNum)
 		s.chunks[s.chunkName].sec = append(ch.sec, s.sec)
 		s.inChunk = true
@@ -479,14 +482,26 @@ func lineDirective(dir string, fname string, n int) string {
 	return out + "\n"
 }
 
-func markdownWithChunkRefs(s *state) *strings.Builder {
+func finalMarkdown(s *state) *strings.Builder {
 	b := strings.Builder{}
 	r := strings.NewReader(s.markdown.String())
 	sc := bufio.NewScanner(r)
 	count := 0
 	for sc.Scan() {
 		count++
-		b.WriteString(sc.Text() + "\n")
+		mkup := sc.Text()
+		// Amend chunk starts to include coding language
+		if name, okay := s.chunkStarts[count]; okay {
+			mkup = backticks(mkup)
+			top := topOf(name, s.lat)
+			re, _ := regexp.Compile("[-_a-zA-Z0-9]*$")
+			langs := re.FindStringSubmatch(top)
+			if langs != nil {
+				mkup += langs[0]
+			}
+		}
+
+		b.WriteString(mkup + "\n")
 		// Include post-chunk reference if necessary
 		if ref, ok := s.chunkRefs[count]; ok {
 			str1 := addedToChunkRef(s, ref)
@@ -497,6 +512,28 @@ func markdownWithChunkRefs(s *state) *strings.Builder {
 
 	}
 	return &b
+}
+
+func topOf(name string, lat lattice) string {
+	for len(lat.parentsOf[name]) > 0 {
+		// Get any parent of this chunk
+		for par := range lat.parentsOf[name] {
+			name = par
+			break
+		}
+	}
+	return name
+}
+
+func backticks(mkup string) string {
+	out := ""
+	for _, roon := range mkup {
+		if roon != '`' {
+			return out
+		}
+		out += "`"
+	}
+	return out
 }
 
 func addedToChunkRef(s *state, ref chunkRef) string {

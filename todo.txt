@@ -9,7 +9,7 @@ Sections
 - Warning when a section jumps a level (e.g. 1 to 3, or nothing to 2)
 
 Chunks
-- HTML code chunks have the language suffix for code highlighting
+- Select line directives on the command line.
 
 I/O
 - Write markup to a file specified by the command line
@@ -33,3 +33,6 @@ I/O
 - Read from a file specified by the command line
 - Read from stdin
 - Write code to files
+
+Chunks
+- HTML code chunks have the language suffix for code highlighting
