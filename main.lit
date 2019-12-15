@@ -656,14 +656,24 @@ func writeChunk(name string,
             err = writeChunk(ref, s, w, code[0:iPos] + indent)
         } else {
             lnum := chunk.lines[i]
-            dir := lineDirective(s.lineDir, s.fname, lnum)
-            _, err = w.WriteString(indent + dir + code + "\n")
+            indentHere := initialWS(code)
+            dir := lineDirective(s.lineDir, indent + indentHere, s.fname, lnum)
+            _, err = w.WriteString(dir + indent + code + "\n")
         }
         if err != nil {
             return err
         }
     }
     return nil
+}
+
+func initialWS(code string) string {
+    whitespace, _ := regexp.Compile("^\\s*")
+    res := whitespace.FindStringSubmatch(code)
+    if len(res) == 0 {
+        return ""
+    }
+    return res[0]
 }
 
 ---
@@ -674,7 +684,7 @@ func writeChunk(name string,
 A line directive is only output if it's non-empty.
 
 --- Functions +=
-func lineDirective(dir string, fname string, n int) string {
+func lineDirective(dir string, indent string, fname string, n int) string {
     if dir == "" {
         return ""
     }
@@ -685,6 +695,7 @@ func lineDirective(dir string, fname string, n int) string {
         if perc {
             switch r {
             case '%': out += "%"
+            case 'i': out += indent
             case 'f': out += fname
             case 'l': out += fmt.Sprintf("%d", n)
             default: out += string(r)
@@ -924,7 +935,8 @@ The command line is:
 
       <input-file> can be - (or omit it) to indicate stdin.
       <ldir> is the line directive to preceed each code line.
-          Use %f for filename, %l for line number, %% for percent sign.
+          Use %f for filename, %l for line number,
+          %i to include indentation, %% for percent sign.
 
 --- Package level declarations +=
 var lDir string

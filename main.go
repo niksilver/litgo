@@ -453,8 +453,9 @@ func writeChunk(name string,
 			err = writeChunk(ref, s, w, code[0:iPos]+indent)
 		} else {
 			lnum := chunk.lines[i]
-			dir := lineDirective(s.lineDir, s.fname, lnum)
-			_, err = w.WriteString(indent + dir + code + "\n")
+			indentHere := initialWS(code)
+			dir := lineDirective(s.lineDir, indent+indentHere, s.fname, lnum)
+			_, err = w.WriteString(dir + indent + code + "\n")
 		}
 		if err != nil {
 			return err
@@ -463,7 +464,16 @@ func writeChunk(name string,
 	return nil
 }
 
-func lineDirective(dir string, fname string, n int) string {
+func initialWS(code string) string {
+	whitespace, _ := regexp.Compile("^\\s*")
+	res := whitespace.FindStringSubmatch(code)
+	if len(res) == 0 {
+		return ""
+	}
+	return res[0]
+}
+
+func lineDirective(dir string, indent string, fname string, n int) string {
 	if dir == "" {
 		return ""
 	}
@@ -475,6 +485,8 @@ func lineDirective(dir string, fname string, n int) string {
 			switch r {
 			case '%':
 				out += "%"
+			case 'i':
+				out += indent
 			case 'f':
 				out += fname
 			case 'l':

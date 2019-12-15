@@ -344,35 +344,140 @@ Line 2.2
 	}
 }
 
+func TestWriteChunks_OkayWithLineDirectiveIndents(t *testing.T) {
+	// Test code that looks like this (with line numbers):
+	//
+	// ``` One      1
+	//   Line 1.1   2
+	//   @{Two}     3
+	//   Line 1.3   4
+	// ```
+	// Gap line
+	// ``` Two      7
+	// Line 2.1     8
+	// ```
+
+	expectedWith := `  //line test.lit:2
+  Line 1.1
+  //line test.lit:8
+  Line 2.1
+  //line test.lit:4
+  Line 1.3
+`
+	expectedWithout := `//line test.lit:2
+  Line 1.1
+//line test.lit:8
+  Line 2.1
+//line test.lit:4
+  Line 1.3
+`
+
+	top := []string{"One"}
+	chunks := map[string]*chunk{
+		"One": &chunk{
+			[]int{1},
+			[]section{},
+			[]string{"  Line 1.1", "  @{Two}", "  Line 1.3"},
+			[]int{2, 3, 4},
+		},
+		"Two": &chunk{
+			[]int{7},
+			[]section{},
+			[]string{"Line 2.1"},
+			[]int{8},
+		},
+	}
+
+	// Test it with an indent
+
+	outputs1 := make(map[string]*strings.Builder)
+	wFact1 := func(name string) (io.WriteCloser, error) {
+		outputs1[name] = &strings.Builder{}
+		b := outputs1[name]
+		return builderWriteCloser{b}, nil
+	}
+	s1 := state{chunks: chunks, fname: "test.lit", lineDir: "%i//line %f:%l"}
+	err1 := writeChunks(top, s1, wFact1)
+
+	if err1 != nil {
+		t.Errorf("With: Should not have produced an error, but got %q",
+			err1.Error())
+	}
+
+	if len(outputs1) != 1 {
+		t.Errorf("With: Should have one top chunk output, but got %d: %v",
+			len(outputs1), reflect.ValueOf(outputs1).MapKeys())
+	}
+
+	if outputs1["One"] == nil {
+		t.Errorf("With: Chunk One did not have a Builder")
+	} else if outputs1["One"].String() != expectedWith {
+		t.Errorf("With: For chunk One expected\n%q\nbut got\n%q",
+			expectedWith, outputs1["One"].String())
+	}
+
+	// Test it without an indent
+
+	outputs2 := make(map[string]*strings.Builder)
+	wFact2 := func(name string) (io.WriteCloser, error) {
+		outputs2[name] = &strings.Builder{}
+		b := outputs2[name]
+		return builderWriteCloser{b}, nil
+	}
+	s2 := state{chunks: chunks, fname: "test.lit", lineDir: "//line %f:%l"}
+	err2 := writeChunks(top, s2, wFact2)
+
+	if err2 != nil {
+		t.Errorf("Without: Should not have produced an error, but got %q",
+			err2.Error())
+	}
+
+	if len(outputs2) != 1 {
+		t.Errorf("Without: Should have one top chunk output, but got %d: %v",
+			len(outputs2), reflect.ValueOf(outputs2).MapKeys())
+	}
+
+	if outputs2["One"] == nil {
+		t.Errorf("Without: Chunk One did not have a Builder")
+	} else if outputs2["One"].String() != expectedWithout {
+		t.Errorf("Without: For chunk One expected\n%q\nbut got\n%q",
+			expectedWithout, outputs2["One"].String())
+	}
+
+}
+
 func TestLineDirective(t *testing.T) {
 	data := []struct {
 		dir   string
+		ind   string
 		fname string
 		n     int
 		exp   string
 	}{
-		{"", "", 3, ""},
-		{"//Two", "", 3, "//Two\n"},
-		{"%%", "", 4, "%\n"},
-		{"*%%", "", 4, "*%\n"},
-		{"%%%%", "", 4, "%%\n"},
-		{"%l", "", 5, "5\n"},
-		{"%%l", "", 5, "%l\n"},
-		{"a%lb", "", 5, "a5b\n"},
-		{"a%%%lb", "", 6, "a%6b\n"},
-		{"%l%l%%%lk", "", 7, "77%7k\n"},
-		{"%f", "t.go", 7, "t.go\n"},
-		{"%%f", "t.go", 7, "%f\n"},
-		{"a%fb", "t.go", 8, "at.gob\n"},
-		{"a%%%fb", "t.go", 8, "a%t.gob\n"},
-		{"%f%l%%%fk", "t.go", 8, "t.go8%t.gok\n"},
+		{"", "", "", 3, ""},
+		{"//Two", "", "", 3, "//Two\n"},
+		{"%%", "", "", 4, "%\n"},
+		{"*%%", "", "", 4, "*%\n"},
+		{"%%%%", "", "", 4, "%%\n"},
+		{"%l", "", "", 5, "5\n"},
+		{"%%l", "", "", 5, "%l\n"},
+		{"a%lb", "", "", 5, "a5b\n"},
+		{"a%%%lb", "", "", 6, "a%6b\n"},
+		{"%l%l%%%lk", "", "", 7, "77%7k\n"},
+		{"%f", "", "t.go", 7, "t.go\n"},
+		{"%%f", "", "t.go", 7, "%f\n"},
+		{"a%fb", "", "t.go", 8, "at.gob\n"},
+		{"a%%%fb", "", "t.go", 8, "a%t.gob\n"},
+		{"%f%l%%%fk", "", "t.go", 8, "t.go8%t.gok\n"},
+		{"%i", "  ", "", 9, "  \n"},
+		{"a%ib", "  ", "", 9, "a  b\n"},
 	}
 
 	for _, d := range data {
-		act := lineDirective(d.dir, d.fname, d.n)
+		act := lineDirective(d.dir, d.ind, d.fname, d.n)
 		if act != d.exp {
-			t.Errorf("Directive %q in file %q at line %d, expected %q but got %q",
-				d.dir, d.fname, d.n, d.exp, act)
+			t.Errorf("Directive %q with indent %q in file %q at line %d, expected %q but got %q",
+				d.dir, d.ind, d.fname, d.n, d.exp, act)
 		}
 	}
 }
