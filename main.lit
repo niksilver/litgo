@@ -143,7 +143,7 @@ func proc(s *state, line string) {
     s.lineNum ++
     @{Track section changes}
     @{Collect lines in code chunks}
-    @{Send surviving lines to markdown}
+    s.markdown.WriteString(line + "\n")
 }
 
 ---
@@ -323,13 +323,6 @@ type chunkRef struct {
 
 --- Capture data for post-chunk references
 s.chunkRefs[s.lineNum] = chunkRef{ s.chunkName, s.sec }
----
-
-
-@s Processing content: Send surviving lines to markdown
-
---- Send surviving lines to markdown
-s.markdown.WriteString(line + "\n")
 ---
 
 

@@ -192,9 +192,7 @@ func proc(s *state, line string) {
 		s.inChunk = true
 	}
 
-	// Send surviving lines to markdown
 	s.markdown.WriteString(line + "\n")
-
 }
 
 func (s *section) toString() string {
