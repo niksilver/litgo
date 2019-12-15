@@ -65,7 +65,15 @@ type lattice struct {
 	parentsOf  map[string]set
 }
 
+var lDir string
+
 // Functions
+
+func init() {
+	// Flag initialisation
+	flag.StringVar(&lDir, "line-dir", "", "Pattern for line directives")
+
+}
 
 func main() {
 	// Set up the initial state
@@ -81,6 +89,9 @@ func main() {
 		fmt.Print("Too many arguments\n\n")
 		printHelp()
 		return
+	}
+	if lDir != "" {
+		s.lineDir = lDir
 	}
 
 	// Read the content
@@ -627,9 +638,12 @@ func (s1 *section) less(s2 section) bool {
 }
 
 func printHelp() {
-	fmt.Print(`litgo <input-file>
+	msg := `litgo <input-file>
     <input-file> can be - (or be omitted) to indicate stdin.
-`)
+    <ldir> is the line directive to preceed each code line.
+        Use %f for filename, %l for line number, %% for percent sign.
+`
+	fmt.Printf(msg)
 }
 
 func inputBytes(fname string) (input []byte, e error) {

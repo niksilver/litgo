@@ -3,6 +3,8 @@
 Here is chapter one...
 
 ``` chapter-one.go
+package main
+
 func main() {
     @{Later inclusion}
 }
@@ -11,5 +13,5 @@ func main() {
 # Later inclusion
 
 ``` Later inclusion
-fmt.Println("Somethign to be included multiple times")
+fmt.Println("Something to be included multiple times")
 ```

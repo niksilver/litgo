@@ -9,6 +9,7 @@ Sections
 - Warning when a section jumps a level (e.g. 1 to 3, or nothing to 2)
 
 Chunks
+- Line directives mustn't be indented without a %i
 - Select line directives on the command line.
 
 Directives

@@ -33,6 +33,10 @@ And here is the main loop:
 
 --- Functions
 
+func init() {
+    @{Flag initialisation}
+}
+
 func main() {
     @{Set up the initial state}
 
@@ -916,9 +920,20 @@ func (s1 *section) less(s2 section) bool {
 
 The command line is:
 
-    cmd <input-file>
+    cmd [--line-dir <ldir>] <input-file>
 
       <input-file> can be - (or omit it) to indicate stdin.
+      <ldir> is the line directive to preceed each code line.
+          Use %f for filename, %l for line number, %% for percent sign.
+
+--- Package level declarations +=
+var lDir string
+
+---
+
+--- Flag initialisation
+flag.StringVar(&lDir, "line-dir", "", "Pattern for line directives")
+---
 
 --- Update the state according to the command line
 flag.Parse()
@@ -931,13 +946,19 @@ if flag.NArg() == 0 {
     printHelp()
     return
 }
+if lDir != "" {
+    s.lineDir = lDir
+}
 ---
 
 --- Functions +=
 func printHelp() {
-    fmt.Print(`litgo <input-file>
+    msg := `litgo <input-file>
     <input-file> can be - (or be omitted) to indicate stdin.
-`)
+    <ldir> is the line directive to preceed each code line.
+        Use %f for filename, %l for line number, %% for percent sign.
+`
+    fmt.Printf(msg)
 }
 
 ---
