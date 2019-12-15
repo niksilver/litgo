@@ -11,8 +11,9 @@ Sections
 Chunks
 - Select line directives on the command line.
 
-Refactoring
-- Rearrange the design doc to present more of a design.
+Directives
+- Add a dummy "ignore" directive just to make sure line numbers
+  don't get corrupted.
 
 I/O
 - Write markup to a file specified by the command line
@@ -31,6 +32,7 @@ Sections
 
 Refactoring
 - Put the lattice into the state.
+- Rearrange the design doc to present more of a design.
 
 I/O
 - Read from a file specified by the command line

@@ -92,7 +92,7 @@ func newState() state {
 ---
 
 
-@s Reading the content: Basic structure
+@s Processing the content: Overview
 
 There is one pass reading the content, which is just designed to
 assemble the basic data structures, check for problems, and prepare
@@ -109,17 +109,12 @@ processContent(input, &s, proc)
 ---
 
 
-@s Processing content: Basic structure
+@s Processing content: Reading the document
 
-We start with a file, from which we get a
-slice of bytes (our input) but it will be processed
-line by line, as strings.
-We need to keep track of the (current) file, so we can include
-references to it in the generated source.
-We will do this by maintaining a state, and process each line with
-a given line processor, all the while updating the state.
-
-Each line will be received for processing without its end of line characters.
+When we process the content on the first pass through it's a slice of bytes.
+We turn that into lines (without the newline characters) and
+read those lines one at a time, updating the document data structure
+as we go..
 
 --- Functions +=
 func processContent(c []byte, s *state, proc func(*state, string)) {
@@ -136,13 +131,9 @@ func processContent(c []byte, s *state, proc func(*state, string)) {
 For the purposes of both testing and ease of developing our application
 we need a generic way of reacting to lines. The process is:
 
-    Line ->    Code processor    ->  Markdown processor
-            (May add more lines,
-             or drop this line,
-             or change the input
-             in other ways)
+    Line ->    Process    ->  Updated doc structure
 
-The line processor, which is `proc` in the code above,
+The line processor, which is `proc` in the code above and below,
 should just pass through any markdown, but it
 will need to process special commands and it will need to keep a
 track of the code as it is assembled in non-linear order.
