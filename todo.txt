@@ -11,6 +11,9 @@ Sections
 Chunks
 - Select line directives on the command line.
 
+Refactoring
+- Rearrange the design doc to present more of a design.
+
 I/O
 - Write markup to a file specified by the command line
 - Write markup to stdout

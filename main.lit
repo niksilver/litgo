@@ -23,23 +23,41 @@ And here is the main loop:
 --- Functions
 
 func main() {
-    s := newState()
+    @{Set up the initial state}
 
-    @{Update the state according to the command line}
+    @{Read the content}
 
-    @{Read input in main loop}
-
-    processContent(input, &s, proc)
-
-    @{Check code chunks and maybe abort}
-
-    @{Write out warnings}
-
-    @{Write out code chunks}
+    @{Write out the code files}
 
     @{Write out the markdown}
 }
 
+---
+
+
+@s The state: Structure and initialisation
+
+--- Set up the initial state
+s := newState()
+
+@{Update the state according to the command line}
+---
+
+
+@s Reading the content: Basic structure
+
+There is one pass reading the content, which is just designed to
+assemble the basic data structures, check for problems, and prepare
+for output (code and markup).
+
+--- Read the content
+@{Read the input into a byte array}
+
+processContent(input, &s, proc)
+
+@{Check code chunks and maybe abort}
+
+@{Write out warnings}
 ---
 
 
@@ -603,7 +621,7 @@ The writing process will return any error.
 lineDir string
 ---
 
---- Write out code chunks
+--- Write out the code files
 top := topLevelChunks(s.lat)
 err = writeChunks(top, s, getWriteCloser)
 if err != nil {
@@ -983,7 +1001,7 @@ func printHelp() {
 We simply read the input from a file. If the filename is `"-"` then
 we use Stdin.
 
---- Read input in main loop
+--- Read the input into a byte array
 input, err := inputBytes(s.fname)
 if err != nil {
     fmt.Println(err.Error())

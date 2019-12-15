@@ -67,6 +67,7 @@ type lattice struct {
 // Functions
 
 func main() {
+	// Set up the initial state
 	s := newState()
 
 	// Update the state according to the command line
@@ -81,7 +82,8 @@ func main() {
 		return
 	}
 
-	// Read input in main loop
+	// Read the content
+	// Read the input into a byte array
 	input, err := inputBytes(s.fname)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -114,7 +116,7 @@ func main() {
 		fmt.Printf("%s: %d: %s\n", w.fname, w.line, w.msg)
 	}
 
-	// Write out code chunks
+	// Write out the code files
 	top := topLevelChunks(s.lat)
 	err = writeChunks(top, s, getWriteCloser)
 	if err != nil {
