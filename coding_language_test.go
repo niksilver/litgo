@@ -63,3 +63,52 @@ func TestFinalMarkDown_TwoCodingLanguages(t *testing.T) {
 		}
 	}
 }
+
+func TestFinalMarkDown_MissingCodingLanguages(t *testing.T) {
+	s := newState()
+	lines := []string{
+		"# Language one", // Line 1
+		"",
+		"```", // Missing language // Line 3
+		"@{Chunk 1a}",
+		"```",
+		"",
+		"```Chunk 1a", // Line 7
+		"Content 1a.1",
+		"```",
+		// Post-chunk blank
+		// Post-chunk ref (used in...)
+		// Post-chunk blank
+		"# Language two",
+		"``` Chunk.two", // Line 14
+		"@{Chunk 2a}",
+		"```",
+		"",
+		"``` Chunk 2a", // Line 18
+		"Content 2a.1",
+		"```",
+		// Post-chunk blank
+		// Post-chunk ref (used in...)
+		// Post-chunk blank
+	}
+	expected := map[int]string{
+		3:  "```",
+		5:  "```",
+		7:  "```",
+		14: "```two",
+		18: "```two",
+	}
+	content := []byte(strings.Join(lines, "\n"))
+
+	processContent(content, &s, proc)
+	s.lat = compileLattice(s.chunks)
+	b := finalMarkdown(&s)
+	out := strings.Split(b.String(), "\n")
+
+	for n, s := range expected {
+		if out[n-1] != s {
+			t.Errorf("Expected line %d to be %q but got %q",
+				n, s, out[n-1])
+		}
+	}
+}

@@ -514,6 +514,7 @@ func finalMarkdown(s *state) *strings.Builder {
 	return &b
 }
 
+// topOf takes a chunk name and returns the top-most parent name
 func topOf(name string, lat lattice) string {
 	for len(lat.parentsOf[name]) > 0 {
 		// Get any parent of this chunk
@@ -525,6 +526,7 @@ func topOf(name string, lat lattice) string {
 	return name
 }
 
+// backticks gets all the backticks at the start of a string
 func backticks(mkup string) string {
 	out := ""
 	for _, roon := range mkup {
