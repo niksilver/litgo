@@ -19,19 +19,21 @@ import (
 
 // Package level declarations
 type state struct {
-	fname    string          // Name of file being processed, relative to working dir
-	markdown strings.Builder // Markdown output
-	lineNum  int
-	// More state fields
-	warnings    []warning
-	sec         section
-	inChunk     bool              // If we're currently reading a chunk
-	chunkName   string            // Name of current chunk
+	// Current processing state
+	fname     string    // Name of file being processed, relative to working dir
+	lineNum   int       // Current line number
+	chunkName string    // Name of current chunk
+	inChunk   bool      // If we're currently reading a chunk
+	warnings  []warning // Warnings we're collecting
+	sec       section   // Current section being read
+	// Document structure
+	markdown    strings.Builder   // Markdown after the initial read
 	chunks      map[string]*chunk // All the chunks found so far
 	chunkStarts map[int]string    // Lines where a named chunk starts
-	chunkRefs   map[int]chunkRef
-	lat         lattice
-	lineDir     string
+	chunkRefs   map[int]chunkRef  // Lines where other chunks are called in
+	lat         lattice           // A lattice of chunk parent/child relationships
+	// Other
+	lineDir string // The string pattern for line directives
 }
 
 type warning struct {
@@ -133,7 +135,6 @@ func main() {
 
 func newState() state {
 	return state{
-		// Field initialisers for state
 		chunks:      make(map[string]*chunk),
 		chunkStarts: make(map[int]string),
 		chunkRefs:   make(map[int]chunkRef),

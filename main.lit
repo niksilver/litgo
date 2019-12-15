@@ -37,10 +37,47 @@ func main() {
 
 @s The state: Structure and initialisation
 
+The state variable will keep track of more or less everything.
+Primarily there are two kinds of data it will hold: where we are
+as we read through the markup, and the overall data structures
+as they are built up (mainly the relationship between the code chunks).
+
 --- Set up the initial state
 s := newState()
 
 @{Update the state according to the command line}
+---
+
+--- Package level declarations
+type state struct {
+    // Current processing state
+    fname string  // Name of file being processed, relative to working dir
+    lineNum int  // Current line number
+    chunkName string  // Name of current chunk
+    inChunk bool  // If we're currently reading a chunk
+    warnings []warning  // Warnings we're collecting
+    sec section  // Current section being read
+    // Document structure
+    markdown strings.Builder  // Markdown after the initial read
+    chunks map[string]*chunk  // All the chunks found so far
+    chunkStarts map[int]string  // Lines where a named chunk starts
+    chunkRefs map[int]chunkRef  // Lines where other chunks are called in
+    lat lattice  // A lattice of chunk parent/child relationships
+    // Other
+    lineDir string  // The string pattern for line directives
+}
+
+---
+
+--- Functions +=
+func newState() state {
+    return state{
+        chunks: make(map[string]*chunk),
+        chunkStarts: make(map[int]string),
+        chunkRefs: make(map[int]chunkRef),
+    }
+}
+
 ---
 
 
@@ -82,23 +119,7 @@ Each line will be received for processing without its end of line characters.
 "strings"
 ---
 
---- Package level declarations
-type state struct {
-    fname string  // Name of file being processed, relative to working dir
-    markdown strings.Builder  // Markdown output
-    lineNum int
-    @{More state fields}
-}
-
----
-
 --- Functions +=
-func newState() state {
-    return state{
-        @{Field initialisers for state}
-    }
-}
-
 func processContent(c []byte, s *state, proc func(*state, string)) {
     r := strings.NewReader(string(c))
     sc := bufio.NewScanner(r)
@@ -147,10 +168,6 @@ type warning struct {
     msg string
 }
 
----
-
---- More state fields
-warnings []warning
 ---
 
 --- Write out warnings
@@ -235,10 +252,6 @@ func (s *section) next(line string) (section, bool) {
 
 We will track section changes in our state.
 
---- More state fields +=
-sec section
----
-
 --- Track section changes
 if !s.inChunk && strings.HasPrefix(line, "#") {
     var changed bool
@@ -266,18 +279,6 @@ type chunk struct {
     lines []int    // Line number for each line of code
 }
 
----
-
---- More state fields +=
-inChunk bool  // If we're currently reading a chunk
-chunkName string  // Name of current chunk
-chunks map[string]*chunk  // All the chunks found so far
-chunkStarts map[int]string  // Lines where a named chunk starts
----
-
---- Field initialisers for state
-chunks: make(map[string]*chunk),
-chunkStarts: make(map[int]string),
 ---
 
 --- Collect lines in code chunks
@@ -331,14 +332,6 @@ type chunkRef struct {
 
 ---
 
---- More state fields +=
-chunkRefs map[int]chunkRef
----
-
---- Field initialisers for state +=
-chunkRefs: make(map[int]chunkRef),
----
-
 --- Capture data for post-chunk references
 s.chunkRefs[s.lineNum] = chunkRef{ s.chunkName, s.sec }
 ---
@@ -362,10 +355,6 @@ a problem with the assembly. So we'll do checks on it first. Checks will be:
 
 (One chunk may have more than one parent, so the structure is more like
 a lattice; it's not a tree.)
-
---- More state fields +=
-lat lattice
----
 
 --- Check code chunks and maybe abort
 s.lat = compileLattice(s.chunks)
@@ -616,10 +605,6 @@ If the line directive string (`lineDir`) is anything other than an empty string
 that means we need to output them in that format.
 
 The writing process will return any error.
-
---- More state fields +=
-lineDir string
----
 
 --- Write out the code files
 top := topLevelChunks(s.lat)
