@@ -10,7 +10,18 @@
 package main
 
 import (
-    @{Imports}
+    "bufio"
+    "flag"
+    "fmt"
+    "github.com/gomarkdown/markdown"
+    "io"
+    "io/ioutil"
+    "os"
+    "reflect"
+    "regexp"
+    "sort"
+    "strconv"
+    "strings"
 )
 
 @{Package level declarations}
@@ -110,15 +121,6 @@ a given line processor, all the while updating the state.
 
 Each line will be received for processing without its end of line characters.
 
---- Imports
-"bufio"
-"fmt"
-"io/ioutil"
-"github.com/gomarkdown/markdown"
-"os"
-"strings"
----
-
 --- Functions +=
 func processContent(c []byte, s *state, proc func(*state, string)) {
     r := strings.NewReader(string(c))
@@ -186,10 +188,6 @@ A line represents a new section (or subsection) when it starts with a number
 of `#`s, some whitespace, and some text. So a section will
 be a structured object with functions to convert to and from strings.
 
-
---- Imports +=
-"strconv"
----
 
 --- Package level declarations +=
 type section struct {
@@ -439,10 +437,6 @@ func referredChunkName(str string) string {
 How to check if every top level chunk is a filename.
 A chunk is at the top level if it's got no parents.
 
---- Imports +=
-"regexp"
----
-
 --- Functions +=
 func assertTopLevelChunksAreFilenames(lat lattice) error {
     badNames := make([]string,0)
@@ -613,10 +607,6 @@ if err != nil {
     fmt.Println(err.Error())
     return
 }
----
-
---- Imports +=
-"io"
 ---
 
 --- Functions +=
@@ -816,10 +806,6 @@ There are two kinds of post-chunk references: "Added to in..."
 (siblings) and "Used in..." (parents). Both will be presented
 in its own paragraph.
 
---- Imports +=
-"reflect"
----
-
 --- Include post-chunk reference if necessary
 if ref, ok := s.chunkRefs[count]; ok {
     str1 := addedToChunkRef(s, ref)
@@ -888,10 +874,6 @@ find any line including the child. For each line found:
 
 Then add that to the list of parent sections. Phew!
 
---- Imports +=
-"sort"
----
-
 --- Functions +=
 func usedInChunkRef(s *state, ref chunkRef) string {
     secs := make([]section, 0)
@@ -953,10 +935,6 @@ The command line is:
     cmd <input-file>
 
       <input-file> can be - (or omit it) to indicate stdin.
-
---- Imports +=
-"flag"
----
 
 --- Update the state according to the command line
 flag.Parse()

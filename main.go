@@ -2,7 +2,6 @@
 package main
 
 import (
-	// Imports
 	"bufio"
 	"flag"
 	"fmt"
