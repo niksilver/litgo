@@ -326,7 +326,7 @@ s.chunkRefs[s.lineNum] = chunkRef{ s.chunkName, s.sec }
 ---
 
 
-@s Outputting the code: Checking code chunks
+@s Processing content: Checking code chunks
 
 We don't want to output the code and discover half way through we have
 a problem with the assembly. So we'll do checks on it first. Checks will be:
