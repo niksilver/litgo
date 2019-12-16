@@ -10,7 +10,7 @@ func main() {
 }
 ```
 
-# Later inclusion
+# Later inclusion<a name="later-inclusion"></a>
 
 ``` Later inclusion
 fmt.Println("Something to be included multiple times")

@@ -31,6 +31,7 @@ type state struct {
 	chunkStarts map[int]string    // Lines where a named chunk starts
 	chunkRefs   map[int]chunkRef  // Lines where other chunks are called in
 	lat         lattice           // A lattice of chunk parent/child relationships
+	secStarts   map[int]section   // Lines where a section starts
 	// Other
 	lineDir string // The string pattern for line directives
 }
@@ -148,6 +149,7 @@ func newState() state {
 		chunks:      make(map[string]*chunk),
 		chunkStarts: make(map[int]string),
 		chunkRefs:   make(map[int]chunkRef),
+		secStarts:   make(map[int]section),
 	}
 }
 
@@ -167,12 +169,15 @@ func processContent(c []byte, s *state, proc func(*state, string)) {
 
 func proc(s *state, line string) {
 	s.lineNum++
-	// Track section changes
+	// Track and mark section changes
 	if !s.inChunk && strings.HasPrefix(line, "#") {
 		var changed bool
 		s.sec, changed = s.sec.next(line)
 		if changed {
-			line = strings.Repeat("#", len(s.sec.nums)) + " " + s.sec.toString()
+			line = strings.Repeat("#", len(s.sec.nums)) +
+				" <a name=\"sec" + s.sec.numsToString() + "\"></a>" +
+				s.sec.toString()
+			s.secStarts[s.lineNum] = s.sec
 		}
 	}
 

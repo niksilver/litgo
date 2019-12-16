@@ -1,6 +1,7 @@
 package main
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -35,11 +36,16 @@ func TestProcForMarkdownWithChunkRefs_AddedToNowhereElse(t *testing.T) {
 			9, len(out), b.String())
 	}
 	for n, s := range expected {
-		if out[n-1] != s {
+		if stripHTML(out[n-1]) != s {
 			t.Errorf("Expected line %d to be %q but got %q",
 				n, s, out[n-1])
 		}
 	}
+}
+
+func stripHTML(str string) string {
+	html, _ := regexp.Compile("<.*>")
+	return html.ReplaceAllString(str, "")
 }
 
 func TestProcForMarkdownWithChunkRefs_AddedToOnce(t *testing.T) {

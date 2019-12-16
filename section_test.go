@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestNewSection(t *testing.T) {
+func TestSectionNext(t *testing.T) {
 	data := []struct {
 		curr       string
 		line       string
@@ -94,7 +94,7 @@ func toSection(line string) section {
 	return section{nums, line[a+1:]}
 }
 
-func TestProcForSectionTracking(t *testing.T) {
+func TestProcForSectionTrackingHeadings(t *testing.T) {
 	s := newState()
 	data := []struct {
 		line string // Next line
@@ -124,6 +124,71 @@ func TestProcForSectionTracking(t *testing.T) {
 	}
 }
 
+func TestProcForSectionTrackingStartLines(t *testing.T) {
+	s := newState()
+	data := []struct {
+		line  string // Next line
+		start bool   // True if it's supposed to be a section start
+	}{
+		{"Aaa", false},
+		{"# Title", true},
+		{"", false},
+		{"## Subtitle", true},
+		{"Content", false},
+		{"# Next", true},
+		{"More content", false},
+		{"```", false},
+		{"# Code comment", false},
+		{"```", false},
+		{"", false},
+		{"## After code", true},
+	}
+
+	// Process all the lines
+	for _, d := range data {
+		proc(&s, d.line)
+	}
+
+	for i, d := range data {
+		if _, okay := s.secStarts[i+1]; okay != d.start {
+			t.Errorf("Line %d: Expected section start %t but got %t",
+				i+1, d.start, okay)
+		}
+	}
+}
+
+func TestProcForSectionMarkingAnchors(t *testing.T) {
+	s := newState()
+	data := []struct {
+		line string // Next line
+		pref string // Prefix of amended line, if it includes a section anchor
+	}{
+		{"Aaa", ""},
+		{"# Title", "# <a name=\"sec1\"></a>"},
+		{"", ""},
+		{"## Subtitle", "## <a name=\"sec1.1\"></a>"},
+		{"Content", ""},
+		{"# Next", "# <a name=\"sec2\"></a>"},
+		{"More content", ""},
+		{"```", ""},
+		{"# Code comment", ""},
+		{"```", ""},
+		{"", ""},
+		{"## After code", "## <a name=\"sec2.1\"></a>"},
+	}
+
+	// Process all the lines
+	for i, d := range data {
+		proc(&s, d.line)
+		lines := strings.Split(s.markdown.String(), "\n")
+		line := lines[len(lines)-2]
+		if !strings.HasPrefix(line, d.pref) {
+			t.Errorf("Line %d: Expected prefix %q but line was %q",
+				i+1, d.pref, line)
+		}
+	}
+}
+
 func TestProcForNumsInSectionHeadings(t *testing.T) {
 	s := newState()
 	data := []struct {
@@ -145,14 +210,14 @@ func TestProcForNumsInSectionHeadings(t *testing.T) {
 		proc(&s, d.line)
 		line := s.markdown.String()
 		md := line[0 : len(line)-1]
-		if md != d.exp {
+		if stripHTML(md) != d.exp {
 			t.Errorf("Line %d: Expected markdown %q but got %q",
 				i+1, d.exp, md)
 		}
 	}
 }
 
-func TestLess(t *testing.T) {
+func TestSectionLess(t *testing.T) {
 	s0 := section{[]int(nil), ""}
 	s1 := section{[]int{1}, ""}
 	s2 := section{[]int{2}, ""}
