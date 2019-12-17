@@ -13,8 +13,7 @@ func TestProcessContent(t *testing.T) {
 	d := newDoc()
 	mockProc := func(sd stateDoc, in string) { called = true }
 
-	processContent(strings.NewReader("Hello"),
-		stateDoc{&state{}, &d}, mockProc)
+	processContent(strings.NewReader("Hello"), &state{}, &d, mockProc)
 
 	if !called {
 		t.Error("proc should have been called at least once")
@@ -23,10 +22,10 @@ func TestProcessContent(t *testing.T) {
 	// Process three lines in order
 	lines := make([]string, 0)
 	d = newDoc()
-	sd := stateDoc{&state{}, &d}
 	mockProc = func(sd stateDoc, in string) { lines = append(lines, in) }
 
-	processContent(strings.NewReader("One\nTwo\nThree"), sd, mockProc)
+	processContent(strings.NewReader("One\nTwo\nThree"),
+		&state{}, &d, mockProc)
 
 	if len(lines) != 3 {
 		t.Errorf("Should have returned 3 lines but got %d", len(lines))
@@ -202,7 +201,7 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 		{"testfile.lit", 11, "chunk not closed"},
 	}
 
-	processContent(r, stateDoc{&s, &d}, proc)
+	processContent(r, &s, &d, proc)
 
 	nWarn := len(s.warnings)
 	if nWarn != len(expected) {
@@ -249,7 +248,7 @@ func TestProcForChunkRefs(t *testing.T) {
 		13: chunkRef{"Chunk three", sec1},
 	}
 
-	processContent(r, stateDoc{&s, &d}, proc)
+	processContent(r, &s, &d, proc)
 
 	if len(d.chunkRefs) != len(expected) {
 		t.Errorf("Expected %d chunk refs but got %d. Map is %#v",

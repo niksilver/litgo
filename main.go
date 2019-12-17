@@ -44,6 +44,7 @@ type stateDoc struct {
 	*doc
 }
 
+type lineProc = func(stateDoc, string)
 type warning struct {
 	fName string
 	line  int
@@ -112,7 +113,7 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
-	processContent(fReader, stateDoc{&s, &d}, proc)
+	processContent(fReader, &s, &d, proc)
 	if err := fReader.Close(); err != nil {
 		fmt.Println(err.Error())
 		return
@@ -179,15 +180,15 @@ func fileReader(fName string) (io.ReadCloser, error) {
 	return f, err
 }
 
-func processContent(r io.Reader, sd stateDoc, proc func(stateDoc, string)) {
+func processContent(r io.Reader, s *state, d *doc, proc lineProc) {
 	sc := bufio.NewScanner(r)
 	for sc.Scan() {
-		proc(sd, sc.Text())
+		proc(stateDoc{s, d}, sc.Text())
 	}
 
-	if sd.inChunk {
-		sd.warnings = append(sd.warnings,
-			warning{sd.inName, sd.lineNum,
+	if s.inChunk {
+		s.warnings = append(s.warnings,
+			warning{s.inName, s.lineNum,
 				"Content finished but chunk not closed"})
 	}
 }
