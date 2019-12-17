@@ -173,7 +173,7 @@ func TestProcForChunkDetails(t *testing.T) {
 
 func TestProcForWarningsAroundChunks(t *testing.T) {
 	s := newState()
-	s.fname = "testfile.lit"
+	s.inName = "testfile.lit"
 	lines := []string{
 		"Title",
 		"",
@@ -189,7 +189,7 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 	expected := []struct {
-		fname string
+		fName string
 		line  int
 		subs  string
 	}{
@@ -209,7 +209,7 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 			continue
 		}
 		if expected[i].line != s.warnings[i].line ||
-			expected[i].fname != s.warnings[i].fname ||
+			expected[i].fName != s.warnings[i].fName ||
 			!strings.Contains(s.warnings[i].msg, expected[i].subs) {
 			t.Errorf("Expected warning index %d to be %v but got %v",
 				i, w, s.warnings)
@@ -219,7 +219,7 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 
 func TestProcForChunkRefs(t *testing.T) {
 	s := newState()
-	s.fname = "testfile.lit"
+	s.inName = "testfile.lit"
 	lines := []string{
 		"Opening text", // Line 1
 		"",

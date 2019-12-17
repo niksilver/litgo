@@ -316,7 +316,7 @@ Line 2.2
 		},
 	}
 
-	s := state{chunks: chunks, fname: "test.lit", lineDir: "//line %f:%l"}
+	s := state{chunks: chunks, inName: "test.lit", lineDir: "//line %f:%l"}
 	err := writeChunks(top, s, wFact)
 
 	if err != nil {
@@ -396,7 +396,7 @@ func TestWriteChunks_OkayWithLineDirectiveIndents(t *testing.T) {
 		b := outputs1[name]
 		return builderWriteCloser{b}, nil
 	}
-	s1 := state{chunks: chunks, fname: "test.lit", lineDir: "%i//line %f:%l"}
+	s1 := state{chunks: chunks, inName: "test.lit", lineDir: "%i//line %f:%l"}
 	err1 := writeChunks(top, s1, wFact1)
 
 	if err1 != nil {
@@ -424,7 +424,7 @@ func TestWriteChunks_OkayWithLineDirectiveIndents(t *testing.T) {
 		b := outputs2[name]
 		return builderWriteCloser{b}, nil
 	}
-	s2 := state{chunks: chunks, fname: "test.lit", lineDir: "//line %f:%l"}
+	s2 := state{chunks: chunks, inName: "test.lit", lineDir: "//line %f:%l"}
 	err2 := writeChunks(top, s2, wFact2)
 
 	if err2 != nil {
@@ -448,11 +448,11 @@ func TestWriteChunks_OkayWithLineDirectiveIndents(t *testing.T) {
 
 func TestLineDirective(t *testing.T) {
 	data := []struct {
-		dir   string
-		ind   string
-		fname string
-		n     int
-		exp   string
+		dir    string
+		ind    string
+		inName string
+		n      int
+		exp    string
 	}{
 		{"", "", "", 3, ""},
 		{"//Two", "", "", 3, "//Two\n"},
@@ -474,10 +474,10 @@ func TestLineDirective(t *testing.T) {
 	}
 
 	for _, d := range data {
-		act := lineDirective(d.dir, d.ind, d.fname, d.n)
+		act := lineDirective(d.dir, d.ind, d.inName, d.n)
 		if act != d.exp {
 			t.Errorf("Directive %q with indent %q in file %q at line %d, expected %q but got %q",
-				d.dir, d.ind, d.fname, d.n, d.exp, act)
+				d.dir, d.ind, d.inName, d.n, d.exp, act)
 		}
 	}
 }

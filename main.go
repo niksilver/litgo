@@ -18,7 +18,7 @@ import (
 // Package level declarations
 type state struct {
 	// Current processing state
-	fname     string    // Name of file being processed, relative to working dir
+	inName    string    // Name of file being processed, relative to working dir
 	lineNum   int       // Current line number
 	chunkName string    // Name of current chunk
 	inChunk   bool      // If we're currently reading a chunk
@@ -36,7 +36,7 @@ type state struct {
 }
 
 type warning struct {
-	fname string
+	fName string
 	line  int
 	msg   string
 }
@@ -82,9 +82,9 @@ func main() {
 	// Update the state according to the command line
 	flag.Parse()
 	if flag.NArg() == 0 {
-		s.fname = "-"
+		s.inName = "-"
 	} else if flag.NArg() == 1 {
-		s.fname = flag.Arg(0)
+		s.inName = flag.Arg(0)
 	} else if flag.NArg() > 1 {
 		fmt.Print("Too many arguments\n\n")
 		printHelp()
@@ -96,7 +96,7 @@ func main() {
 
 	// Read the content
 	// Do a first pass through the content
-	fReader, err := fileReader(s.fname)
+	fReader, err := fileReader(s.inName)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -128,7 +128,7 @@ func main() {
 
 	// Write out warnings
 	for _, w := range s.warnings {
-		fmt.Printf("%s: %d: %s\n", w.fname, w.line, w.msg)
+		fmt.Printf("%s: %d: %s\n", w.fName, w.line, w.msg)
 	}
 
 	// Write out the code files
@@ -155,13 +155,13 @@ func newState() state {
 	}
 }
 
-func fileReader(fname string) (io.ReadCloser, error) {
+func fileReader(fName string) (io.ReadCloser, error) {
 	var f *os.File
 	var err error
-	if fname == "-" {
+	if fName == "-" {
 		f = os.Stdin
 	} else {
-		f, err = os.Open(fname)
+		f, err = os.Open(fName)
 	}
 
 	return f, err
@@ -175,7 +175,7 @@ func processContent(r io.Reader, s *state, proc func(*state, string)) {
 	// Tidy-up after processing content
 	if s.inChunk {
 		s.warnings = append(s.warnings,
-			warning{s.fname, s.lineNum, "Content finished but chunk not closed"})
+			warning{s.inName, s.lineNum, "Content finished but chunk not closed"})
 	}
 
 }
@@ -208,7 +208,7 @@ func proc(s *state, line string) {
 		s.chunkName = strings.TrimSpace(line[3:])
 		if s.chunkName == "" {
 			s.warnings = append(s.warnings,
-				warning{s.fname, s.lineNum, "Chunk has no name"})
+				warning{s.inName, s.lineNum, "Chunk has no name"})
 		}
 		ch := s.chunks[s.chunkName]
 		if ch == nil {
@@ -468,7 +468,7 @@ func writeChunk(name string,
 		} else {
 			lnum := chunk.lines[i]
 			indentHere := initialWS(code)
-			dir := lineDirective(s.lineDir, indent+indentHere, s.fname, lnum)
+			dir := lineDirective(s.lineDir, indent+indentHere, s.inName, lnum)
 			_, err = w.WriteString(dir + indent + code + "\n")
 		}
 		if err != nil {
@@ -487,7 +487,7 @@ func initialWS(code string) string {
 	return res[0]
 }
 
-func lineDirective(dir string, indent string, fname string, n int) string {
+func lineDirective(dir string, indent string, fName string, n int) string {
 	if dir == "" {
 		return ""
 	}
@@ -502,7 +502,7 @@ func lineDirective(dir string, indent string, fname string, n int) string {
 			case 'i':
 				out += indent
 			case 'f':
-				out += fname
+				out += fName
 			case 'l':
 				out += fmt.Sprintf("%d", n)
 			default:
