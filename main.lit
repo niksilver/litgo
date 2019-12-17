@@ -664,11 +664,7 @@ func writeChunks(
 }
 
 func getWriteCloser(name string) (io.WriteCloser, error) {
-    f, err := os.Create(name)
-    if err != nil {
-        return nil, err
-    }
-    return f, nil
+    return os.Create(name)
 }
 
 ---

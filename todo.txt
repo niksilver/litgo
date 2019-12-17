@@ -11,16 +11,19 @@ Chunks
 
 Chapters
 - Follow chapter links and compile chapters.
-  - Add a chapter int to the definition of a section
   - Have a command line flag to say if the markdown file is book with chapters
+  - If reading chapters, makes sure to read a sequence of files.
+  - If reading chapters, preserve the section number between successive
+    files.
+- Allow links between chapters.
 
 Directives
 - Add a dummy "ignore" directive just to make sure line numbers
   don't get corrupted.
 
 I/O
-- Write markup to a file specified by the command line
-- Write markup to stdout
+- Write markup to input filename, but with an "html" suffix.
+- Write markup from stdin to "out.html".
 
 Done
 ----
