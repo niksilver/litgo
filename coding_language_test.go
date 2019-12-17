@@ -49,7 +49,7 @@ func TestFinalMarkDown_TwoCodingLanguages(t *testing.T) {
 		22: "```two",
 		26: "```two",
 	}
-	content := []byte(strings.Join(lines, "\n"))
+	content := strings.NewReader(strings.Join(lines, "\n"))
 
 	processContent(content, &s, proc)
 	s.lat = compileLattice(s.chunks)
@@ -98,7 +98,7 @@ func TestFinalMarkDown_MissingCodingLanguages(t *testing.T) {
 		14: "```two",
 		18: "```two",
 	}
-	content := []byte(strings.Join(lines, "\n"))
+	content := strings.NewReader(strings.Join(lines, "\n"))
 
 	processContent(content, &s, proc)
 	s.lat = compileLattice(s.chunks)

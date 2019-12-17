@@ -13,7 +13,7 @@ func TestProcessContent(t *testing.T) {
 	s := newState()
 	mockProc := func(s *state, in string) { called = true }
 
-	processContent([]byte("Hello"), &s, mockProc)
+	processContent(strings.NewReader("Hello"), &s, mockProc)
 
 	if !called {
 		t.Error("proc should have been called at least once")
@@ -24,7 +24,7 @@ func TestProcessContent(t *testing.T) {
 	s = newState()
 	mockProc = func(s *state, in string) { lines = append(lines, in) }
 
-	processContent([]byte("One\nTwo\nThree"), &s, mockProc)
+	processContent(strings.NewReader("One\nTwo\nThree"), &s, mockProc)
 
 	if len(lines) != 3 {
 		t.Errorf("Should have returned 3 lines but got %d", len(lines))
@@ -187,7 +187,7 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 		"``` Another chunk",
 		"Chunk content", // Chunk does not end
 	}
-	content := []byte(strings.Join(lines, "\n"))
+	r := strings.NewReader(strings.Join(lines, "\n"))
 	expected := []struct {
 		fname string
 		line  int
@@ -197,7 +197,7 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 		{"testfile.lit", 11, "chunk not closed"},
 	}
 
-	processContent(content, &s, proc)
+	processContent(r, &s, proc)
 
 	nWarn := len(s.warnings)
 	if nWarn != len(expected) {
@@ -237,14 +237,14 @@ func TestProcForChunkRefs(t *testing.T) {
 	}
 	sec0 := section{[]int(nil), ""}
 	sec1 := section{[]int{1}, "First section"}
-	content := []byte(strings.Join(lines, "\n"))
+	r := strings.NewReader(strings.Join(lines, "\n"))
 	expected := map[int]chunkRef{
 		5:  chunkRef{"Chunk one", sec0},
 		9:  chunkRef{"Chunk two", sec1},
 		13: chunkRef{"Chunk three", sec1},
 	}
 
-	processContent(content, &s, proc)
+	processContent(r, &s, proc)
 
 	if len(s.chunkRefs) != len(expected) {
 		t.Errorf("Expected %d chunk refs but got %d. Map is %#v",

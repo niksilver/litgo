@@ -15,3 +15,6 @@ test-one-code-file: tangle
 test-two-code-files: tangle
 	~/go/bin/litgo test/two-code-files.md
 
+test-non-existent-file: tangle
+	~/go/bin/litgo test/no-such-file.md
+

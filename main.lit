@@ -15,7 +15,6 @@ import (
     "fmt"
     "github.com/gomarkdown/markdown"
     "io"
-    "io/ioutil"
     "os"
     "reflect"
     "regexp"
@@ -101,17 +100,49 @@ func newState() state {
 @s Processing the content: Overview
 
 There is one pass reading the content, which is just designed to
-assemble the basic data structures, check for problems, and prepare
-for output (code and markup).
+assemble the basic data structures, make some light amendments,
+check for problems, and prepare for output (code and markup).
 
 --- Read the content
-@{Read the input into a byte array}
-
-processContent(input, &s, proc)
+@{Do a first pass through the content}
 
 @{Check code chunks and maybe abort}
 
 @{Write out warnings}
+---
+
+
+@s Processing the content: First pass, basic file handling
+
+We open a file, process the content, and close the file.
+If the filename is `"-"` then we use Stdin.
+
+--- Do a first pass through the content
+fReader, err := fileReader(s.fname)
+if err != nil {
+    fmt.Println(err.Error())
+    return
+}
+processContent(fReader, &s, proc)
+if err := fReader.Close(); err != nil {
+    fmt.Println(err.Error())
+    return
+}
+---
+
+--- Functions +=
+func fileReader(fname string) (io.ReadCloser, error) {
+    var f *os.File
+    var err error
+    if fname == "-" {
+        f = os.Stdin
+    } else {
+        f, err = os.Open(fname)
+    }
+
+    return f, err
+}
+
 ---
 
 
@@ -123,8 +154,7 @@ read those lines one at a time, updating the document data structure
 (including relationships between code chunks) as we go.
 
 --- Functions +=
-func processContent(c []byte, s *state, proc func(*state, string)) {
-    r := strings.NewReader(string(c))
+func processContent(r io.Reader, s *state, proc func(*state, string)) {
     sc := bufio.NewScanner(r)
     for sc.Scan() {
         proc(s, sc.Text())
@@ -977,43 +1007,6 @@ func printHelp() {
         Use %f for filename, %l for line number, %% for percent sign.
 `
     fmt.Printf(msg)
-}
-
----
-
-
-@s Reading the input
-
-We simply read the input from a file. If the filename is `"-"` then
-we use Stdin.
-
---- Read the input into a byte array
-input, err := inputBytes(s.fname)
-if err != nil {
-    fmt.Println(err.Error())
-    return
-}
----
-
---- Functions +=
-func inputBytes(fname string) (input []byte, e error) {
-    var f *os.File
-    var err error
-    if fname == "-" {
-        f = os.Stdin
-    } else {
-        f, err = os.Open(fname)
-    }
-
-    if err != nil {
-        return nil, err
-    }
-    defer func() {
-        if err := f.Close(); err != nil {
-            e = err
-        }
-    }()
-    return ioutil.ReadAll(f)
 }
 
 ---

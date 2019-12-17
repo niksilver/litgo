@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/gomarkdown/markdown"
 	"io"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"regexp"
@@ -96,14 +95,17 @@ func main() {
 	}
 
 	// Read the content
-	// Read the input into a byte array
-	input, err := inputBytes(s.fname)
+	// Do a first pass through the content
+	fReader, err := fileReader(s.fname)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-
-	processContent(input, &s, proc)
+	processContent(fReader, &s, proc)
+	if err := fReader.Close(); err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
 	// Check code chunks and maybe abort
 	s.lat = compileLattice(s.chunks)
@@ -153,8 +155,19 @@ func newState() state {
 	}
 }
 
-func processContent(c []byte, s *state, proc func(*state, string)) {
-	r := strings.NewReader(string(c))
+func fileReader(fname string) (io.ReadCloser, error) {
+	var f *os.File
+	var err error
+	if fname == "-" {
+		f = os.Stdin
+	} else {
+		f, err = os.Open(fname)
+	}
+
+	return f, err
+}
+
+func processContent(r io.Reader, s *state, proc func(*state, string)) {
 	sc := bufio.NewScanner(r)
 	for sc.Scan() {
 		proc(s, sc.Text())
@@ -661,24 +674,4 @@ func printHelp() {
         Use %f for filename, %l for line number, %% for percent sign.
 `
 	fmt.Printf(msg)
-}
-
-func inputBytes(fname string) (input []byte, e error) {
-	var f *os.File
-	var err error
-	if fname == "-" {
-		f = os.Stdin
-	} else {
-		f, err = os.Open(fname)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			e = err
-		}
-	}()
-	return ioutil.ReadAll(f)
 }

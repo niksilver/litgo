@@ -9,6 +9,11 @@ Sections
 
 Chunks
 
+Chapters
+- Follow chapter links and compile chapters.
+  - Add a chapter int to the definition of a section
+  - Have a command line flag to say if the markdown file is book with chapters
+
 Directives
 - Add a dummy "ignore" directive just to make sure line numbers
   don't get corrupted.
