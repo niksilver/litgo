@@ -116,7 +116,7 @@ func TestProcForSectionTrackingHeadings(t *testing.T) {
 	}
 
 	for i, p := range tData {
-		proc(stateDoc{&s, &d}, p.line)
+		proc(&s, &d, p.line)
 		strSec := s.sec.toString()
 		if strSec != p.exp {
 			t.Errorf("Line %d: Expected sec=%q but got %q",
@@ -148,7 +148,7 @@ func TestProcForSectionTrackingStartLines(t *testing.T) {
 
 	// Process all the lines
 	for _, p := range tData {
-		proc(stateDoc{&s, &d}, p.line)
+		proc(&s, &d, p.line)
 	}
 
 	for i, p := range tData {
@@ -182,7 +182,7 @@ func TestProcForSectionMarkingAnchors(t *testing.T) {
 
 	// Process all the lines
 	for i, p := range tData {
-		proc(stateDoc{&s, &d}, p.line)
+		proc(&s, &d, p.line)
 		lines := strings.Split(d.markdown.String(), "\n")
 		line := lines[len(lines)-2]
 		if !strings.HasPrefix(line, p.pref) {
@@ -211,7 +211,7 @@ func TestProcForNumsInSectionHeadings(t *testing.T) {
 
 	for i, p := range tData {
 		d.markdown = strings.Builder{}
-		proc(stateDoc{&s, &d}, p.line)
+		proc(&s, &d, p.line)
 		line := d.markdown.String()
 		md := line[0 : len(line)-1]
 		if stripHTML(md) != p.exp {

@@ -87,10 +87,6 @@ type doc struct {
     lineDir string  // The string pattern for line directives
 }
 
-type stateDoc struct {
-    *state
-    *doc
-}
 
 ---
 
@@ -164,14 +160,14 @@ read those lines one at a time, updating the document data structure
 (including relationships between code chunks) as we go.
 
 --- Package level declarations +=
-type lineProc = func(stateDoc, string)
+type lineProc = func(*state, *doc, string)
 ---
 
 --- Functions +=
 func processContent(r io.Reader, s *state, d *doc, proc lineProc) {
     sc := bufio.NewScanner(r)
     for sc.Scan() {
-        proc(stateDoc{s, d}, sc.Text())
+        proc(s, d, sc.Text())
     }
 
     if s.inChunk {
@@ -195,9 +191,7 @@ will amend some lines (e.g. adding section anchors), and it
 will need to process special commands.
 
 --- Functions +=
-func proc(sd stateDoc, line string) {
-    s := sd.state
-    d := sd.doc
+func proc(s *state, d *doc, line string) {
     s.lineNum ++
     @{Track and mark section changes}
     @{Collect lines in code chunks}

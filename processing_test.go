@@ -11,7 +11,7 @@ func TestProcessContent(t *testing.T) {
 	// Make sure proc is called at least once normally
 	called := false
 	d := newDoc()
-	mockProc := func(sd stateDoc, in string) { called = true }
+	mockProc := func(s *state, d *doc, in string) { called = true }
 
 	processContent(strings.NewReader("Hello"), &state{}, &d, mockProc)
 
@@ -22,7 +22,7 @@ func TestProcessContent(t *testing.T) {
 	// Process three lines in order
 	lines := make([]string, 0)
 	d = newDoc()
-	mockProc = func(sd stateDoc, in string) { lines = append(lines, in) }
+	mockProc = func(s *state, d *doc, in string) { lines = append(lines, in) }
 
 	processContent(strings.NewReader("One\nTwo\nThree"),
 		&state{}, &d, mockProc)
@@ -59,7 +59,7 @@ func TestProcForMarkdown(t *testing.T) {
 	}
 
 	for i, c := range cs {
-		proc(stateDoc{&state{}, &d}, c.line)
+		proc(&state{}, &d, c.line)
 		if d.markdown.String() != c.markdown {
 			t.Errorf("Line %d: Expected markdown %q but got %q",
 				i+1, c.markdown, d.markdown.String())
@@ -83,7 +83,7 @@ func TestProcForInChunks(t *testing.T) {
 	}
 
 	for i, c := range cs {
-		proc(stateDoc{&s, &d}, c.line)
+		proc(&s, &d, c.line)
 		if s.inChunk != c.inChunk {
 			t.Errorf("Line %d: Expected inChunk=%v but got %v",
 				i+1, c.inChunk, s.inChunk)
@@ -109,7 +109,7 @@ func TestProcForChunkNames(t *testing.T) {
 	second := []string{"Code line 3"}
 
 	for _, line := range lines {
-		proc(stateDoc{&s, &d}, line)
+		proc(&s, &d, line)
 	}
 	actFirst := d.chunks["First"].code
 	if !reflect.DeepEqual(actFirst, first) {
@@ -159,7 +159,7 @@ func TestProcForChunkDetails(t *testing.T) {
 	}
 
 	for _, line := range lines {
-		proc(stateDoc{&s, &d}, line)
+		proc(&s, &d, line)
 	}
 
 	if len(d.chunks) != 2 {

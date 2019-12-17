@@ -39,12 +39,7 @@ type doc struct {
 	lineDir string // The string pattern for line directives
 }
 
-type stateDoc struct {
-	*state
-	*doc
-}
-
-type lineProc = func(stateDoc, string)
+type lineProc = func(*state, *doc, string)
 type warning struct {
 	fName string
 	line  int
@@ -183,7 +178,7 @@ func fileReader(fName string) (io.ReadCloser, error) {
 func processContent(r io.Reader, s *state, d *doc, proc lineProc) {
 	sc := bufio.NewScanner(r)
 	for sc.Scan() {
-		proc(stateDoc{s, d}, sc.Text())
+		proc(s, d, sc.Text())
 	}
 
 	if s.inChunk {
@@ -193,9 +188,7 @@ func processContent(r io.Reader, s *state, d *doc, proc lineProc) {
 	}
 }
 
-func proc(sd stateDoc, line string) {
-	s := sd.state
-	d := sd.doc
+func proc(s *state, d *doc, line string) {
 	s.lineNum++
 	// Track and mark section changes
 	if !s.inChunk && strings.HasPrefix(line, "#") {
