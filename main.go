@@ -18,7 +18,7 @@ import (
 
 // Package level declarations
 type state struct {
-	// Current processing state
+	// Tracking
 	inName    string    // Name of file being processed, relative to working dir
 	outName   string    // Name of final file to write to
 	lineNum   int       // Current line number
@@ -26,15 +26,22 @@ type state struct {
 	inChunk   bool      // If we're currently reading a chunk
 	warnings  []warning // Warnings we're collecting
 	sec       section   // Current section being read
-	// Document structure
+}
+
+type doc struct {
 	markdown    strings.Builder   // Markdown after the initial read
 	chunks      map[string]*chunk // All the chunks found so far
 	chunkStarts map[int]string    // Lines where a named chunk starts
 	chunkRefs   map[int]chunkRef  // Lines where other chunks are called in
 	lat         lattice           // A lattice of chunk parent/child relationships
 	secStarts   map[int]section   // Lines where a section starts
-	// Other
+	// Config
 	lineDir string // The string pattern for line directives
+}
+
+type stateDoc struct {
+	*state
+	*doc
 }
 
 type warning struct {
@@ -79,9 +86,10 @@ func init() {
 
 func main() {
 	// Set up the initial state
-	s := newState()
+	s := state{}
+	d := newDoc()
 
-	// Update the state according to the command line
+	// Update the structs according to the command line
 	flag.Parse()
 	if flag.NArg() == 0 {
 		s.inName = "-"
@@ -94,7 +102,7 @@ func main() {
 	}
 	s.outName = outName(s.inName)
 	if lDir != "" {
-		s.lineDir = lDir
+		d.lineDir = lDir
 	}
 
 	// Read the content
@@ -104,22 +112,22 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
-	processContent(fReader, &s, proc)
+	processContent(fReader, stateDoc{&s, &d}, proc)
 	if err := fReader.Close(); err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 
 	// Check code chunks and maybe abort
-	s.lat = compileLattice(s.chunks)
+	d.lat = compileLattice(d.chunks)
 	errs := make([]error, 0)
-	if err := assertTopLevelChunksAreFilenames(s.lat); err != nil {
+	if err := assertTopLevelChunksAreFilenames(d.lat); err != nil {
 		errs = append(errs, err)
 	}
-	if err := assertNoCycles(s.lat); err != nil {
+	if err := assertNoCycles(d.lat); err != nil {
 		errs = append(errs, err)
 	}
-	if err := assertAllChunksDefined(s.chunks, s.lat); err != nil {
+	if err := assertAllChunksDefined(d.chunks, d.lat); err != nil {
 		errs = append(errs, err)
 	}
 	if len(errs) > 0 {
@@ -135,23 +143,23 @@ func main() {
 	}
 
 	// Write out the code files
-	top := topLevelChunks(s.lat)
-	err = writeChunks(top, s, getWriteCloser)
+	top := topLevelChunks(d.lat)
+	err = writeChunks(top, d, d.lineDir, s.inName, getWriteCloser)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 
 	// Write out the markdown
-	if err := writeHTML(&s); err != nil {
+	if err := writeHTML(s.outName, &d); err != nil {
 		fmt.Print(err.Error())
 		return
 	}
 
 }
 
-func newState() state {
-	return state{
+func newDoc() doc {
+	return doc{
 		chunks:      make(map[string]*chunk),
 		chunkStarts: make(map[int]string),
 		chunkRefs:   make(map[int]chunkRef),
@@ -171,20 +179,22 @@ func fileReader(fName string) (io.ReadCloser, error) {
 	return f, err
 }
 
-func processContent(r io.Reader, s *state, proc func(*state, string)) {
+func processContent(r io.Reader, sd stateDoc, proc func(stateDoc, string)) {
 	sc := bufio.NewScanner(r)
 	for sc.Scan() {
-		proc(s, sc.Text())
-	}
-	// Tidy-up after processing content
-	if s.inChunk {
-		s.warnings = append(s.warnings,
-			warning{s.inName, s.lineNum, "Content finished but chunk not closed"})
+		proc(sd, sc.Text())
 	}
 
+	if sd.inChunk {
+		sd.warnings = append(sd.warnings,
+			warning{sd.inName, sd.lineNum,
+				"Content finished but chunk not closed"})
+	}
 }
 
-func proc(s *state, line string) {
+func proc(sd stateDoc, line string) {
+	s := sd.state
+	d := sd.doc
 	s.lineNum++
 	// Track and mark section changes
 	if !s.inChunk && strings.HasPrefix(line, "#") {
@@ -194,7 +204,7 @@ func proc(s *state, line string) {
 			line = strings.Repeat("#", len(s.sec.nums)) +
 				" <a name=\"sec" + s.sec.numsToString() + "\"></a>" +
 				s.sec.toString()
-			s.secStarts[s.lineNum] = s.sec
+			d.secStarts[s.lineNum] = s.sec
 		}
 	}
 
@@ -202,30 +212,30 @@ func proc(s *state, line string) {
 	if s.inChunk && line == "```" {
 		s.inChunk = false
 		// Capture data for post-chunk references
-		s.chunkRefs[s.lineNum] = chunkRef{s.chunkName, s.sec}
+		d.chunkRefs[s.lineNum] = chunkRef{s.chunkName, s.sec}
 
 	} else if s.inChunk {
-		ch := s.chunks[s.chunkName]
-		s.chunks[s.chunkName].code = append(ch.code, line)
-		s.chunks[s.chunkName].lines = append(ch.lines, s.lineNum)
+		ch := d.chunks[s.chunkName]
+		d.chunks[s.chunkName].code = append(ch.code, line)
+		d.chunks[s.chunkName].lines = append(ch.lines, s.lineNum)
 	} else if !s.inChunk && strings.HasPrefix(line, "```") {
 		s.chunkName = strings.TrimSpace(line[3:])
 		if s.chunkName == "" {
 			s.warnings = append(s.warnings,
 				warning{s.inName, s.lineNum, "Chunk has no name"})
 		}
-		ch := s.chunks[s.chunkName]
+		ch := d.chunks[s.chunkName]
 		if ch == nil {
-			s.chunks[s.chunkName] = &chunk{}
-			ch = s.chunks[s.chunkName]
+			d.chunks[s.chunkName] = &chunk{}
+			ch = d.chunks[s.chunkName]
 		}
-		s.chunkStarts[s.lineNum] = s.chunkName
-		s.chunks[s.chunkName].line = append(ch.line, s.lineNum)
-		s.chunks[s.chunkName].sec = append(ch.sec, s.sec)
+		d.chunkStarts[s.lineNum] = s.chunkName
+		d.chunks[s.chunkName].line = append(ch.line, s.lineNum)
+		d.chunks[s.chunkName].sec = append(ch.sec, s.sec)
 		s.inChunk = true
 	}
 
-	s.markdown.WriteString(line + "\n")
+	d.markdown.WriteString(line + "\n")
 }
 
 func (s *section) toString() string {
@@ -427,7 +437,9 @@ func assertAllChunksDefined(chunks map[string]*chunk, lat lattice) error {
 
 func writeChunks(
 	top []string,
-	s state,
+	d doc,
+	lineDir string,
+	fName string,
 	getWC func(string) (io.WriteCloser, error)) error {
 
 	for _, name := range top {
@@ -436,7 +448,7 @@ func writeChunks(
 			return err
 		}
 		bw := bufio.NewWriter(wc)
-		err = writeChunk(name, s, bw, "")
+		err = writeChunk(name, d, bw, lineDir, "", fName)
 		if err != nil {
 			wc.Close()
 			return err
@@ -459,20 +471,22 @@ func getWriteCloser(name string) (io.WriteCloser, error) {
 }
 
 func writeChunk(name string,
-	s state,
+	d doc,
 	w *bufio.Writer,
-	indent string) error {
+	lineDir string,
+	indent string,
+	fName string) error {
 
-	chunk := *s.chunks[name]
+	chunk := *d.chunks[name]
 	for i, code := range chunk.code {
 		var err error
 		if ref := referredChunkName(code); ref != "" {
 			iPos := strings.Index(code, "@")
-			err = writeChunk(ref, s, w, code[0:iPos]+indent)
+			err = writeChunk(ref, d, w, lineDir, code[0:iPos]+indent, fName)
 		} else {
 			lnum := chunk.lines[i]
 			indentHere := initialWS(code)
-			dir := lineDirective(s.lineDir, indent+indentHere, s.inName, lnum)
+			dir := lineDirective(lineDir, indent+indentHere, fName, lnum)
 			_, err = w.WriteString(dir + indent + code + "\n")
 		}
 		if err != nil {
@@ -523,10 +537,10 @@ func lineDirective(dir string, indent string, fName string, n int) string {
 	return out + "\n"
 }
 
-func writeHTML(s *state) error {
-	md := finalMarkdown(s).String()
+func writeHTML(outName string, d *doc) error {
+	md := finalMarkdown(d).String()
 	output := markdown.ToHTML([]byte(md), nil, nil)
-	outFile, err := os.Create(s.outName)
+	outFile, err := os.Create(outName)
 	if err != nil {
 		return err
 	}
@@ -538,18 +552,18 @@ func writeHTML(s *state) error {
 	return outFile.Close()
 }
 
-func finalMarkdown(s *state) *strings.Builder {
+func finalMarkdown(d *doc) *strings.Builder {
 	b := strings.Builder{}
-	r := strings.NewReader(s.markdown.String())
+	r := strings.NewReader(d.markdown.String())
 	sc := bufio.NewScanner(r)
 	count := 0
 	for sc.Scan() {
 		count++
 		mkup := sc.Text()
 		// Amend chunk starts to include coding language
-		if name, okay := s.chunkStarts[count]; okay {
+		if name, okay := d.chunkStarts[count]; okay {
 			mkup = backticks(mkup)
-			top := topOf(name, s.lat)
+			top := topOf(name, d.lat)
 			re, _ := regexp.Compile("[-_a-zA-Z0-9]*$")
 			langs := re.FindStringSubmatch(top)
 			if langs != nil {
@@ -559,10 +573,10 @@ func finalMarkdown(s *state) *strings.Builder {
 
 		b.WriteString(mkup + "\n")
 		// Include post-chunk reference if necessary
-		if ref, ok := s.chunkRefs[count]; ok {
-			str1 := addedToChunkRef(s, ref)
+		if ref, ok := d.chunkRefs[count]; ok {
+			str1 := addedToChunkRef(d, ref)
 			b.WriteString(str1)
-			str2 := usedInChunkRef(s, ref)
+			str2 := usedInChunkRef(d, ref)
 			b.WriteString(str2)
 		}
 
@@ -594,8 +608,8 @@ func backticks(mkup string) string {
 	return out
 }
 
-func addedToChunkRef(s *state, ref chunkRef) string {
-	chunk := s.chunks[ref.name]
+func addedToChunkRef(d *doc, ref chunkRef) string {
+	chunk := d.chunks[ref.name]
 	secs := make([]section, len(chunk.sec))
 	copy(secs, chunk.sec)
 
@@ -632,12 +646,12 @@ func sectionsAsEnglish(secs []section) string {
 	return prefix + list
 }
 
-func usedInChunkRef(s *state, ref chunkRef) string {
+func usedInChunkRef(d *doc, ref chunkRef) string {
 	secs := make([]section, 0)
 
 	// Get the sections
-	for parName, _ := range s.lat.parentsOf[ref.name] {
-		chunk := s.chunks[parName]
+	for parName, _ := range d.lat.parentsOf[ref.name] {
+		chunk := d.chunks[parName]
 		for i, code := range chunk.code {
 			if referredChunkName(code) == ref.name {
 				lnum := chunk.lines[i]

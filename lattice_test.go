@@ -243,11 +243,11 @@ func TestAssertAllChunksDefined(t *testing.T) {
 		"Something",
 		"```",
 	}
-	s1 := newState()
+	d1 := newDoc()
 	r1 := strings.NewReader(strings.Join(lit1, "\n"))
-	processContent(r1, &s1, proc)
-	lat1 := compileLattice(s1.chunks)
-	err1 := assertAllChunksDefined(s1.chunks, lat1)
+	processContent(r1, stateDoc{&state{}, &d1}, proc)
+	lat1 := compileLattice(d1.chunks)
+	err1 := assertAllChunksDefined(d1.chunks, lat1)
 	if err1 != nil {
 		t.Errorf("1. Doc should have all chunks defined but got error %q",
 			err1.Error())
@@ -266,11 +266,11 @@ func TestAssertAllChunksDefined(t *testing.T) {
 		"Something",
 		"```",
 	}
-	s2 := newState()
+	d2 := newDoc()
 	r2 := strings.NewReader(strings.Join(lit2, "\n"))
-	processContent(r2, &s2, proc)
-	lat2 := compileLattice(s2.chunks)
-	err2 := assertAllChunksDefined(s2.chunks, lat2)
+	processContent(r2, stateDoc{&state{}, &d2}, proc)
+	lat2 := compileLattice(d2.chunks)
+	err2 := assertAllChunksDefined(d2.chunks, lat2)
 	if err2 == nil {
 		t.Errorf("2. Doc should have a chunk defined but got no error")
 	}
@@ -292,11 +292,11 @@ func TestAssertAllChunksDefined(t *testing.T) {
 		"Something",
 		"```",
 	}
-	s3 := newState()
+	d3 := newDoc()
 	r3 := strings.NewReader(strings.Join(lit3, "\n"))
-	processContent(r3, &s3, proc)
-	lat3 := compileLattice(s3.chunks)
-	err3 := assertAllChunksDefined(s3.chunks, lat3)
+	processContent(r3, stateDoc{&state{}, &d3}, proc)
+	lat3 := compileLattice(d3.chunks)
+	err3 := assertAllChunksDefined(d3.chunks, lat3)
 	if err3 == nil {
 		t.Errorf("3. Doc should have a chunk defined but got no error")
 	}

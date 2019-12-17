@@ -7,7 +7,7 @@ import (
 )
 
 func TestProcForMarkdownWithChunkRefs_AddedToNowhereElse(t *testing.T) {
-	s := newState()
+	d := newDoc()
 	lines := []string{
 		"# Title", // Line 1
 		"",
@@ -26,9 +26,9 @@ func TestProcForMarkdownWithChunkRefs_AddedToNowhereElse(t *testing.T) {
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(r, &s, proc)
-	s.lat = compileLattice(s.chunks)
-	b := finalMarkdown(&s)
+	processContent(r, stateDoc{&state{}, &d}, proc)
+	d.lat = compileLattice(d.chunks)
+	b := finalMarkdown(&d)
 	out := strings.Split(b.String(), "\n")
 
 	if len(out) != 9 {
@@ -49,7 +49,7 @@ func stripHTML(str string) string {
 }
 
 func TestProcForMarkdownWithChunkRefs_AddedToOnce(t *testing.T) {
-	s := newState()
+	d := newDoc()
 	lines := []string{
 		"# Title", // Line 1
 		"",
@@ -77,9 +77,9 @@ func TestProcForMarkdownWithChunkRefs_AddedToOnce(t *testing.T) {
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(r, &s, proc)
-	s.lat = compileLattice(s.chunks)
-	b := finalMarkdown(&s)
+	processContent(r, stateDoc{&state{}, &d}, proc)
+	d.lat = compileLattice(d.chunks)
+	b := finalMarkdown(&d)
 	out := strings.Split(b.String(), "\n")
 
 	if len(out) != 15 {
@@ -95,7 +95,7 @@ func TestProcForMarkdownWithChunkRefs_AddedToOnce(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_AddedToTwice(t *testing.T) {
-	s := newState()
+	d := newDoc()
 	lines := []string{
 		"# Title", // Line 1
 		"",
@@ -132,9 +132,9 @@ func TestProcForMarkdownWithChunkRefs_AddedToTwice(t *testing.T) {
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(r, &s, proc)
-	s.lat = compileLattice(s.chunks)
-	b := finalMarkdown(&s)
+	processContent(r, stateDoc{&state{}, &d}, proc)
+	d.lat = compileLattice(d.chunks)
+	b := finalMarkdown(&d)
 	out := strings.Split(b.String(), "\n")
 
 	if len(out) != 21 {
@@ -150,7 +150,7 @@ func TestProcForMarkdownWithChunkRefs_AddedToTwice(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_AddedToThrice(t *testing.T) {
-	s := newState()
+	d := newDoc()
 	lines := []string{
 		"# Title", // Line 1
 		"",
@@ -193,9 +193,9 @@ func TestProcForMarkdownWithChunkRefs_AddedToThrice(t *testing.T) {
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(r, &s, proc)
-	s.lat = compileLattice(s.chunks)
-	b := finalMarkdown(&s)
+	processContent(r, stateDoc{&state{}, &d}, proc)
+	d.lat = compileLattice(d.chunks)
+	b := finalMarkdown(&d)
 	out := strings.Split(b.String(), "\n")
 
 	if len(out) != 27 {
@@ -211,7 +211,7 @@ func TestProcForMarkdownWithChunkRefs_AddedToThrice(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_UsedNowhere(t *testing.T) {
-	s := newState()
+	d := newDoc()
 	lines := []string{
 		"# Title", // Line 1
 		"",
@@ -221,9 +221,9 @@ func TestProcForMarkdownWithChunkRefs_UsedNowhere(t *testing.T) {
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(r, &s, proc)
-	s.lat = compileLattice(s.chunks)
-	b := finalMarkdown(&s)
+	processContent(r, stateDoc{&state{}, &d}, proc)
+	d.lat = compileLattice(d.chunks)
+	b := finalMarkdown(&d)
 	out := strings.Split(b.String(), "\n")
 
 	if len(out) != 5 {
@@ -233,7 +233,7 @@ func TestProcForMarkdownWithChunkRefs_UsedNowhere(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_UsedOnce(t *testing.T) {
-	s := newState()
+	d := newDoc()
 	lines := []string{
 		"# Title", // Line 1
 		"",
@@ -256,9 +256,9 @@ func TestProcForMarkdownWithChunkRefs_UsedOnce(t *testing.T) {
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(r, &s, proc)
-	s.lat = compileLattice(s.chunks)
-	b := finalMarkdown(&s)
+	processContent(r, stateDoc{&state{}, &d}, proc)
+	d.lat = compileLattice(d.chunks)
+	b := finalMarkdown(&d)
 	out := strings.Split(b.String(), "\n")
 
 	if len(out) != 13 {
@@ -274,7 +274,7 @@ func TestProcForMarkdownWithChunkRefs_UsedOnce(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_UsedTwice(t *testing.T) {
-	s := newState()
+	d := newDoc()
 	lines := []string{
 		"# Title", // Line 1
 		"",
@@ -303,9 +303,9 @@ func TestProcForMarkdownWithChunkRefs_UsedTwice(t *testing.T) {
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(r, &s, proc)
-	s.lat = compileLattice(s.chunks)
-	b := finalMarkdown(&s)
+	processContent(r, stateDoc{&state{}, &d}, proc)
+	d.lat = compileLattice(d.chunks)
+	b := finalMarkdown(&d)
 	out := strings.Split(b.String(), "\n")
 
 	if len(out) != 19 {
@@ -321,7 +321,7 @@ func TestProcForMarkdownWithChunkRefs_UsedTwice(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_UsedThrice(t *testing.T) {
-	s := newState()
+	d := newDoc()
 	lines := []string{
 		"# Title", // Line 1
 		"",
@@ -352,9 +352,9 @@ func TestProcForMarkdownWithChunkRefs_UsedThrice(t *testing.T) {
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(r, &s, proc)
-	s.lat = compileLattice(s.chunks)
-	b := finalMarkdown(&s)
+	processContent(r, stateDoc{&state{}, &d}, proc)
+	d.lat = compileLattice(d.chunks)
+	b := finalMarkdown(&d)
 	out := strings.Split(b.String(), "\n")
 
 	if len(out) != 21 {

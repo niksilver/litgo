@@ -9,6 +9,7 @@ Sections
 
 Chunks
 - Write out the chunk name before each chunk.
+- Make chunk starts linkable.
 
 Chapters
 - Follow chapter links and compile chapters.

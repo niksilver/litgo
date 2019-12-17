@@ -10,10 +10,11 @@ func TestProcessContent(t *testing.T) {
 
 	// Make sure proc is called at least once normally
 	called := false
-	s := newState()
-	mockProc := func(s *state, in string) { called = true }
+	d := newDoc()
+	mockProc := func(sd stateDoc, in string) { called = true }
 
-	processContent(strings.NewReader("Hello"), &s, mockProc)
+	processContent(strings.NewReader("Hello"),
+		stateDoc{&state{}, &d}, mockProc)
 
 	if !called {
 		t.Error("proc should have been called at least once")
@@ -21,10 +22,11 @@ func TestProcessContent(t *testing.T) {
 
 	// Process three lines in order
 	lines := make([]string, 0)
-	s = newState()
-	mockProc = func(s *state, in string) { lines = append(lines, in) }
+	d = newDoc()
+	sd := stateDoc{&state{}, &d}
+	mockProc = func(sd stateDoc, in string) { lines = append(lines, in) }
 
-	processContent(strings.NewReader("One\nTwo\nThree"), &s, mockProc)
+	processContent(strings.NewReader("One\nTwo\nThree"), sd, mockProc)
 
 	if len(lines) != 3 {
 		t.Errorf("Should have returned 3 lines but got %d", len(lines))
@@ -38,7 +40,7 @@ func TestProcessContent(t *testing.T) {
 }
 
 func TestProcForMarkdown(t *testing.T) {
-	s := newState()
+	d := newDoc()
 	cs := []struct {
 		line     string // Next line
 		markdown string // Accumulated markdown
@@ -58,16 +60,17 @@ func TestProcForMarkdown(t *testing.T) {
 	}
 
 	for i, c := range cs {
-		proc(&s, c.line)
-		if s.markdown.String() != c.markdown {
+		proc(stateDoc{&state{}, &d}, c.line)
+		if d.markdown.String() != c.markdown {
 			t.Errorf("Line %d: Expected markdown %q but got %q",
-				i+1, c.markdown, s.markdown.String())
+				i+1, c.markdown, d.markdown.String())
 		}
 	}
 }
 
 func TestProcForInChunks(t *testing.T) {
-	s := newState()
+	d := newDoc()
+	s := state{}
 	cs := []struct {
 		line    string // Next line
 		inChunk bool   // Expected values...
@@ -81,7 +84,7 @@ func TestProcForInChunks(t *testing.T) {
 	}
 
 	for i, c := range cs {
-		proc(&s, c.line)
+		proc(stateDoc{&s, &d}, c.line)
 		if s.inChunk != c.inChunk {
 			t.Errorf("Line %d: Expected inChunk=%v but got %v",
 				i+1, c.inChunk, s.inChunk)
@@ -90,7 +93,8 @@ func TestProcForInChunks(t *testing.T) {
 }
 
 func TestProcForChunkNames(t *testing.T) {
-	s := newState()
+	d := newDoc()
+	s := state{}
 	lines := []string{
 		"``` First",
 		"Code line 1",
@@ -106,14 +110,14 @@ func TestProcForChunkNames(t *testing.T) {
 	second := []string{"Code line 3"}
 
 	for _, line := range lines {
-		proc(&s, line)
+		proc(stateDoc{&s, &d}, line)
 	}
-	actFirst := s.chunks["First"].code
+	actFirst := d.chunks["First"].code
 	if !reflect.DeepEqual(actFirst, first) {
 		t.Errorf("Chunk First should be %#v but got %#v",
 			first, actFirst)
 	}
-	actSecond := s.chunks["Second"].code
+	actSecond := d.chunks["Second"].code
 	if !reflect.DeepEqual(actSecond, second) {
 		t.Errorf("Chunk Second should be %#v but got %#v",
 			first, actSecond)
@@ -121,7 +125,8 @@ func TestProcForChunkNames(t *testing.T) {
 }
 
 func TestProcForChunkDetails(t *testing.T) {
-	s := newState()
+	d := newDoc()
+	s := state{}
 	lines := []string{
 		"``` First",
 		"Code line 1",
@@ -155,25 +160,25 @@ func TestProcForChunkDetails(t *testing.T) {
 	}
 
 	for _, line := range lines {
-		proc(&s, line)
+		proc(stateDoc{&s, &d}, line)
 	}
 
-	if len(s.chunks) != 2 {
-		t.Errorf("Expected 2 chunks but got %d", len(s.chunks))
+	if len(d.chunks) != 2 {
+		t.Errorf("Expected 2 chunks but got %d", len(d.chunks))
 	}
-	if !reflect.DeepEqual(expected["First"], *s.chunks["First"]) {
+	if !reflect.DeepEqual(expected["First"], *d.chunks["First"]) {
 		t.Errorf("Expected First chunk to be\n%#v\nbut got\n%#v",
-			expected["First"], *s.chunks["First"])
+			expected["First"], *d.chunks["First"])
 	}
-	if !reflect.DeepEqual(expected["Second"], *s.chunks["Second"]) {
+	if !reflect.DeepEqual(expected["Second"], *d.chunks["Second"]) {
 		t.Errorf("Expected Second chunk to be\n%#v\nbut got\n%#v",
-			expected["Second"], *s.chunks["Second"])
+			expected["Second"], *d.chunks["Second"])
 	}
 }
 
 func TestProcForWarningsAroundChunks(t *testing.T) {
-	s := newState()
-	s.inName = "testfile.lit"
+	d := newDoc()
+	s := state{inName: "testfile.lit"}
 	lines := []string{
 		"Title",
 		"",
@@ -197,7 +202,7 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 		{"testfile.lit", 11, "chunk not closed"},
 	}
 
-	processContent(r, &s, proc)
+	processContent(r, stateDoc{&s, &d}, proc)
 
 	nWarn := len(s.warnings)
 	if nWarn != len(expected) {
@@ -218,8 +223,8 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 }
 
 func TestProcForChunkRefs(t *testing.T) {
-	s := newState()
-	s.inName = "testfile.lit"
+	d := newDoc()
+	s := state{inName: "testfile.lit"}
 	lines := []string{
 		"Opening text", // Line 1
 		"",
@@ -244,17 +249,17 @@ func TestProcForChunkRefs(t *testing.T) {
 		13: chunkRef{"Chunk three", sec1},
 	}
 
-	processContent(r, &s, proc)
+	processContent(r, stateDoc{&s, &d}, proc)
 
-	if len(s.chunkRefs) != len(expected) {
+	if len(d.chunkRefs) != len(expected) {
 		t.Errorf("Expected %d chunk refs but got %d. Map is %#v",
-			len(expected), len(s.chunkRefs), s.chunkRefs)
+			len(expected), len(d.chunkRefs), d.chunkRefs)
 		return
 	}
 	for lNum, ref := range expected {
-		if !reflect.DeepEqual(s.chunkRefs[lNum], ref) {
+		if !reflect.DeepEqual(d.chunkRefs[lNum], ref) {
 			t.Errorf("For line %d expected chunk %#v but got %#v",
-				lNum, ref, s.chunkRefs[lNum])
+				lNum, ref, d.chunkRefs[lNum])
 		}
 	}
 }

@@ -96,7 +96,7 @@ Line 2.2
 		},
 	}
 
-	err := writeChunks(top, state{chunks: chunks}, wFact)
+	err := writeChunks(top, doc{chunks: chunks}, "", "", wFact)
 
 	if err != nil {
 		t.Errorf("Should not have produced an error, but got %q",
@@ -174,7 +174,7 @@ func TestWriteChunks_ErrorWriting(t *testing.T) {
 		},
 	}
 
-	err := writeChunks(top, state{chunks: chunks}, wFact)
+	err := writeChunks(top, doc{chunks: chunks}, "", "", wFact)
 	if err == nil {
 		t.Errorf("Should have produced an error, did not")
 	}
@@ -234,7 +234,7 @@ func TestWriteChunks_IndentProperly(t *testing.T) {
 		},
 	}
 
-	err := writeChunks(top, state{chunks: chunks}, wFact)
+	err := writeChunks(top, doc{chunks: chunks}, "", "", wFact)
 
 	if err != nil {
 		t.Errorf("Should not have produced an error, but got %q",
@@ -316,8 +316,8 @@ Line 2.2
 		},
 	}
 
-	s := state{chunks: chunks, inName: "test.lit", lineDir: "//line %f:%l"}
-	err := writeChunks(top, s, wFact)
+	d := doc{chunks: chunks}
+	err := writeChunks(top, d, "//line %f:%l", "test.lit", wFact)
 
 	if err != nil {
 		t.Errorf("Should not have produced an error, but got %q",
@@ -396,8 +396,8 @@ func TestWriteChunks_OkayWithLineDirectiveIndents(t *testing.T) {
 		b := outputs1[name]
 		return builderWriteCloser{b}, nil
 	}
-	s1 := state{chunks: chunks, inName: "test.lit", lineDir: "%i//line %f:%l"}
-	err1 := writeChunks(top, s1, wFact1)
+	d1 := doc{chunks: chunks}
+	err1 := writeChunks(top, d1, "%i//line %f:%l", "test.lit", wFact1)
 
 	if err1 != nil {
 		t.Errorf("With: Should not have produced an error, but got %q",
@@ -424,8 +424,8 @@ func TestWriteChunks_OkayWithLineDirectiveIndents(t *testing.T) {
 		b := outputs2[name]
 		return builderWriteCloser{b}, nil
 	}
-	s2 := state{chunks: chunks, inName: "test.lit", lineDir: "//line %f:%l"}
-	err2 := writeChunks(top, s2, wFact2)
+	d2 := doc{chunks: chunks}
+	err2 := writeChunks(top, d2, "//line %f:%l", "test.lit", wFact2)
 
 	if err2 != nil {
 		t.Errorf("Without: Should not have produced an error, but got %q",
