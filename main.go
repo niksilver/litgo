@@ -8,6 +8,7 @@ import (
 	"github.com/gomarkdown/markdown"
 	"io"
 	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"sort"
@@ -19,6 +20,7 @@ import (
 type state struct {
 	// Current processing state
 	inName    string    // Name of file being processed, relative to working dir
+	outName   string    // Name of final file to write to
 	lineNum   int       // Current line number
 	chunkName string    // Name of current chunk
 	inChunk   bool      // If we're currently reading a chunk
@@ -90,6 +92,7 @@ func main() {
 		printHelp()
 		return
 	}
+	s.outName = outName(s.inName)
 	if lDir != "" {
 		s.lineDir = lDir
 	}
@@ -140,9 +143,10 @@ func main() {
 	}
 
 	// Write out the markdown
-	md := finalMarkdown(&s).String()
-	output := markdown.ToHTML([]byte(md), nil, nil)
-	fmt.Println(string(output))
+	if err := writeHTML(&s); err != nil {
+		fmt.Print(err.Error())
+		return
+	}
 
 }
 
@@ -519,6 +523,21 @@ func lineDirective(dir string, indent string, fName string, n int) string {
 	return out + "\n"
 }
 
+func writeHTML(s *state) error {
+	md := finalMarkdown(s).String()
+	output := markdown.ToHTML([]byte(md), nil, nil)
+	outFile, err := os.Create(s.outName)
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(outFile, string(output))
+	if err != nil {
+		outFile.Close()
+		return err
+	}
+	return outFile.Close()
+}
+
 func finalMarkdown(s *state) *strings.Builder {
 	b := strings.Builder{}
 	r := strings.NewReader(s.markdown.String())
@@ -664,10 +683,25 @@ func (s1 *section) less(s2 section) bool {
 }
 
 func printHelp() {
-	msg := `litgo <input-file>
+	msg := `litgo [--line-dir <ldir>] <input-file>
+
     <input-file> can be - (or be omitted) to indicate stdin.
     <ldir> is the line directive to preceed each code line.
-        Use %f for filename, %l for line number, %% for percent sign.
+        Use %f for filename, %l for line number,
+        %i to include indentation, %% for percent sign.
 `
 	fmt.Printf(msg)
+}
+
+func outName(fName string) string {
+	base := filepath.Base(fName)
+	ext := filepath.Ext(fName)
+	if fName == "-" || base == "." {
+		base = "out"
+	}
+	pref := base
+	if ext != "" {
+		pref = base[0 : len(base)-len(ext)]
+	}
+	return pref + ".html"
 }

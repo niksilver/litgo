@@ -8,6 +8,7 @@ Sections
 - Warning when a section jumps a level (e.g. 1 to 3, or nothing to 2)
 
 Chunks
+- Write out the chunk name before each chunk.
 
 Chapters
 - Follow chapter links and compile chapters.
@@ -22,8 +23,6 @@ Directives
   don't get corrupted.
 
 I/O
-- Write markup to input filename, but with an "html" suffix.
-- Write markup from stdin to "out.html".
 
 Done
 ----
@@ -45,6 +44,8 @@ I/O
 - Read from a file specified by the command line
 - Read from stdin
 - Write code to files
+- Write markup to input filename, but with an "html" suffix.
+- Write markup from stdin to "out.html".
 
 Chunks
 - HTML code chunks have the language suffix for code highlighting
