@@ -246,6 +246,7 @@ be a structured object with functions to convert to and from strings.
 
 --- Package level declarations +=
 type section struct {
+    inName string
     nums []int
     text string
 }
@@ -295,7 +296,7 @@ func (s *section) next(line string) (section, bool) {
         nums[newLevel-1] = s.nums[newLevel-1] + 1
     }
 
-    return section{nums, find[2]}, true
+    return section{s.inName, nums, find[2]}, true
 }
 
 ---
@@ -304,6 +305,9 @@ func (s *section) next(line string) (section, bool) {
 @s Sections: Tracking and marking
 
 We will track section changes in our state.
+Note we'll always update the current section's input filename if we
+change files, even if there hasn't been a new section heading since
+changing file.
 
 --- Track and mark section changes
 if !s.inChunk && strings.HasPrefix(line, "#") {
@@ -319,6 +323,14 @@ if !s.inChunk && strings.HasPrefix(line, "#") {
         d.secStarts[s.inName][s.lineNum] = s.sec
     }
 }
+---
+
+--- Functions +=
+func (s *state) setInName(name string) {
+    s.inName = name
+    s.sec.inName = name
+}
+
 ---
 
 
@@ -1054,9 +1066,9 @@ flag.StringVar(&lDir, "line-dir", "", "Pattern for line directives")
 --- Update the structs according to the command line
 flag.Parse()
 if flag.NArg() == 0 {
-    s.inName = "-"
+    s.setInName("-")
 } else if flag.NArg() == 1 {
-    s.inName = flag.Arg(0)
+    s.setInName(flag.Arg(0))
 } else if flag.NArg() > 1 {
     fmt.Print("Too many arguments\n\n")
     printHelp()

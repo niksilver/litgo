@@ -51,8 +51,9 @@ type warning struct {
 }
 
 type section struct {
-	nums []int
-	text string
+	inName string
+	nums   []int
+	text   string
 }
 
 type chunk struct {
@@ -103,9 +104,9 @@ func main() {
 	// Update the structs according to the command line
 	flag.Parse()
 	if flag.NArg() == 0 {
-		s.inName = "-"
+		s.setInName("-")
 	} else if flag.NArg() == 1 {
-		s.inName = flag.Arg(0)
+		s.setInName(flag.Arg(0))
 	} else if flag.NArg() > 1 {
 		fmt.Print("Too many arguments\n\n")
 		printHelp()
@@ -309,7 +310,12 @@ func (s *section) next(line string) (section, bool) {
 		nums[newLevel-1] = s.nums[newLevel-1] + 1
 	}
 
-	return section{nums, find[2]}, true
+	return section{s.inName, nums, find[2]}, true
+}
+
+func (s *state) setInName(name string) {
+	s.inName = name
+	s.sec.inName = name
 }
 
 func compileLattice(chunks map[string]*chunk) lattice {

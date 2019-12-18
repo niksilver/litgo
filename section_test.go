@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestSectionNext(t *testing.T) {
+func TestSectionNext_SameFile(t *testing.T) {
 	data := []struct {
 		curr       string
 		line       string
@@ -66,7 +66,7 @@ func TestSectionNext(t *testing.T) {
 	}
 
 	for _, d := range data {
-		sec := toSection(d.curr)
+		sec := toSection("dummy.md", d.curr)
 		actSec, actChanged := sec.next(d.line)
 		if actSec.toString() != d.expSec {
 			t.Errorf("From %q with line %q got %q but expected %q",
@@ -79,7 +79,7 @@ func TestSectionNext(t *testing.T) {
 	}
 }
 
-func toSection(line string) section {
+func toSection(inName string, line string) section {
 	if line == "" {
 		return section{}
 	}
@@ -91,11 +91,11 @@ func toSection(line string) section {
 		nums[i], _ = strconv.Atoi(s)
 	}
 
-	return section{nums, line[a+1:]}
+	return section{inName, nums, line[a+1:]}
 }
 
 func TestProcForSectionTrackingHeadings(t *testing.T) {
-	s := state{inName: "headings.md"}
+	s := newState("headings.md")
 	d := newDoc()
 	tData := []struct {
 		line string // Next line
@@ -126,7 +126,7 @@ func TestProcForSectionTrackingHeadings(t *testing.T) {
 }
 
 func TestProcForSectionTrackingStartLines(t *testing.T) {
-	s := state{inName: "startlines.md"}
+	s := newState("startlines.md")
 	d := newDoc()
 	tData := []struct {
 		line  string // Next line
@@ -160,7 +160,7 @@ func TestProcForSectionTrackingStartLines(t *testing.T) {
 }
 
 func TestProcForSectionMarkingAnchors(t *testing.T) {
-	s := state{inName: "anchors.md"}
+	s := newState("anchors.md")
 	d := newDoc()
 	tData := []struct {
 		line string // Next line
@@ -194,7 +194,7 @@ func TestProcForSectionMarkingAnchors(t *testing.T) {
 
 func TestProcForNumsInSectionHeadings(t *testing.T) {
 	d := newDoc()
-	s := state{inName: "headings.md"}
+	s := newState("headings.md")
 	tData := []struct {
 		line string // Next line
 		exp  string // Expected markdown line
@@ -222,15 +222,15 @@ func TestProcForNumsInSectionHeadings(t *testing.T) {
 }
 
 func TestSectionLess(t *testing.T) {
-	s0 := section{[]int(nil), ""}
-	s1 := section{[]int{1}, ""}
-	s2 := section{[]int{2}, ""}
-	s2_4 := section{[]int{2, 4}, ""}
-	s2_5 := section{[]int{2, 5}, ""}
-	s3 := section{[]int{3}, ""}
-	s3_4 := section{[]int{3, 4}, ""}
-	s3_4_2 := section{[]int{3, 4, 2}, ""}
-	s3_4_3 := section{[]int{3, 4, 3}, ""}
+	s0 := section{"n/a", []int(nil), ""}
+	s1 := section{"n/a", []int{1}, ""}
+	s2 := section{"n/a", []int{2}, ""}
+	s2_4 := section{"n/a", []int{2, 4}, ""}
+	s2_5 := section{"n/a", []int{2, 5}, ""}
+	s3 := section{"n/a", []int{3}, ""}
+	s3_4 := section{"n/a", []int{3, 4}, ""}
+	s3_4_2 := section{"n/a", []int{3, 4, 2}, ""}
+	s3_4_3 := section{"n/a", []int{3, 4, 3}, ""}
 	data := []struct {
 		a   section
 		b   section

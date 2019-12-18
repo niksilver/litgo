@@ -39,7 +39,7 @@ func TestProcessContent(t *testing.T) {
 }
 
 func TestProcForMarkdown(t *testing.T) {
-	s := state{inName: "markdown.md"}
+	s := newState("markdown.md")
 	d := newDoc()
 	cs := []struct {
 		line     string // Next line
@@ -70,8 +70,8 @@ func TestProcForMarkdown(t *testing.T) {
 }
 
 func TestProcForInChunks(t *testing.T) {
+	s := newState("in.md")
 	d := newDoc()
-	s := state{}
 	cs := []struct {
 		line    string // Next line
 		inChunk bool   // Expected values...
@@ -95,7 +95,7 @@ func TestProcForInChunks(t *testing.T) {
 
 func TestProcForChunkNames(t *testing.T) {
 	d := newDoc()
-	s := state{inName: "names.md"}
+	s := newState("names.md")
 	lines := []string{
 		"``` First",
 		"Code line 1",
@@ -140,8 +140,8 @@ func TestProcForChunkNames(t *testing.T) {
 }
 
 func TestProcForChunkDetails(t *testing.T) {
+	s := newState("details.md")
 	d := newDoc()
-	s := state{inName: "details.md"}
 	lines := []string{
 		"``` First",
 		"Code line 1",
@@ -157,8 +157,8 @@ func TestProcForChunkDetails(t *testing.T) {
 		"```",
 		"The end",
 	}
-	sec0 := section{[]int(nil), ""}
-	sec1 := section{[]int{1}, "Heading"}
+	sec0 := section{s.inName, []int(nil), ""}
+	sec1 := section{s.inName, []int{1}, "Heading"}
 	expected := map[string]chunk{
 		"First": chunk{
 			[]chunkDef{
@@ -199,8 +199,8 @@ func TestProcForChunkDetails(t *testing.T) {
 }
 
 func TestProcForWarningsAroundChunks(t *testing.T) {
+	s := newState("testfile.lit")
 	d := newDoc()
-	s := state{inName: "testfile.lit"}
 	lines := []string{
 		"Title",
 		"",
@@ -245,8 +245,8 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 }
 
 func TestProcForChunkRefs(t *testing.T) {
+	s := newState("testfile.lit")
 	d := newDoc()
-	s := state{inName: "testfile.lit"}
 	lines := []string{
 		"Opening text", // Line 1
 		"",
@@ -262,8 +262,8 @@ func TestProcForChunkRefs(t *testing.T) {
 		"More chunk content",
 		"```", // Line 13
 	}
-	sec0 := section{[]int(nil), ""}
-	sec1 := section{[]int{1}, "First section"}
+	sec0 := section{s.inName, []int(nil), ""}
+	sec1 := section{s.inName, []int{1}, "First section"}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 	expected := map[int]chunkRef{
 		5:  chunkRef{"Chunk one", sec0},

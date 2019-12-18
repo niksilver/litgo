@@ -252,9 +252,10 @@ func TestAssertAllChunksDefined(t *testing.T) {
 		"Something",
 		"```",
 	}
+	s1 := state{}
 	d1 := newDoc()
 	r1 := strings.NewReader(strings.Join(lit1, "\n"))
-	processContent(r1, &state{}, &d1, proc)
+	processContent(r1, &s1, &d1, proc)
 	lat1 := compileLattice(d1.chunks)
 	err1 := assertAllChunksDefined(d1.chunks, lat1)
 	if err1 != nil {
@@ -275,9 +276,10 @@ func TestAssertAllChunksDefined(t *testing.T) {
 		"Something",
 		"```",
 	}
+	s2 := state{}
 	d2 := newDoc()
 	r2 := strings.NewReader(strings.Join(lit2, "\n"))
-	processContent(r2, &state{}, &d2, proc)
+	processContent(r2, &s2, &d2, proc)
 	lat2 := compileLattice(d2.chunks)
 	err2 := assertAllChunksDefined(d2.chunks, lat2)
 	if err2 == nil {
@@ -301,9 +303,10 @@ func TestAssertAllChunksDefined(t *testing.T) {
 		"Something",
 		"```",
 	}
+	s3 := state{}
 	d3 := newDoc()
 	r3 := strings.NewReader(strings.Join(lit3, "\n"))
-	processContent(r3, &state{}, &d3, proc)
+	processContent(r3, &s3, &d3, proc)
 	lat3 := compileLattice(d3.chunks)
 	err3 := assertAllChunksDefined(d3.chunks, lat3)
 	if err3 == nil {

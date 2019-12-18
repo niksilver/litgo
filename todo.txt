@@ -11,12 +11,16 @@ Chunks
 - Write out the chunk name before each chunk.
 - Make chunk starts linkable.
 
+Refactoring
+- In chunk struct definitions, change field file to be called inName
+  for consistency and clarity.
+
 Chapters
 - Follow chapter links and compile chapters.
   - Have a command line flag to say if the markdown file is book with chapters
   - If reading chapters, makes sure to read a sequence of files.
   - If reading chapters, preserve the section number between successive
-    files.
+    files... but make sure the filename changes.
 - Allow links between chapters.
 
 Directives
