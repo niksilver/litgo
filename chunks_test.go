@@ -35,6 +35,14 @@ func (bwc badWriteCloser) Close() error {
 	return nil
 }
 
+func defLines(lines ...int) []chunkDef {
+	def := make([]chunkDef, len(lines))
+	for i, line := range lines {
+		def[i] = chunkDef{line: line}
+	}
+	return def
+}
+
 func TestWriteChunks_Okay(t *testing.T) {
 	// Test code that looks like this (with line numbers):
 	//
@@ -77,20 +85,17 @@ Line 2.2
 	top := []string{"One", "Two"}
 	chunks := map[string]*chunk{
 		"One": &chunk{
-			[]int{1, 16},
-			[]section{},
+			defLines(1, 16),
 			[]string{"Line 1.1", "@{Three}", "Line 1.3", "Line 1.4"},
 			[]int{2, 3, 4, 17},
 		},
 		"Two": &chunk{
-			[]int{7},
-			[]section{},
+			defLines(7),
 			[]string{"@{Three}", "Line 2.2"},
 			[]int{8, 9},
 		},
 		"Three": &chunk{
-			[]int{12},
-			[]section{},
+			defLines(12),
 			[]string{"Line 3.1", "Line 3.2"},
 			[]int{13, 14},
 		},
@@ -155,20 +160,17 @@ func TestWriteChunks_ErrorWriting(t *testing.T) {
 	top := []string{"One", "Two"}
 	chunks := map[string]*chunk{
 		"One": &chunk{
-			[]int{1, 16},
-			[]section{},
+			defLines(1, 16),
 			[]string{"Line 1.1", "@{Three}", "Line 1.3", "Line 1.4"},
 			[]int{2, 3, 4, 17},
 		},
 		"Two": &chunk{
-			[]int{7},
-			[]section{},
+			defLines(7),
 			[]string{"@{Three}", "Line 2.2"},
 			[]int{8, 9},
 		},
 		"Three": &chunk{
-			[]int{12},
-			[]section{},
+			defLines(12),
 			[]string{"Line 3.1", "Line 3.2"},
 			[]int{13, 14},
 		},
@@ -215,20 +217,17 @@ func TestWriteChunks_IndentProperly(t *testing.T) {
 	top := []string{"One"}
 	chunks := map[string]*chunk{
 		"One": &chunk{
-			[]int{1},
-			[]section{},
+			defLines(1),
 			[]string{"  Line 1.1", "  @{Two}", "  Line 1.3", "  @{Three}"},
 			[]int{2, 3, 4, 5},
 		},
 		"Two": &chunk{
-			[]int{8},
-			[]section{},
+			defLines(8),
 			[]string{"Line 2.1", "  @{Three}", "Line 2.2"},
 			[]int{9, 10, 11},
 		},
 		"Three": &chunk{
-			[]int{14},
-			[]section{},
+			defLines(4),
 			[]string{"Line 3.1"},
 			[]int{15},
 		},
@@ -297,20 +296,17 @@ Line 2.2
 	top := []string{"One", "Two"}
 	chunks := map[string]*chunk{
 		"One": &chunk{
-			[]int{1, 16},
-			[]section{},
+			defLines(1, 16),
 			[]string{"Line 1.1", "@{Three}", "Line 1.3", "Line 1.4"},
 			[]int{2, 3, 4, 17},
 		},
 		"Two": &chunk{
-			[]int{7},
-			[]section{},
+			defLines(7),
 			[]string{"@{Three}", "Line 2.2"},
 			[]int{8, 9},
 		},
 		"Three": &chunk{
-			[]int{12},
-			[]section{},
+			defLines(12),
 			[]string{"Line 3.1", "Line 3.2"},
 			[]int{13, 14},
 		},
@@ -375,14 +371,12 @@ func TestWriteChunks_OkayWithLineDirectiveIndents(t *testing.T) {
 	top := []string{"One"}
 	chunks := map[string]*chunk{
 		"One": &chunk{
-			[]int{1},
-			[]section{},
+			defLines(1),
 			[]string{"  Line 1.1", "  @{Two}", "  Line 1.3"},
 			[]int{2, 3, 4},
 		},
 		"Two": &chunk{
-			[]int{7},
-			[]section{},
+			defLines(7),
 			[]string{"Line 2.1"},
 			[]int{8},
 		},

@@ -6,6 +6,10 @@ import (
 	"testing"
 )
 
+func lineSec(line int, sec section) chunkDef {
+	return chunkDef{line: line, sec: sec}
+}
+
 func TestProcessContent(t *testing.T) {
 
 	// Make sure proc is called at least once normally
@@ -147,14 +151,12 @@ func TestProcForChunkDetails(t *testing.T) {
 	sec1 := section{[]int{1}, "Heading"}
 	expected := map[string]chunk{
 		"First": chunk{
-			[]int{1, 10},
-			[]section{sec0, sec1},
+			[]chunkDef{lineSec(1, sec0), lineSec(10, sec1)},
 			[]string{"Code line 1", "Code line 2", "Code line 4"},
 			[]int{2, 3, 11},
 		},
 		"Second": chunk{
-			[]int{6},
-			[]section{sec1},
+			[]chunkDef{lineSec(6, sec1)},
 			[]string{"Code line 3"},
 			[]int{7},
 		},

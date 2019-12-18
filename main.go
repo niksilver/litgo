@@ -52,12 +52,17 @@ type section struct {
 }
 
 type chunk struct {
-	line  []int     // Line numbers where the chunk is defined
-	sec   []section // Sections where the chunk is defined
-	code  []string  // Lines of code, without newlines
-	lines []int     // Line number for each line of code
+	def   []chunkDef // Each place where the chunk is defined
+	code  []string   // Lines of code, without newlines
+	lines []int      // Line number for each line of code
 }
 
+// Where the chunk is defined: file name, line number, section
+type chunkDef struct {
+	file string
+	line int
+	sec  section
+}
 type chunkRef struct {
 	name    string
 	thisSec section
@@ -223,8 +228,12 @@ func proc(s *state, d *doc, line string) {
 			ch = d.chunks[s.chunkName]
 		}
 		d.chunkStarts[s.lineNum] = s.chunkName
-		d.chunks[s.chunkName].line = append(ch.line, s.lineNum)
-		d.chunks[s.chunkName].sec = append(ch.sec, s.sec)
+		d.chunks[s.chunkName].def = append(
+			d.chunks[s.chunkName].def,
+			chunkDef{
+				line: s.lineNum,
+				sec:  s.sec,
+			})
 		s.inChunk = true
 	}
 
@@ -607,8 +616,10 @@ func backticks(mkup string) string {
 
 func addedToChunkRef(d *doc, ref chunkRef) string {
 	chunk := d.chunks[ref.name]
-	secs := make([]section, len(chunk.sec))
-	copy(secs, chunk.sec)
+	secs := make([]section, len(chunk.def))
+	for i, def := range chunk.def {
+		secs[i] = def.sec
+	}
 
 	for i, sec := range secs {
 		if reflect.DeepEqual(ref.thisSec, sec) {
@@ -653,9 +664,9 @@ func usedInChunkRef(d *doc, ref chunkRef) string {
 			if referredChunkName(code) == ref.name {
 				lnum := chunk.lines[i]
 				var sec section
-				for j, chLine := range chunk.line {
-					if chLine < lnum {
-						sec = chunk.sec[j]
+				for _, def := range chunk.def {
+					if def.line < lnum {
+						sec = def.sec
 					}
 				}
 				secs = append(secs, sec)
