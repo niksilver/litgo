@@ -273,15 +273,16 @@ func TestProcForChunkRefs(t *testing.T) {
 
 	processContent(r, &s, &d, proc)
 
-	if len(d.chunkRefs) != len(expected) {
+	chRefs := d.chunkRefs[s.inName]
+	if len(chRefs) != len(expected) {
 		t.Errorf("Expected %d chunk refs but got %d. Map is %#v",
-			len(expected), len(d.chunkRefs), d.chunkRefs)
+			len(expected), len(chRefs), chRefs)
 		return
 	}
 	for lNum, ref := range expected {
-		if !reflect.DeepEqual(d.chunkRefs[lNum], ref) {
+		if !reflect.DeepEqual(chRefs[lNum], ref) {
 			t.Errorf("For line %d expected chunk %#v but got %#v",
-				lNum, ref, d.chunkRefs[lNum])
+				lNum, ref, chRefs[lNum])
 		}
 	}
 }

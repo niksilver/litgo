@@ -29,10 +29,10 @@ type state struct {
 }
 
 type doc struct {
-	markdown    map[string]*strings.Builder // Markdown after the initial read, per in file
+	markdown    map[string]*strings.Builder // Markdown after the initial read, per input file
 	chunks      map[string]*chunk           // All the chunks found so far
-	chunkStarts map[string]map[int]string   // Lines where a named chunk starts, per in file
-	chunkRefs   map[int]chunkRef            // Lines where other chunks are called in
+	chunkStarts map[string]map[int]string   // Lines where a named chunk starts, per input file
+	chunkRefs   map[string]map[int]chunkRef // Lines where other chunks are called in, per input file
 	lat         lattice                     // A lattice of chunk parent/child relationships
 	secStarts   map[int]section             // Lines where a section starts
 	// Config
@@ -169,7 +169,7 @@ func newDoc() doc {
 		markdown:    make(map[string]*strings.Builder),
 		chunks:      make(map[string]*chunk),
 		chunkStarts: make(map[string]map[int]string),
-		chunkRefs:   make(map[int]chunkRef),
+		chunkRefs:   make(map[string]map[int]chunkRef),
 		secStarts:   make(map[int]section),
 	}
 }
@@ -216,7 +216,10 @@ func proc(s *state, d *doc, line string) {
 	if s.inChunk && line == "```" {
 		s.inChunk = false
 		// Capture data for post-chunk references
-		d.chunkRefs[s.lineNum] = chunkRef{s.chunkName, s.sec}
+		if _, okay := d.chunkRefs[s.inName]; !okay {
+			d.chunkRefs[s.inName] = make(map[int]chunkRef)
+		}
+		d.chunkRefs[s.inName][s.lineNum] = chunkRef{s.chunkName, s.sec}
 
 	} else if s.inChunk {
 		d.chunks[s.chunkName].cont = append(
@@ -594,7 +597,7 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 
 		b.WriteString(mkup + "\n")
 		// Include post-chunk reference if necessary
-		if ref, ok := d.chunkRefs[count]; ok {
+		if ref, ok := d.chunkRefs[inName][count]; ok {
 			str1 := addedToChunkRef(d, ref)
 			b.WriteString(str1)
 			str2 := usedInChunkRef(d, ref)
