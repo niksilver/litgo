@@ -152,7 +152,7 @@ func TestProcForSectionTrackingStartLines(t *testing.T) {
 	}
 
 	for i, p := range tData {
-		if _, okay := d.secStarts[i+1]; okay != p.start {
+		if _, okay := d.secStarts[s.inName][i+1]; okay != p.start {
 			t.Errorf("Line %d: Expected section start %t but got %t",
 				i+1, p.start, okay)
 		}

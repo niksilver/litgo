@@ -29,12 +29,16 @@ type state struct {
 }
 
 type doc struct {
-	markdown    map[string]*strings.Builder // Markdown after the initial read, per input file
-	chunks      map[string]*chunk           // All the chunks found so far
-	chunkStarts map[string]map[int]string   // Lines where a named chunk starts, per input file
-	chunkRefs   map[string]map[int]chunkRef // Lines where other chunks are called in, per input file
-	lat         lattice                     // A lattice of chunk parent/child relationships
-	secStarts   map[int]section             // Lines where a section starts
+	// Markdown after the initial read, per input file
+	markdown map[string]*strings.Builder
+	chunks   map[string]*chunk // All the chunks found so far
+	// Lines where a named chunk starts, per input file
+	chunkStarts map[string]map[int]string
+	// Lines where other chunks are called in, per input file
+	chunkRefs map[string]map[int]chunkRef
+	lat       lattice // A lattice of chunk parent/child relationships
+	// Lines where a section starts, per input file
+	secStarts map[string]map[int]section
 	// Config
 	lineDir string // The string pattern for line directives
 }
@@ -170,7 +174,7 @@ func newDoc() doc {
 		chunks:      make(map[string]*chunk),
 		chunkStarts: make(map[string]map[int]string),
 		chunkRefs:   make(map[string]map[int]chunkRef),
-		secStarts:   make(map[int]section),
+		secStarts:   make(map[string]map[int]section),
 	}
 }
 func fileReader(fName string) (io.ReadCloser, error) {
@@ -208,7 +212,10 @@ func proc(s *state, d *doc, line string) {
 			line = strings.Repeat("#", len(s.sec.nums)) +
 				" <a name=\"sec" + s.sec.numsToString() + "\"></a>" +
 				s.sec.toString()
-			d.secStarts[s.lineNum] = s.sec
+			if _, okay := d.secStarts[s.inName]; !okay {
+				d.secStarts[s.inName] = make(map[int]section)
+			}
+			d.secStarts[s.inName][s.lineNum] = s.sec
 		}
 	}
 
