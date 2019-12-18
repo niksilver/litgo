@@ -348,16 +348,16 @@ type chunk struct {
     cont []chunkCont // Each line of code
 }
 
-// Where the chunk is defined: file name, line number, section
+// Where the chunk is defined: input file name, line number, section
 type chunkDef struct {
-    file string
+    inName string
     line int
     sec section
 }
 
-// A line of chunk content: file name, line number, and the code line itself
+// A line of chunk content: input file name, line number, and the code line itself
 type chunkCont struct {
-    file string
+    inName string
     lNum int
     code string
 }
@@ -371,7 +371,7 @@ if s.inChunk && line == "```" {
     d.chunks[s.chunkName].cont = append(
             d.chunks[s.chunkName].cont,
             chunkCont {
-                file: s.inName,
+                inName: s.inName,
                 lNum: s.lineNum,
                 code: line,
             })
@@ -393,7 +393,7 @@ if s.inChunk && line == "```" {
     d.chunks[s.chunkName].def = append(
             d.chunks[s.chunkName].def,
             chunkDef {
-                file: s.inName,
+                inName: s.inName,
                 line: s.lineNum,
                 sec: s.sec,
             })

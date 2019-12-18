@@ -12,8 +12,6 @@ Chunks
 - Make chunk starts linkable.
 
 Refactoring
-- In chunk struct definitions, change field file to be called inName
-  for consistency and clarity.
 
 Chapters
 - Follow chapter links and compile chapters.
@@ -44,6 +42,8 @@ Sections
 Refactoring
 - Put the lattice into the state.
 - Rearrange the design doc to present more of a design.
+- In chunk struct definitions, change field file to be called inName
+  for consistency and clarity.
 
 I/O
 - Read from a file specified by the command line

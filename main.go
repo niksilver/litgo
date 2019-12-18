@@ -61,18 +61,18 @@ type chunk struct {
 	cont []chunkCont // Each line of code
 }
 
-// Where the chunk is defined: file name, line number, section
+// Where the chunk is defined: input file name, line number, section
 type chunkDef struct {
-	file string
-	line int
-	sec  section
+	inName string
+	line   int
+	sec    section
 }
 
-// A line of chunk content: file name, line number, and the code line itself
+// A line of chunk content: input file name, line number, and the code line itself
 type chunkCont struct {
-	file string
-	lNum int
-	code string
+	inName string
+	lNum   int
+	code   string
 }
 type chunkRef struct {
 	name    string
@@ -233,9 +233,9 @@ func proc(s *state, d *doc, line string) {
 		d.chunks[s.chunkName].cont = append(
 			d.chunks[s.chunkName].cont,
 			chunkCont{
-				file: s.inName,
-				lNum: s.lineNum,
-				code: line,
+				inName: s.inName,
+				lNum:   s.lineNum,
+				code:   line,
 			})
 	} else if !s.inChunk && strings.HasPrefix(line, "```") {
 		s.chunkName = strings.TrimSpace(line[3:])
@@ -255,9 +255,9 @@ func proc(s *state, d *doc, line string) {
 		d.chunks[s.chunkName].def = append(
 			d.chunks[s.chunkName].def,
 			chunkDef{
-				file: s.inName,
-				line: s.lineNum,
-				sec:  s.sec,
+				inName: s.inName,
+				line:   s.lineNum,
+				sec:    s.sec,
 			})
 		s.inChunk = true
 	}
