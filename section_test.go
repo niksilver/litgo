@@ -95,8 +95,8 @@ func toSection(line string) section {
 }
 
 func TestProcForSectionTrackingHeadings(t *testing.T) {
+	s := state{inName: "headings.md"}
 	d := newDoc()
-	s := state{}
 	tData := []struct {
 		line string // Next line
 		exp  string // Expected section as a string
@@ -126,8 +126,8 @@ func TestProcForSectionTrackingHeadings(t *testing.T) {
 }
 
 func TestProcForSectionTrackingStartLines(t *testing.T) {
+	s := state{inName: "startlines.md"}
 	d := newDoc()
-	s := state{}
 	tData := []struct {
 		line  string // Next line
 		start bool   // True if it's supposed to be a section start
@@ -160,8 +160,8 @@ func TestProcForSectionTrackingStartLines(t *testing.T) {
 }
 
 func TestProcForSectionMarkingAnchors(t *testing.T) {
+	s := state{inName: "anchors.md"}
 	d := newDoc()
-	s := state{}
 	tData := []struct {
 		line string // Next line
 		pref string // Prefix of amended line, if it includes a section anchor
@@ -183,7 +183,7 @@ func TestProcForSectionMarkingAnchors(t *testing.T) {
 	// Process all the lines
 	for i, p := range tData {
 		proc(&s, &d, p.line)
-		lines := strings.Split(d.markdown.String(), "\n")
+		lines := strings.Split(d.markdown[s.inName].String(), "\n")
 		line := lines[len(lines)-2]
 		if !strings.HasPrefix(line, p.pref) {
 			t.Errorf("Line %d: Expected prefix %q but line was %q",
@@ -194,7 +194,7 @@ func TestProcForSectionMarkingAnchors(t *testing.T) {
 
 func TestProcForNumsInSectionHeadings(t *testing.T) {
 	d := newDoc()
-	s := state{}
+	s := state{inName: "headings.md"}
 	tData := []struct {
 		line string // Next line
 		exp  string // Expected markdown line
@@ -210,9 +210,9 @@ func TestProcForNumsInSectionHeadings(t *testing.T) {
 	}
 
 	for i, p := range tData {
-		d.markdown = strings.Builder{}
+		d.markdown[s.inName] = &strings.Builder{}
 		proc(&s, &d, p.line)
-		line := d.markdown.String()
+		line := d.markdown[s.inName].String()
 		md := line[0 : len(line)-1]
 		if stripHTML(md) != p.exp {
 			t.Errorf("Line %d: Expected markdown %q but got %q",

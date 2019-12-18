@@ -29,12 +29,12 @@ type state struct {
 }
 
 type doc struct {
-	markdown    strings.Builder   // Markdown after the initial read
-	chunks      map[string]*chunk // All the chunks found so far
-	chunkStarts map[int]string    // Lines where a named chunk starts
-	chunkRefs   map[int]chunkRef  // Lines where other chunks are called in
-	lat         lattice           // A lattice of chunk parent/child relationships
-	secStarts   map[int]section   // Lines where a section starts
+	markdown    map[string]*strings.Builder // Markdown after the initial read, per in file
+	chunks      map[string]*chunk           // All the chunks found so far
+	chunkStarts map[int]string              // Lines where a named chunk starts
+	chunkRefs   map[int]chunkRef            // Lines where other chunks are called in
+	lat         lattice                     // A lattice of chunk parent/child relationships
+	secStarts   map[int]section             // Lines where a section starts
 	// Config
 	lineDir string // The string pattern for line directives
 }
@@ -96,7 +96,6 @@ func main() {
 		printHelp()
 		return
 	}
-	s.outName = outName(s.inName)
 	if lDir != "" {
 		d.lineDir = lDir
 	}
@@ -147,7 +146,7 @@ func main() {
 	}
 
 	// Write out the markdown
-	if err := writeHTML(s.outName, &d); err != nil {
+	if err := writeHTML(s.inName, &d); err != nil {
 		fmt.Print(err.Error())
 		return
 	}
@@ -156,13 +155,13 @@ func main() {
 
 func newDoc() doc {
 	return doc{
+		markdown:    make(map[string]*strings.Builder),
 		chunks:      make(map[string]*chunk),
 		chunkStarts: make(map[int]string),
 		chunkRefs:   make(map[int]chunkRef),
 		secStarts:   make(map[int]section),
 	}
 }
-
 func fileReader(fName string) (io.ReadCloser, error) {
 	var f *os.File
 	var err error
@@ -229,7 +228,10 @@ func proc(s *state, d *doc, line string) {
 		s.inChunk = true
 	}
 
-	d.markdown.WriteString(line + "\n")
+	if _, okay := d.markdown[s.inName]; !okay {
+		d.markdown[s.inName] = &strings.Builder{}
+	}
+	d.markdown[s.inName].WriteString(line + "\n")
 }
 
 func (s *section) toString() string {
@@ -531,10 +533,11 @@ func lineDirective(dir string, indent string, fName string, n int) string {
 	return out + "\n"
 }
 
-func writeHTML(outName string, d *doc) error {
-	md := finalMarkdown(d).String()
+func writeHTML(inName string, d *doc) error {
+	oName := outName(inName)
+	md := finalMarkdown(inName, d).String()
 	output := markdown.ToHTML([]byte(md), nil, nil)
-	outFile, err := os.Create(outName)
+	outFile, err := os.Create(oName)
 	if err != nil {
 		return err
 	}
@@ -546,9 +549,9 @@ func writeHTML(outName string, d *doc) error {
 	return outFile.Close()
 }
 
-func finalMarkdown(d *doc) *strings.Builder {
+func finalMarkdown(inName string, d *doc) *strings.Builder {
 	b := strings.Builder{}
-	r := strings.NewReader(d.markdown.String())
+	r := strings.NewReader(d.markdown[inName].String())
 	sc := bufio.NewScanner(r)
 	count := 0
 	for sc.Scan() {

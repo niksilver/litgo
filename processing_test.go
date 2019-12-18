@@ -39,6 +39,7 @@ func TestProcessContent(t *testing.T) {
 }
 
 func TestProcForMarkdown(t *testing.T) {
+	s := state{inName: "markdown.md"}
 	d := newDoc()
 	cs := []struct {
 		line     string // Next line
@@ -59,10 +60,11 @@ func TestProcForMarkdown(t *testing.T) {
 	}
 
 	for i, c := range cs {
-		proc(&state{}, &d, c.line)
-		if d.markdown.String() != c.markdown {
+		proc(&s, &d, c.line)
+		mdb := d.markdown[s.inName]
+		if mdb.String() != c.markdown {
 			t.Errorf("Line %d: Expected markdown %q but got %q",
-				i+1, c.markdown, d.markdown.String())
+				i+1, c.markdown, mdb.String())
 		}
 	}
 }
