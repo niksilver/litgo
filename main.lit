@@ -85,7 +85,7 @@ type state struct {
 type doc struct {
     markdown map[string]*strings.Builder  // Markdown after the initial read, per in file
     chunks map[string]*chunk  // All the chunks found so far
-    chunkStarts map[int]string  // Lines where a named chunk starts
+    chunkStarts map[string]map[int]string  // Lines where a named chunk starts, per in file
     chunkRefs map[int]chunkRef  // Lines where other chunks are called in
     lat lattice  // A lattice of chunk parent/child relationships
     secStarts map[int]section  // Lines where a section starts
@@ -101,7 +101,7 @@ func newDoc() doc {
     return doc{
         markdown: make(map[string]*strings.Builder),
         chunks: make(map[string]*chunk),
-        chunkStarts: make(map[int]string),
+        chunkStarts: make(map[string]map[int]string),
         chunkRefs: make(map[int]chunkRef),
         secStarts: make(map[int]section),
     }
@@ -367,7 +367,10 @@ if s.inChunk && line == "```" {
         d.chunks[s.chunkName] = &chunk{}
         ch = d.chunks[s.chunkName]
     }
-    d.chunkStarts[s.lineNum] = s.chunkName
+    if _, okay := d.chunkStarts[s.inName]; !okay {
+        d.chunkStarts[s.inName] = make(map[int]string)
+    }
+    d.chunkStarts[s.inName][s.lineNum] = s.chunkName
     d.chunks[s.chunkName].def = append(
             d.chunks[s.chunkName].def,
             chunkDef {
@@ -847,7 +850,7 @@ of the filename. For other chunks we need to work up the lattice until
 we find the top chunk.
 
 --- Amend chunk starts to include coding language
-if name, okay := d.chunkStarts[count]; okay {
+if name, okay := d.chunkStarts[inName][count]; okay {
     mkup = backticks(mkup)
     top := topOf(name, d.lat)
     re, _ := regexp.Compile("[-_a-zA-Z0-9]*$")
