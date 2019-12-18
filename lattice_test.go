@@ -6,17 +6,26 @@ import (
 	"testing"
 )
 
+func contCode(code ...string) []chunkCont {
+	cont := make([]chunkCont, len(code))
+	for i, c := range code {
+		cont[i] = chunkCont{code: c}
+	}
+	return cont
+}
+
 func TestBasicLattice(t *testing.T) {
 	chunks := map[string]*chunk{
-		"top": &chunk{code: []string{
-			"top one", "@{chunk two}", "@{chunk three}", "top four",
-		}},
-		"chunk three": &chunk{code: []string{
-			"three A", "three B",
-		}},
-		"chunk two": &chunk{code: []string{
-			"Two A", "  @{chunk three}  ", "@chunk three",
-		}},
+		"top": &chunk{
+			cont: contCode(
+				"top one", "@{chunk two}", "@{chunk three}", "top four"),
+		},
+		"chunk three": &chunk{
+			cont: contCode("three A", "three B"),
+		},
+		"chunk two": &chunk{
+			cont: contCode("Two A", "  @{chunk three}  ", "@chunk three"),
+		},
 	}
 	expected := lattice{
 		childrenOf: map[string]set{

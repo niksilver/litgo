@@ -52,9 +52,8 @@ type section struct {
 }
 
 type chunk struct {
-	def   []chunkDef // Each place where the chunk is defined
-	code  []string   // Lines of code, without newlines
-	lines []int      // Line number for each line of code
+	def  []chunkDef  // Each place where the chunk is defined
+	cont []chunkCont // Each line of code
 }
 
 // Where the chunk is defined: file name, line number, section
@@ -62,6 +61,13 @@ type chunkDef struct {
 	file string
 	line int
 	sec  section
+}
+
+// A line of chunk content: file name, line number, and the code line itself
+type chunkCont struct {
+	file string
+	lNum int
+	code string
 }
 type chunkRef struct {
 	name    string
@@ -213,9 +219,13 @@ func proc(s *state, d *doc, line string) {
 		d.chunkRefs[s.lineNum] = chunkRef{s.chunkName, s.sec}
 
 	} else if s.inChunk {
-		ch := d.chunks[s.chunkName]
-		d.chunks[s.chunkName].code = append(ch.code, line)
-		d.chunks[s.chunkName].lines = append(ch.lines, s.lineNum)
+		d.chunks[s.chunkName].cont = append(
+			d.chunks[s.chunkName].cont,
+			chunkCont{
+				file: s.inName,
+				lNum: s.lineNum,
+				code: line,
+			})
 	} else if !s.inChunk && strings.HasPrefix(line, "```") {
 		s.chunkName = strings.TrimSpace(line[3:])
 		if s.chunkName == "" {
@@ -231,6 +241,7 @@ func proc(s *state, d *doc, line string) {
 		d.chunks[s.chunkName].def = append(
 			d.chunks[s.chunkName].def,
 			chunkDef{
+				file: s.inName,
 				line: s.lineNum,
 				sec:  s.sec,
 			})
@@ -303,8 +314,8 @@ func compileLattice(chunks map[string]*chunk) lattice {
 			lat.parentsOf[name] = make(map[string]bool)
 		}
 
-		for _, line := range data.code {
-			refChunk := referredChunkName(line)
+		for _, cont := range data.cont {
+			refChunk := referredChunkName(cont.code)
 			if refChunk == "" {
 				continue
 			}
@@ -483,15 +494,16 @@ func writeChunk(name string,
 	fName string) error {
 
 	chunk := *d.chunks[name]
-	for i, code := range chunk.code {
+	for _, cont := range chunk.cont {
+		code := cont.code
 		var err error
 		if ref := referredChunkName(code); ref != "" {
 			iPos := strings.Index(code, "@")
 			err = writeChunk(ref, d, w, lineDir, code[0:iPos]+indent, fName)
 		} else {
-			lnum := chunk.lines[i]
+			lNum := cont.lNum
 			indentHere := initialWS(code)
-			dir := lineDirective(lineDir, indent+indentHere, fName, lnum)
+			dir := lineDirective(lineDir, indent+indentHere, fName, lNum)
 			_, err = w.WriteString(dir + indent + code + "\n")
 		}
 		if err != nil {
@@ -660,12 +672,11 @@ func usedInChunkRef(d *doc, ref chunkRef) string {
 	// Get the sections
 	for parName, _ := range d.lat.parentsOf[ref.name] {
 		chunk := d.chunks[parName]
-		for i, code := range chunk.code {
-			if referredChunkName(code) == ref.name {
-				lnum := chunk.lines[i]
+		for _, cont := range chunk.cont {
+			if referredChunkName(cont.code) == ref.name {
 				var sec section
 				for _, def := range chunk.def {
-					if def.line < lnum {
+					if def.line < cont.lNum {
 						sec = def.sec
 					}
 				}

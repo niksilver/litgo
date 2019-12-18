@@ -6,10 +6,6 @@ import (
 	"testing"
 )
 
-func lineSec(line int, sec section) chunkDef {
-	return chunkDef{line: line, sec: sec}
-}
-
 func TestProcessContent(t *testing.T) {
 
 	// Make sure proc is called at least once normally
@@ -99,7 +95,7 @@ func TestProcForInChunks(t *testing.T) {
 
 func TestProcForChunkNames(t *testing.T) {
 	d := newDoc()
-	s := state{}
+	s := state{inName: "names.md"}
 	lines := []string{
 		"``` First",
 		"Code line 1",
@@ -111,27 +107,41 @@ func TestProcForChunkNames(t *testing.T) {
 		"```",
 		"The end",
 	}
-	first := []string{"Code line 1", "Code line 2"}
-	second := []string{"Code line 3"}
+	exp := map[string][]string{
+		"First":  []string{"Code line 1", "Code line 2"},
+		"Second": []string{"Code line 3"},
+	}
 
 	for _, line := range lines {
 		proc(&s, &d, line)
 	}
-	actFirst := d.chunks["First"].code
-	if !reflect.DeepEqual(actFirst, first) {
-		t.Errorf("Chunk First should be %#v but got %#v",
-			first, actFirst)
+
+	if len(d.chunks) != 2 {
+		t.Errorf("Expected 2 chunks but got %d: %#v",
+			len(d.chunks), d.chunks)
 	}
-	actSecond := d.chunks["Second"].code
-	if !reflect.DeepEqual(actSecond, second) {
-		t.Errorf("Chunk Second should be %#v but got %#v",
-			first, actSecond)
+	for name, codes := range exp {
+		if _, okay := d.chunks[name]; !okay {
+			t.Errorf("Couldn't find chunk name %s", name)
+			continue
+		}
+		cont := d.chunks[name].cont
+		if len(cont) != len(codes) {
+			t.Errorf("In chunk %s expected %d lines of content but content is %#v",
+				name, len(codes), cont)
+		}
+		for i, code := range codes {
+			if cont[i].code != code {
+				t.Errorf("In chunk %s expected code[%d] == %q but got %q",
+					name, i, code, cont[i].code)
+			}
+		}
 	}
 }
 
 func TestProcForChunkDetails(t *testing.T) {
 	d := newDoc()
-	s := state{}
+	s := state{inName: "details.md"}
 	lines := []string{
 		"``` First",
 		"Code line 1",
@@ -151,14 +161,23 @@ func TestProcForChunkDetails(t *testing.T) {
 	sec1 := section{[]int{1}, "Heading"}
 	expected := map[string]chunk{
 		"First": chunk{
-			[]chunkDef{lineSec(1, sec0), lineSec(10, sec1)},
-			[]string{"Code line 1", "Code line 2", "Code line 4"},
-			[]int{2, 3, 11},
+			[]chunkDef{
+				chunkDef{"details.md", 1, sec0},
+				chunkDef{"details.md", 10, sec1},
+			},
+			[]chunkCont{
+				chunkCont{"details.md", 2, "Code line 1"},
+				chunkCont{"details.md", 3, "Code line 2"},
+				chunkCont{"details.md", 11, "Code line 4"},
+			},
 		},
 		"Second": chunk{
-			[]chunkDef{lineSec(6, sec1)},
-			[]string{"Code line 3"},
-			[]int{7},
+			[]chunkDef{
+				chunkDef{"details.md", 6, sec1},
+			},
+			[]chunkCont{
+				chunkCont{"details.md", 7, "Code line 3"},
+			},
 		},
 	}
 

@@ -43,6 +43,10 @@ func defLines(lines ...int) []chunkDef {
 	return def
 }
 
+func contLNumCode(lNum int, code string) chunkCont {
+	return chunkCont{lNum: lNum, code: code}
+}
+
 func TestWriteChunks_Okay(t *testing.T) {
 	// Test code that looks like this (with line numbers):
 	//
@@ -86,18 +90,23 @@ Line 2.2
 	chunks := map[string]*chunk{
 		"One": &chunk{
 			defLines(1, 16),
-			[]string{"Line 1.1", "@{Three}", "Line 1.3", "Line 1.4"},
-			[]int{2, 3, 4, 17},
+			[]chunkCont{
+				contLNumCode(2, "Line 1.1"),
+				contLNumCode(3, "@{Three}"),
+				contLNumCode(4, "Line 1.3"),
+				contLNumCode(17, "Line 1.4")},
 		},
 		"Two": &chunk{
 			defLines(7),
-			[]string{"@{Three}", "Line 2.2"},
-			[]int{8, 9},
+			[]chunkCont{
+				contLNumCode(8, "@{Three}"),
+				contLNumCode(9, "Line 2.2")},
 		},
 		"Three": &chunk{
 			defLines(12),
-			[]string{"Line 3.1", "Line 3.2"},
-			[]int{13, 14},
+			[]chunkCont{
+				contLNumCode(13, "Line 3.1"),
+				contLNumCode(14, "Line 3.2")},
 		},
 	}
 
@@ -161,18 +170,23 @@ func TestWriteChunks_ErrorWriting(t *testing.T) {
 	chunks := map[string]*chunk{
 		"One": &chunk{
 			defLines(1, 16),
-			[]string{"Line 1.1", "@{Three}", "Line 1.3", "Line 1.4"},
-			[]int{2, 3, 4, 17},
+			[]chunkCont{
+				contLNumCode(2, "Line 1.1"),
+				contLNumCode(3, "@{Three}"),
+				contLNumCode(4, "Line 1.3"),
+				contLNumCode(17, "Line 1.4")},
 		},
 		"Two": &chunk{
 			defLines(7),
-			[]string{"@{Three}", "Line 2.2"},
-			[]int{8, 9},
+			[]chunkCont{
+				contLNumCode(8, "@{Three}"),
+				contLNumCode(9, "Line 2.2")},
 		},
 		"Three": &chunk{
 			defLines(12),
-			[]string{"Line 3.1", "Line 3.2"},
-			[]int{13, 14},
+			[]chunkCont{
+				contLNumCode(13, "Line 3.1"),
+				contLNumCode(14, "Line 3.2")},
 		},
 	}
 
@@ -218,18 +232,23 @@ func TestWriteChunks_IndentProperly(t *testing.T) {
 	chunks := map[string]*chunk{
 		"One": &chunk{
 			defLines(1),
-			[]string{"  Line 1.1", "  @{Two}", "  Line 1.3", "  @{Three}"},
-			[]int{2, 3, 4, 5},
+			[]chunkCont{
+				contLNumCode(2, "  Line 1.1"),
+				contLNumCode(3, "  @{Two}"),
+				contLNumCode(4, "  Line 1.3"),
+				contLNumCode(5, "  @{Three}")},
 		},
 		"Two": &chunk{
 			defLines(8),
-			[]string{"Line 2.1", "  @{Three}", "Line 2.2"},
-			[]int{9, 10, 11},
+			[]chunkCont{
+				contLNumCode(9, "Line 2.1"),
+				contLNumCode(10, "  @{Three}"),
+				contLNumCode(11, "Line 2.2")},
 		},
 		"Three": &chunk{
 			defLines(4),
-			[]string{"Line 3.1"},
-			[]int{15},
+			[]chunkCont{
+				contLNumCode(15, "Line 3.1")},
 		},
 	}
 
@@ -297,18 +316,23 @@ Line 2.2
 	chunks := map[string]*chunk{
 		"One": &chunk{
 			defLines(1, 16),
-			[]string{"Line 1.1", "@{Three}", "Line 1.3", "Line 1.4"},
-			[]int{2, 3, 4, 17},
+			[]chunkCont{
+				contLNumCode(2, "Line 1.1"),
+				contLNumCode(3, "@{Three}"),
+				contLNumCode(4, "Line 1.3"),
+				contLNumCode(17, "Line 1.4")},
 		},
 		"Two": &chunk{
 			defLines(7),
-			[]string{"@{Three}", "Line 2.2"},
-			[]int{8, 9},
+			[]chunkCont{
+				contLNumCode(8, "@{Three}"),
+				contLNumCode(9, "Line 2.2")},
 		},
 		"Three": &chunk{
 			defLines(12),
-			[]string{"Line 3.1", "Line 3.2"},
-			[]int{13, 14},
+			[]chunkCont{
+				contLNumCode(13, "Line 3.1"),
+				contLNumCode(14, "Line 3.2")},
 		},
 	}
 
@@ -372,13 +396,15 @@ func TestWriteChunks_OkayWithLineDirectiveIndents(t *testing.T) {
 	chunks := map[string]*chunk{
 		"One": &chunk{
 			defLines(1),
-			[]string{"  Line 1.1", "  @{Two}", "  Line 1.3"},
-			[]int{2, 3, 4},
+			[]chunkCont{
+				contLNumCode(2, "  Line 1.1"),
+				contLNumCode(3, "  @{Two}"),
+				contLNumCode(4, "  Line 1.3")},
 		},
 		"Two": &chunk{
 			defLines(7),
-			[]string{"Line 2.1"},
-			[]int{8},
+			[]chunkCont{
+				contLNumCode(8, "Line 2.1")},
 		},
 	}
 
