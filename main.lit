@@ -75,6 +75,7 @@ type state struct {
     // Tracking
     inName string  // Name of file being processed, relative to working dir
     outName string  // Name of final file to write to
+    nextIn []string  // Name of next file(s) to read in
     lineNum int  // Current line number
     chunkName string  // Name of current chunk
     inChunk bool  // If we're currently reading a chunk
@@ -110,6 +111,7 @@ func newDoc() doc {
         secStarts: make(map[string]map[int]section),
     }
 }
+
 ---
 
 @s Processing the content: Overview
@@ -129,23 +131,48 @@ check for problems, and prepare for output (code and markup).
 
 @s Processing the content: First pass, basic file handling
 
-We open a file, process the content, and close the file.
+We open a file, process the content, and close the file, repeatedly
+for all file - one initially, but if we're reading a book
+that may lead to others.
+When reading a book, future files to read in are stored in `s.nextIn`.
+We will keep looping through the `nextIn` files until there are none left.
+
 If the filename is `"-"` then we use Stdin.
 
 --- Do a first pass through the content
-fReader, err := fileReader(s.inName)
-if err != nil {
-    fmt.Println(err.Error())
-    return
-}
-processContent(fReader, &s, &d, proc)
-if err := fReader.Close(); err != nil {
+if err := firstPassForAll(&s, &d, proc, fileReader); err != nil {
     fmt.Println(err.Error())
     return
 }
 ---
 
 --- Functions +=
+func firstPassForAll(s *state, d *doc, lp lineProc, fileRdr func(string) (io.ReadCloser, error)) error {
+    for s.inName != "" {
+        if err := firstPass(s, d, proc, fileRdr); err != nil {
+            return err
+        }
+        s.inName = ""
+        if len(s.nextIn) > 0 {
+            s.setInName(s.nextIn[0])
+            s.nextIn = s.nextIn[1:]
+        }
+    }
+    return nil
+}
+
+func firstPass(s *state, d *doc, lp lineProc, fileRdr func(string) (io.ReadCloser, error)) error {
+    fReader, err := fileRdr(s.inName)
+    if err != nil {
+        return err
+    }
+    processContent(fReader, s, d, lp)
+    if err := fReader.Close(); err != nil {
+        return err
+    }
+    return nil
+}
+
 func fileReader(fName string) (io.ReadCloser, error) {
     var f *os.File
     var err error
@@ -202,6 +229,7 @@ will need to process special commands.
 --- Functions +=
 func proc(s *state, d *doc, line string) {
     s.lineNum ++
+    @{Track chapter files to read}
     @{Track and mark section changes}
     @{Collect lines in code chunks}
     if _, okay := d.markdown[s.inName]; !okay {
@@ -326,9 +354,45 @@ if !s.inChunk && strings.HasPrefix(line, "#") {
 ---
 
 --- Functions +=
-func (s *state) setInName(name string) {
+func (s *state) setInName(name string) *state {
     s.inName = name
     s.sec.inName = name
+    return s
+}
+
+---
+
+
+@s Processing content: Watching for links to chapter files
+
+If a line of markdown contains a link to a .md file then
+that's a sign we should add the file to our input list.
+
+The regular expression to find a link is:
+
+* A `]` character followed by
+* a `)` character followed by
+* the filename followed by
+* an optional space and title in double quotes, followed by
+* A `)` character.
+
+--- Track chapter files to read
+nextInName := markdownLink(line)
+if !s.inChunk && nextInName != "" {
+    s.nextIn = append(s.nextIn, nextInName)
+}
+---
+
+--- Functions +=
+func markdownLink(line string) string {
+    titleRE := `(\s+"[^"]*")?`
+    re, _ := regexp.Compile("\\]\\(([^)]+\\.md)" + titleRE + "\\)")
+    s := re.FindStringSubmatch(line)
+    if len(s) == 0 {
+        return ""
+    }
+    fmt.Printf("Found link to %q\n", s[1])
+    return s[1]
 }
 
 ---
@@ -687,7 +751,7 @@ The writing process will return any error.
 
 --- Write out the code files
 top := topLevelChunks(d.lat)
-err = writeChunks(top, d, d.lineDir, s.inName, getWriteCloser)
+err := writeChunks(top, d, d.lineDir, s.inName, getWriteCloser)
 if err != nil {
     fmt.Println(err.Error())
     return

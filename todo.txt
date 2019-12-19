@@ -12,13 +12,14 @@ Chunks
 - Make chunk starts linkable.
 
 Refactoring
+- Make proc a method of *state.
 
 Chapters
 - Follow chapter links and compile chapters.
   - Have a command line flag to say if the markdown file is book with chapters
-  - If reading chapters, makes sure to read a sequence of files.
   - If reading chapters, preserve the section number between successive
     files... but make sure the filename changes.
+- Output one documentation file for each input file read.
 - Allow links between chapters.
 
 Directives
@@ -29,6 +30,10 @@ I/O
 
 Done
 ----
+
+Chapters
+- Follow chapter links and compile chapters.
+  - If reading chapters, makes sure to read a sequence of files.
 
 Sections
 - Track current section

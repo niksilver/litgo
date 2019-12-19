@@ -21,6 +21,7 @@ type state struct {
 	// Tracking
 	inName    string    // Name of file being processed, relative to working dir
 	outName   string    // Name of final file to write to
+	nextIn    []string  // Name of next file(s) to read in
 	lineNum   int       // Current line number
 	chunkName string    // Name of current chunk
 	inChunk   bool      // If we're currently reading a chunk
@@ -118,13 +119,7 @@ func main() {
 
 	// Read the content
 	// Do a first pass through the content
-	fReader, err := fileReader(s.inName)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	processContent(fReader, &s, &d, proc)
-	if err := fReader.Close(); err != nil {
+	if err := firstPassForAll(&s, &d, proc, fileReader); err != nil {
 		fmt.Println(err.Error())
 		return
 	}
@@ -155,7 +150,7 @@ func main() {
 
 	// Write out the code files
 	top := topLevelChunks(d.lat)
-	err = writeChunks(top, d, d.lineDir, s.inName, getWriteCloser)
+	err := writeChunks(top, d, d.lineDir, s.inName, getWriteCloser)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -178,6 +173,33 @@ func newDoc() doc {
 		secStarts:   make(map[string]map[int]section),
 	}
 }
+
+func firstPassForAll(s *state, d *doc, lp lineProc, fileRdr func(string) (io.ReadCloser, error)) error {
+	for s.inName != "" {
+		if err := firstPass(s, d, proc, fileRdr); err != nil {
+			return err
+		}
+		s.inName = ""
+		if len(s.nextIn) > 0 {
+			s.setInName(s.nextIn[0])
+			s.nextIn = s.nextIn[1:]
+		}
+	}
+	return nil
+}
+
+func firstPass(s *state, d *doc, lp lineProc, fileRdr func(string) (io.ReadCloser, error)) error {
+	fReader, err := fileRdr(s.inName)
+	if err != nil {
+		return err
+	}
+	processContent(fReader, s, d, lp)
+	if err := fReader.Close(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func fileReader(fName string) (io.ReadCloser, error) {
 	var f *os.File
 	var err error
@@ -205,6 +227,12 @@ func processContent(r io.Reader, s *state, d *doc, proc lineProc) {
 
 func proc(s *state, d *doc, line string) {
 	s.lineNum++
+	// Track chapter files to read
+	nextInName := markdownLink(line)
+	if !s.inChunk && nextInName != "" {
+		s.nextIn = append(s.nextIn, nextInName)
+	}
+
 	// Track and mark section changes
 	if !s.inChunk && strings.HasPrefix(line, "#") {
 		var changed bool
@@ -313,9 +341,21 @@ func (s *section) next(line string) (section, bool) {
 	return section{s.inName, nums, find[2]}, true
 }
 
-func (s *state) setInName(name string) {
+func (s *state) setInName(name string) *state {
 	s.inName = name
 	s.sec.inName = name
+	return s
+}
+
+func markdownLink(line string) string {
+	titleRE := `(\s+"[^"]*")?`
+	re, _ := regexp.Compile("\\]\\(([^)]+\\.md)" + titleRE + "\\)")
+	s := re.FindStringSubmatch(line)
+	if len(s) == 0 {
+		return ""
+	}
+	fmt.Printf("Found link to %q\n", s[1])
+	return s[1]
 }
 
 func compileLattice(chunks map[string]*chunk) lattice {
