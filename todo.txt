@@ -16,13 +16,13 @@ Refactoring
 
 Book and chapters
 - Follow chapter links and compile chapters.
-  - Have a command line flag to say if the markdown file is book with chapters
-  - Follow chapter links only in the top level (book) file.
   - If reading chapters, preserve the section number between successive
     files... but make sure the filename changes.
   - Only amend chapter links in the book file, not other files.
+  - When amending chapter links don't amend the path, just the suffix,
+    even if the book file is not in the base directory.
 - Output one documentation file for each input file read.
-- Allow links between chapters.
+- Allow section links between chapters.
 
 Directives
 - Add a dummy "ignore" directive just to make sure line numbers
@@ -37,6 +37,10 @@ Book and chapters
 - Follow chapter links and compile chapters.
   - If reading chapters, makes sure to read a sequence of files.
   - Follow chapter links only if the file is a book.
+  - Follow chapter links only in the top level (book) file.
+  - Have a command line flag to say if the markdown file is book with chapters
+  - When following chapter links, read the input file relative
+    to the book directory.
 
 Sections
 - Track current section

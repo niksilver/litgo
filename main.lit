@@ -76,7 +76,7 @@ type state struct {
     book string  // Name of the top level book file, or empty if none.
     inName string  // Name of file being processed, relative to working dir
     outName string  // Name of final file to write to
-    nextIn []string  // Name of next file(s) to read in
+    inNames []string  // Name of all input files, including the first
     lineNum int  // Current line number
     chunkName string  // Name of current chunk
     inChunk bool  // If we're currently reading a chunk
@@ -151,16 +151,12 @@ if err := firstPassForAll(&s, &d, proc, fileReader); err != nil {
 
 --- Functions +=
 func firstPassForAll(s *state, d *doc, lp lineProc, fileRdr func(string) (io.ReadCloser, error)) error {
-    for s.inName != "" {
+    for i := 0; i < len(s.inNames); i++ {
+        s.setInName(s.inNames[i])
         if err := firstPass(s, d, proc, fileRdr); err != nil {
             return err
         }
-        s.inName = ""
         s.book = ""
-        if len(s.nextIn) > 0 {
-            s.setInName(s.nextIn[0])
-            s.nextIn = s.nextIn[1:]
-        }
     }
     return nil
 }
@@ -364,6 +360,13 @@ func (s *state) setInName(name string) *state {
     return s
 }
 
+func (s *state) setFirstInName(name string) *state {
+    s.inName = name
+    s.sec.inName = name
+    s.inNames = []string{ name }
+    return s
+}
+
 ---
 
 
@@ -371,8 +374,10 @@ func (s *state) setInName(name string) *state {
 
 If a line of markdown contains a link to a .md file then
 that's a sign we should add the file to our input list.
+We should make sure any link we follow is relative to the
+input file.
 
-The regular expression to find a link is:
+In a line of markdown, the regular expression to find a link is:
 
 * A `]` character followed by
 * a `)` character followed by
@@ -383,7 +388,9 @@ The regular expression to find a link is:
 --- Track chapter files to read
 nextInName := markdownLink(line)
 if s.book != "" && !s.inChunk && nextInName != "" {
-    s.nextIn = append(s.nextIn, nextInName)
+    dir := filepath.Dir(s.inName)
+    relInName := filepath.Join(dir, nextInName)
+    s.inNames = append(s.inNames, relInName)
 }
 ---
 
@@ -881,8 +888,14 @@ func lineDirective(dir string, indent string, fName string, n int) string {
 
 @s Outputting the markdown: Basic output
 
-In theory we can just write out the markdown as one big string in the
-`markdown` field of the state. But we also want to:
+When outputting the markdown there is an outer loop and an inner task.
+
+For the outer loop we want to go through each input file and
+write out the corresponding HTML.
+
+For the inner task we could just output the relevant markdown for that
+input file, but we also want to amend it (to create "final" markdown)
+to:
 
 * Amend each start-of-chunk section so it includes the coding language;
 * insert post-chunk references;
@@ -1114,32 +1127,39 @@ func (s1 *section) less(s2 section) bool {
 
 The command line is:
 
-    cmd [--line-dir <ldir>] <input-file>
+    cmd [--book[=true|false]] [--line-dir <ldir>] <input-file>
 
       <input-file> can be - (or omit it) to indicate stdin.
+      --book if the input file is a book, in which case links
+          to .md files are followed for that file.
       <ldir> is the line directive to preceed each code line.
           Use %f for filename, %l for line number,
           %i to include indentation, %% for percent sign.
 
 --- Package level declarations +=
+var book bool
 var lDir string
 
 ---
 
 --- Flag initialisation
+flag.BoolVar(&book, "book", false, "If the input file is a book")
 flag.StringVar(&lDir, "line-dir", "", "Pattern for line directives")
 ---
 
 --- Update the structs according to the command line
 flag.Parse()
 if flag.NArg() == 0 {
-    s.setInName("-")
+    s.setFirstInName("-")
 } else if flag.NArg() == 1 {
-    s.setInName(flag.Arg(0))
+    s.setFirstInName(flag.Arg(0))
 } else if flag.NArg() > 1 {
     fmt.Print("Too many arguments\n\n")
     printHelp()
     return
+}
+if book {
+    s.book = s.inName
 }
 if lDir != "" {
     d.lineDir = lDir
@@ -1151,7 +1171,12 @@ func printHelp() {
     msg := `litgo [--line-dir <ldir>] <input-file>
 
     <input-file> can be - (or be omitted) to indicate stdin.
-    <ldir> is the line directive to preceed each code line.
+
+    --book[=true|false]
+        Says if the input file is a book, in which case links
+        to .md files are followed for that file.
+    --line-dir <ldir>
+        <ldir> is the line directive to preceed each code line.
         Use %f for filename, %l for line number,
         %i to include indentation, %% for percent sign.
 `

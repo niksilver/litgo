@@ -22,7 +22,7 @@ type state struct {
 	book      string    // Name of the top level book file, or empty if none.
 	inName    string    // Name of file being processed, relative to working dir
 	outName   string    // Name of final file to write to
-	nextIn    []string  // Name of next file(s) to read in
+	inNames   []string  // Name of all input files, including the first
 	lineNum   int       // Current line number
 	chunkName string    // Name of current chunk
 	inChunk   bool      // If we're currently reading a chunk
@@ -88,12 +88,14 @@ type lattice struct {
 	parentsOf  map[string]set
 }
 
+var book bool
 var lDir string
 
 // Functions
 
 func init() {
 	// Flag initialisation
+	flag.BoolVar(&book, "book", false, "If the input file is a book")
 	flag.StringVar(&lDir, "line-dir", "", "Pattern for line directives")
 
 }
@@ -106,13 +108,16 @@ func main() {
 	// Update the structs according to the command line
 	flag.Parse()
 	if flag.NArg() == 0 {
-		s.setInName("-")
+		s.setFirstInName("-")
 	} else if flag.NArg() == 1 {
-		s.setInName(flag.Arg(0))
+		s.setFirstInName(flag.Arg(0))
 	} else if flag.NArg() > 1 {
 		fmt.Print("Too many arguments\n\n")
 		printHelp()
 		return
+	}
+	if book {
+		s.book = s.inName
 	}
 	if lDir != "" {
 		d.lineDir = lDir
@@ -176,16 +181,12 @@ func newDoc() doc {
 }
 
 func firstPassForAll(s *state, d *doc, lp lineProc, fileRdr func(string) (io.ReadCloser, error)) error {
-	for s.inName != "" {
+	for i := 0; i < len(s.inNames); i++ {
+		s.setInName(s.inNames[i])
 		if err := firstPass(s, d, proc, fileRdr); err != nil {
 			return err
 		}
-		s.inName = ""
 		s.book = ""
-		if len(s.nextIn) > 0 {
-			s.setInName(s.nextIn[0])
-			s.nextIn = s.nextIn[1:]
-		}
 	}
 	return nil
 }
@@ -232,7 +233,9 @@ func proc(s *state, d *doc, line string) {
 	// Track chapter files to read
 	nextInName := markdownLink(line)
 	if s.book != "" && !s.inChunk && nextInName != "" {
-		s.nextIn = append(s.nextIn, nextInName)
+		dir := filepath.Dir(s.inName)
+		relInName := filepath.Join(dir, nextInName)
+		s.inNames = append(s.inNames, relInName)
 	}
 
 	// Track and mark section changes
@@ -346,6 +349,13 @@ func (s *section) next(line string) (section, bool) {
 func (s *state) setInName(name string) *state {
 	s.inName = name
 	s.sec.inName = name
+	return s
+}
+
+func (s *state) setFirstInName(name string) *state {
+	s.inName = name
+	s.sec.inName = name
+	s.inNames = []string{name}
 	return s
 }
 
@@ -779,7 +789,12 @@ func printHelp() {
 	msg := `litgo [--line-dir <ldir>] <input-file>
 
     <input-file> can be - (or be omitted) to indicate stdin.
-    <ldir> is the line directive to preceed each code line.
+
+    --book[=true|false]
+        Says if the input file is a book, in which case links
+        to .md files are followed for that file.
+    --line-dir <ldir>
+        <ldir> is the line directive to preceed each code line.
         Use %f for filename, %l for line number,
         %i to include indentation, %% for percent sign.
 `

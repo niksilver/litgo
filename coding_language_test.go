@@ -7,7 +7,7 @@ import (
 
 func newState(name string) state {
 	s := state{}
-	s.setInName(name)
+	s.setFirstInName(name)
 	return s
 }
 
