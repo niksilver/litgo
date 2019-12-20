@@ -14,11 +14,13 @@ Chunks
 Refactoring
 - Make proc a method of *state.
 
-Chapters
+Book and chapters
 - Follow chapter links and compile chapters.
   - Have a command line flag to say if the markdown file is book with chapters
+  - Follow chapter links only in the top level (book) file.
   - If reading chapters, preserve the section number between successive
     files... but make sure the filename changes.
+  - Only amend chapter links in the book file, not other files.
 - Output one documentation file for each input file read.
 - Allow links between chapters.
 
@@ -31,9 +33,10 @@ I/O
 Done
 ----
 
-Chapters
+Book and chapters
 - Follow chapter links and compile chapters.
   - If reading chapters, makes sure to read a sequence of files.
+  - Follow chapter links only if the file is a book.
 
 Sections
 - Track current section

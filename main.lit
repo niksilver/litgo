@@ -73,6 +73,7 @@ d := newDoc()
 --- Package level declarations
 type state struct {
     // Tracking
+    book string  // Name of the top level book file, or empty if none.
     inName string  // Name of file being processed, relative to working dir
     outName string  // Name of final file to write to
     nextIn []string  // Name of next file(s) to read in
@@ -121,7 +122,7 @@ assemble the basic data structures, make some light amendments,
 check for problems, and prepare for output (code and markup).
 
 --- Read the content
-@{Do a first pass through the content}
+@{Do a first pass through all the content}
 
 @{Check code chunks and maybe abort}
 
@@ -131,15 +132,17 @@ check for problems, and prepare for output (code and markup).
 
 @s Processing the content: First pass, basic file handling
 
-We open a file, process the content, and close the file, repeatedly
-for all file - one initially, but if we're reading a book
-that may lead to others.
+We open a file, process the content, and close the file.
+If the top file is book then we will also collect links to `.md` files
+and follow those, too. But we'll only follow those links in the book
+file, not any others.
+
 When reading a book, future files to read in are stored in `s.nextIn`.
 We will keep looping through the `nextIn` files until there are none left.
 
 If the filename is `"-"` then we use Stdin.
 
---- Do a first pass through the content
+--- Do a first pass through all the content
 if err := firstPassForAll(&s, &d, proc, fileReader); err != nil {
     fmt.Println(err.Error())
     return
@@ -153,6 +156,7 @@ func firstPassForAll(s *state, d *doc, lp lineProc, fileRdr func(string) (io.Rea
             return err
         }
         s.inName = ""
+        s.book = ""
         if len(s.nextIn) > 0 {
             s.setInName(s.nextIn[0])
             s.nextIn = s.nextIn[1:]
@@ -378,7 +382,7 @@ The regular expression to find a link is:
 
 --- Track chapter files to read
 nextInName := markdownLink(line)
-if !s.inChunk && nextInName != "" {
+if s.book != "" && !s.inChunk && nextInName != "" {
     s.nextIn = append(s.nextIn, nextInName)
 }
 ---
@@ -391,7 +395,6 @@ func markdownLink(line string) string {
     if len(s) == 0 {
         return ""
     }
-    fmt.Printf("Found link to %q\n", s[1])
     return s[1]
 }
 

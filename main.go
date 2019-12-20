@@ -19,6 +19,7 @@ import (
 // Package level declarations
 type state struct {
 	// Tracking
+	book      string    // Name of the top level book file, or empty if none.
 	inName    string    // Name of file being processed, relative to working dir
 	outName   string    // Name of final file to write to
 	nextIn    []string  // Name of next file(s) to read in
@@ -118,7 +119,7 @@ func main() {
 	}
 
 	// Read the content
-	// Do a first pass through the content
+	// Do a first pass through all the content
 	if err := firstPassForAll(&s, &d, proc, fileReader); err != nil {
 		fmt.Println(err.Error())
 		return
@@ -180,6 +181,7 @@ func firstPassForAll(s *state, d *doc, lp lineProc, fileRdr func(string) (io.Rea
 			return err
 		}
 		s.inName = ""
+		s.book = ""
 		if len(s.nextIn) > 0 {
 			s.setInName(s.nextIn[0])
 			s.nextIn = s.nextIn[1:]
@@ -229,7 +231,7 @@ func proc(s *state, d *doc, line string) {
 	s.lineNum++
 	// Track chapter files to read
 	nextInName := markdownLink(line)
-	if !s.inChunk && nextInName != "" {
+	if s.book != "" && !s.inChunk && nextInName != "" {
 		s.nextIn = append(s.nextIn, nextInName)
 	}
 
@@ -354,7 +356,6 @@ func markdownLink(line string) string {
 	if len(s) == 0 {
 		return ""
 	}
-	fmt.Printf("Found link to %q\n", s[1])
 	return s[1]
 }
 
