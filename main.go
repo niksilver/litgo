@@ -163,9 +163,11 @@ func main() {
 	}
 
 	// Write out the markdown
-	if err := writeHTML(s.inName, &d); err != nil {
-		fmt.Print(err.Error())
-		return
+	for _, inName := range s.inNames {
+		if err := writeHTML(inName, &d); err != nil {
+			fmt.Print(err.Error())
+			return
+		}
 	}
 
 }

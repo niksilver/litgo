@@ -10,18 +10,25 @@ Sections
 Chunks
 - Write out the chunk name before each chunk.
 - Make chunk starts linkable.
+- Have a --out-code-dir as an output base directory for code.
 
 Refactoring
 - Make proc a method of *state.
 
 Book and chapters
-- Follow chapter links and compile chapters.
+- Reading books and chapters:
   - If reading chapters, preserve the section number between successive
     files... but make sure the filename changes.
   - Only amend chapter links in the book file, not other files.
   - When amending chapter links don't amend the path, just the suffix,
     even if the book file is not in the base directory.
-- Output one documentation file for each input file read.
+- Amending for books and chapters:
+  - In the book, amend chapter links to be .html files.
+  - Ensure amended chapter links retain their relative prefix.
+  - Don't amend links to markdown files if initial input file isn't a book.
+- Writing books and chapters:
+    - Output one documentation file for each input file read.
+    - Allow a --out-md-dir option to write markdown files to directory.
 - Allow section links between chapters.
 
 Directives
@@ -34,7 +41,7 @@ Done
 ----
 
 Book and chapters
-- Follow chapter links and compile chapters.
+- Reading books and chapters:
   - If reading chapters, makes sure to read a sequence of files.
   - Follow chapter links only if the file is a book.
   - Follow chapter links only in the top level (book) file.
