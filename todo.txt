@@ -27,7 +27,6 @@ Book and chapters
   - Ensure amended chapter links retain their relative prefix.
   - Don't amend links to markdown files if initial input file isn't a book.
 - Writing books and chapters:
-    - Output one documentation file for each input file read.
     - Allow a --out-md-dir option to write markdown files to directory.
 - Allow section links between chapters.
 
@@ -48,6 +47,8 @@ Book and chapters
   - Have a command line flag to say if the markdown file is book with chapters
   - When following chapter links, read the input file relative
     to the book directory.
+- Writing books and chapters:
+    - Output one documentation file for each input file read.
 
 Sections
 - Track current section

@@ -162,12 +162,10 @@ func main() {
 		return
 	}
 
-	// Write out the markdown
-	for _, inName := range s.inNames {
-		if err := writeHTML(inName, &d); err != nil {
-			fmt.Print(err.Error())
-			return
-		}
+	// Write out the markdown as HTML
+	if err := writeAllMarkdown(s.inNames, &d); err != nil {
+		fmt.Print(err.Error())
+		return
 	}
 
 }
@@ -624,6 +622,15 @@ func lineDirective(dir string, indent string, fName string, n int) string {
 		}
 	}
 	return out + "\n"
+}
+
+func writeAllMarkdown(inNames []string, d *doc) error {
+	for _, inName := range inNames {
+		if err := writeHTML(inName, d); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func writeHTML(inName string, d *doc) error {

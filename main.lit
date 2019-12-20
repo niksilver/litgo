@@ -44,7 +44,7 @@ func main() {
 
     @{Write out the code files}
 
-    @{Write out the markdown}
+    @{Write out the markdown as HTML}
 }
 
 ---
@@ -902,16 +902,23 @@ to:
 
 and we can do that only if we output the markdown a line at a time.
 
---- Write out the markdown
-for _, inName := range s.inNames {
-    if err := writeHTML(inName, &d); err != nil {
-        fmt.Print(err.Error())
-        return
-    }
+--- Write out the markdown as HTML
+if err := writeAllMarkdown(s.inNames, &d); err != nil {
+    fmt.Print(err.Error())
+    return
 }
 ---
 
 --- Functions +=
+func writeAllMarkdown(inNames []string, d *doc) error {
+    for _, inName := range inNames {
+        if err := writeHTML(inName, d); err != nil {
+            return err
+        }
+    }
+    return nil
+}
+
 func writeHTML(inName string, d *doc) error {
     oName := outName(inName)
     md := finalMarkdown(inName, d).String()
