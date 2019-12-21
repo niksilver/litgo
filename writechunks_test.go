@@ -8,6 +8,25 @@ import (
 	"testing"
 )
 
+// A doc that writes out to a map of strings.Builder (one per filename)
+type builderDoc struct {
+	doc
+	outputs map[string]*strings.Builder
+}
+
+func newBuilderDoc(d doc) builderDoc {
+	outputs := make(map[string]*strings.Builder)
+	wc := func(name string) (io.WriteCloser, error) {
+		if outputs == nil {
+		}
+		outputs[name] = &strings.Builder{}
+		b := outputs[name]
+		return builderWriteCloser{b}, nil
+	}
+	d.writeCloser = wc
+	return builderDoc{d, outputs}
+}
+
 // A string.Builder we can also close
 type builderWriteCloser struct {
 	*strings.Builder
@@ -15,6 +34,34 @@ type builderWriteCloser struct {
 
 func (bwc builderWriteCloser) Close() error {
 	return nil
+}
+
+// A doc that writes out to a map of strings.Builder but will error
+type badDoc struct {
+	doc
+	outputs map[string]*strings.Builder
+}
+
+func newBadDoc(d doc) badDoc {
+	outputs := make(map[string]*strings.Builder)
+	wc := func(name string) (io.WriteCloser, error) {
+		if outputs == nil {
+		}
+		outputs[name] = &strings.Builder{}
+		b := outputs[name]
+		return badWriteCloser{b, 0}, nil
+	}
+	d.writeCloser = wc
+	return badDoc{d, outputs}
+}
+
+func (bd *badDoc) getWriteCloser(name string) (io.WriteCloser, error) {
+	if bd.outputs == nil {
+		bd.outputs = make(map[string]*strings.Builder)
+	}
+	bd.outputs[name] = &strings.Builder{}
+	w := bd.outputs[name]
+	return badWriteCloser{w, 0}, nil
 }
 
 // A writer that will eventually produce an error
@@ -48,6 +95,7 @@ func contLNumCode(lNum int, code string) chunkCont {
 }
 
 func TestWriteChunks_Okay(t *testing.T) {
+	fmt.Println("TestWriteChunks_Okay: starting")
 	// Test code that looks like this (with line numbers):
 	//
 	// ``` One    1
@@ -80,12 +128,6 @@ Line 3.2
 Line 2.2
 `
 
-	outputs := make(map[string]*strings.Builder)
-	wFact := func(name string) (io.WriteCloser, error) {
-		outputs[name] = &strings.Builder{}
-		b := outputs[name]
-		return builderWriteCloser{b}, nil
-	}
 	top := []string{"One", "Two"}
 	chunks := map[string]*chunk{
 		"One": &chunk{
@@ -110,31 +152,33 @@ Line 2.2
 		},
 	}
 
-	err := writeChunks(top, doc{chunks: chunks}, "", "", wFact)
+	d := newBuilderDoc(doc{chunks: chunks})
+	err := d.writeChunks(top, "", "")
 
 	if err != nil {
 		t.Errorf("Should not have produced an error, but got %q",
 			err.Error())
 	}
 
-	if len(outputs) != 2 {
+	if len(d.outputs) != 2 {
 		t.Errorf("Should have two top chunks output, but got %d: %v",
-			len(outputs), reflect.ValueOf(outputs).MapKeys())
+			len(d.outputs), reflect.ValueOf(d.outputs).MapKeys())
 	}
 
-	if outputs["One"] == nil {
+	if d.outputs["One"] == nil {
 		t.Errorf("Chunk One did not have a Builder")
-	} else if outputs["One"].String() != oneExpected {
+	} else if d.outputs["One"].String() != oneExpected {
 		t.Errorf("For chunk One expected\n%q\nbut got\n%q",
-			oneExpected, outputs["One"].String())
+			oneExpected, d.outputs["One"].String())
 	}
 
-	if outputs["Two"] == nil {
+	if d.outputs["Two"] == nil {
 		t.Errorf("Chunk Two did not have a Builder")
-	} else if outputs["Two"].String() != twoExpected {
+	} else if d.outputs["Two"].String() != twoExpected {
 		t.Errorf("For chunk Two expected\n%q\nbut got\n%q",
-			twoExpected, outputs["Two"].String())
+			twoExpected, d.outputs["Two"].String())
 	}
+	fmt.Println("TestWriteChunks_Okay: ending")
 }
 
 func TestWriteChunks_ErrorWriting(t *testing.T) {
@@ -159,13 +203,6 @@ func TestWriteChunks_ErrorWriting(t *testing.T) {
 	// Line 1.4   17
 	// ```        18
 
-	outputs := make(map[string]*strings.Builder)
-	wFact := func(name string) (io.WriteCloser, error) {
-		outputs[name] = &strings.Builder{}
-		w := outputs[name]
-		return badWriteCloser{w, 0}, nil
-	}
-
 	top := []string{"One", "Two"}
 	chunks := map[string]*chunk{
 		"One": &chunk{
@@ -190,7 +227,8 @@ func TestWriteChunks_ErrorWriting(t *testing.T) {
 		},
 	}
 
-	err := writeChunks(top, doc{chunks: chunks}, "", "", wFact)
+	d := newBadDoc(doc{chunks: chunks})
+	err := d.writeChunks(top, "", "")
 	if err == nil {
 		t.Errorf("Should have produced an error, did not")
 	}
@@ -224,10 +262,6 @@ func TestWriteChunks_IndentProperly(t *testing.T) {
   Line 3.1
 `
 
-	b := strings.Builder{}
-	wFact := func(n string) (io.WriteCloser, error) {
-		return builderWriteCloser{&b}, nil
-	}
 	top := []string{"One"}
 	chunks := map[string]*chunk{
 		"One": &chunk{
@@ -252,16 +286,17 @@ func TestWriteChunks_IndentProperly(t *testing.T) {
 		},
 	}
 
-	err := writeChunks(top, doc{chunks: chunks}, "", "", wFact)
+	d := newBuilderDoc(doc{chunks: chunks})
+	err := d.writeChunks(top, "", "")
 
 	if err != nil {
 		t.Errorf("Should not have produced an error, but got %q",
 			err.Error())
 	}
 
-	if b.String() != expected {
+	if d.outputs["One"].String() != expected {
 		t.Errorf("Expected\n%q\nbut got\n%q",
-			expected, b.String())
+			expected, d.outputs["One"].String())
 	}
 }
 
@@ -306,12 +341,6 @@ Line 3.2
 Line 2.2
 `
 
-	outputs := make(map[string]*strings.Builder)
-	wFact := func(name string) (io.WriteCloser, error) {
-		outputs[name] = &strings.Builder{}
-		b := outputs[name]
-		return builderWriteCloser{b}, nil
-	}
 	top := []string{"One", "Two"}
 	chunks := map[string]*chunk{
 		"One": &chunk{
@@ -336,31 +365,31 @@ Line 2.2
 		},
 	}
 
-	d := doc{chunks: chunks}
-	err := writeChunks(top, d, "//line %f:%l", "test.lit", wFact)
+	d := newBuilderDoc(doc{chunks: chunks})
+	err := d.writeChunks(top, "//line %f:%l", "test.lit")
 
 	if err != nil {
 		t.Errorf("Should not have produced an error, but got %q",
 			err.Error())
 	}
 
-	if len(outputs) != 2 {
+	if len(d.outputs) != 2 {
 		t.Errorf("Should have two top chunks output, but got %d: %v",
-			len(outputs), reflect.ValueOf(outputs).MapKeys())
+			len(d.outputs), reflect.ValueOf(d.outputs).MapKeys())
 	}
 
-	if outputs["One"] == nil {
+	if d.outputs["One"] == nil {
 		t.Errorf("Chunk One did not have a Builder")
-	} else if outputs["One"].String() != oneExpected {
+	} else if d.outputs["One"].String() != oneExpected {
 		t.Errorf("For chunk One expected\n%q\nbut got\n%q",
-			oneExpected, outputs["One"].String())
+			oneExpected, d.outputs["One"].String())
 	}
 
-	if outputs["Two"] == nil {
+	if d.outputs["Two"] == nil {
 		t.Errorf("Chunk Two did not have a Builder")
-	} else if outputs["Two"].String() != twoExpected {
+	} else if d.outputs["Two"].String() != twoExpected {
 		t.Errorf("For chunk Two expected\n%q\nbut got\n%q",
-			twoExpected, outputs["Two"].String())
+			twoExpected, d.outputs["Two"].String())
 	}
 }
 
@@ -410,58 +439,46 @@ func TestWriteChunks_OkayWithLineDirectiveIndents(t *testing.T) {
 
 	// Test it with an indent
 
-	outputs1 := make(map[string]*strings.Builder)
-	wFact1 := func(name string) (io.WriteCloser, error) {
-		outputs1[name] = &strings.Builder{}
-		b := outputs1[name]
-		return builderWriteCloser{b}, nil
-	}
-	d1 := doc{chunks: chunks}
-	err1 := writeChunks(top, d1, "%i//line %f:%l", "test.lit", wFact1)
+	d1 := newBuilderDoc(doc{chunks: chunks})
+	err1 := d1.writeChunks(top, "%i//line %f:%l", "test.lit")
 
 	if err1 != nil {
 		t.Errorf("With: Should not have produced an error, but got %q",
 			err1.Error())
 	}
 
-	if len(outputs1) != 1 {
+	if len(d1.outputs) != 1 {
 		t.Errorf("With: Should have one top chunk output, but got %d: %v",
-			len(outputs1), reflect.ValueOf(outputs1).MapKeys())
+			len(d1.outputs), reflect.ValueOf(d1.outputs).MapKeys())
 	}
 
-	if outputs1["One"] == nil {
+	if d1.outputs["One"] == nil {
 		t.Errorf("With: Chunk One did not have a Builder")
-	} else if outputs1["One"].String() != expectedWith {
+	} else if d1.outputs["One"].String() != expectedWith {
 		t.Errorf("With: For chunk One expected\n%q\nbut got\n%q",
-			expectedWith, outputs1["One"].String())
+			expectedWith, d1.outputs["One"].String())
 	}
 
 	// Test it without an indent
 
-	outputs2 := make(map[string]*strings.Builder)
-	wFact2 := func(name string) (io.WriteCloser, error) {
-		outputs2[name] = &strings.Builder{}
-		b := outputs2[name]
-		return builderWriteCloser{b}, nil
-	}
-	d2 := doc{chunks: chunks}
-	err2 := writeChunks(top, d2, "//line %f:%l", "test.lit", wFact2)
+	d2 := newBuilderDoc(doc{chunks: chunks})
+	err2 := d2.writeChunks(top, "//line %f:%l", "test.lit")
 
 	if err2 != nil {
 		t.Errorf("Without: Should not have produced an error, but got %q",
 			err2.Error())
 	}
 
-	if len(outputs2) != 1 {
+	if len(d2.outputs) != 1 {
 		t.Errorf("Without: Should have one top chunk output, but got %d: %v",
-			len(outputs2), reflect.ValueOf(outputs2).MapKeys())
+			len(d2.outputs), reflect.ValueOf(d2.outputs).MapKeys())
 	}
 
-	if outputs2["One"] == nil {
+	if d2.outputs["One"] == nil {
 		t.Errorf("Without: Chunk One did not have a Builder")
-	} else if outputs2["One"].String() != expectedWithout {
+	} else if d2.outputs["One"].String() != expectedWithout {
 		t.Errorf("Without: For chunk One expected\n%q\nbut got\n%q",
-			expectedWithout, outputs2["One"].String())
+			expectedWithout, d2.outputs["One"].String())
 	}
 
 }

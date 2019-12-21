@@ -43,6 +43,8 @@ type doc struct {
 	secStarts map[string]map[int]section
 	// Config
 	lineDir string // The string pattern for line directives
+	// Function for opening a file to write to and close
+	writeCloser func(string) (io.WriteCloser, error)
 }
 
 type lineProc = func(*state, *doc, string)
@@ -156,7 +158,7 @@ func main() {
 
 	// Write out the code files
 	top := topLevelChunks(d.lat)
-	err := writeChunks(top, d, d.lineDir, s.inName, getWriteCloser)
+	err := d.writeChunks(top, d.lineDir, s.inName)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -177,6 +179,7 @@ func newDoc() doc {
 		chunkStarts: make(map[string]map[int]string),
 		chunkRefs:   make(map[string]map[int]chunkRef),
 		secStarts:   make(map[string]map[int]section),
+		writeCloser: getWriteCloser,
 	}
 }
 
@@ -521,20 +524,24 @@ func assertAllChunksDefined(chunks map[string]*chunk, lat lattice) error {
 		s, strings.Join(missing, ", "))
 }
 
-func writeChunks(
+func (d *doc) writeChunks(
 	top []string,
-	d doc,
 	lineDir string,
-	fName string,
-	getWC func(string) (io.WriteCloser, error)) error {
+	fName string) error {
 
 	for _, name := range top {
-		wc, err := getWC(name)
+		xx := d.writeCloser
+		if xx == nil {
+			fmt.Printf("d.writeCloser is nil, d is %T\n", d)
+		} else {
+			fmt.Printf("d.writeCloser is not nil, d is %T\n", d)
+		}
+		wc, err := d.writeCloser(name)
 		if err != nil {
 			return err
 		}
 		bw := bufio.NewWriter(wc)
-		err = writeChunk(name, d, bw, lineDir, "", fName)
+		err = d.writeChunk(name, bw, lineDir, "", fName)
 		if err != nil {
 			wc.Close()
 			return err
@@ -553,23 +560,23 @@ func writeChunks(
 }
 
 func getWriteCloser(name string) (io.WriteCloser, error) {
+	fmt.Printf("doc.getWriteCloser: entering for %s\n", name)
 	return os.Create(name)
 }
 
-func writeChunk(name string,
-	d doc,
+func (d *doc) writeChunk(name string,
 	w *bufio.Writer,
 	lineDir string,
 	indent string,
 	fName string) error {
 
-	chunk := *d.chunks[name]
+	chunk := d.chunks[name]
 	for _, cont := range chunk.cont {
 		code := cont.code
 		var err error
 		if ref := referredChunkName(code); ref != "" {
 			iPos := strings.Index(code, "@")
-			err = writeChunk(ref, d, w, lineDir, code[0:iPos]+indent, fName)
+			err = d.writeChunk(ref, w, lineDir, code[0:iPos]+indent, fName)
 		} else {
 			lNum := cont.lNum
 			indentHere := initialWS(code)
