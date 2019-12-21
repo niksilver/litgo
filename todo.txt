@@ -26,8 +26,6 @@ Book and chapters
   - In the book, amend chapter links to be .html files.
   - Ensure amended chapter links retain their relative prefix.
   - Don't amend links to markdown files if initial input file isn't a book.
-- Writing books and chapters:
-    - Allow a --out-md-dir option to write markdown files to directory.
 - Allow section links between chapters.
 
 Directives
@@ -49,6 +47,7 @@ Book and chapters
     to the book directory.
 - Writing books and chapters:
     - Output one documentation file for each input file read.
+    - Allow a --doc-out-dir option to write markdown files to directory.
 
 Sections
 - Track current section

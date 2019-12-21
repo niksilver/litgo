@@ -133,8 +133,8 @@ func TestReadBookAndChapters_FollowsLinksWhenBookNotInBaseDir(t *testing.T) {
 	data := map[string]string{
 		"../aaa/book.md": `* [First chapter](chaps/first.md)
              * [Second chapter](chaps/second.md)`,
-		"../aaa/chaps/first.md":  "First line 1\nFirst line 2",
-		"../aaa/chaps/second.md": "Second line 1\nSecond line 2",
+		"chaps/first.md":  "First line 1\nFirst line 2",
+		"chaps/second.md": "Second line 1\nSecond line 2",
 	}
 
 	mockFileReader := func(inName string) (io.ReadCloser, error) {
@@ -161,17 +161,78 @@ func TestReadBookAndChapters_FollowsLinksWhenBookNotInBaseDir(t *testing.T) {
 		t.Errorf("Markdown for ../aaa/book.md is too short. Got %q", book)
 	}
 
-	first := d.markdown["../aaa/chaps/first.md"].String()
-	if first != data["../aaa/chaps/first.md"]+"\n" {
+	first := d.markdown["chaps/first.md"].String()
+	if first != data["chaps/first.md"]+"\n" {
 		t.Errorf("Expected first.md markdown to be %q but got %q",
-			data["../aaa/chaps/first.md"]+"\n", first)
+			data["chaps/first.md"]+"\n", first)
 	}
 
-	second := d.markdown["../aaa/chaps/second.md"].String()
-	if second != data["../aaa/chaps/second.md"]+"\n" {
+	second := d.markdown["chaps/second.md"].String()
+	if second != data["chaps/second.md"]+"\n" {
 		t.Errorf("Expected second.md markdown to be %q but got %q",
-			data["../aaa/chaps/second.md"]+"\n", second)
+			data["chaps/second.md"]+"\n", second)
 	}
+}
+
+func TestReadBookAndChapters_WriteToMarkdownOutDir(t *testing.T) {
+	fmt.Println("TestReadBookAndChapters_WriteToMarkdownOutDir: starting")
+	s := state{}
+	s.setFirstInName("../aaa/book.md")
+	s.book = "../aaa/book.md"
+	d := newBuilderDoc(newDoc())
+	d.docOutDir = "outdir"
+
+	data := map[string]string{
+		"../aaa/book.md": `* [First chapter](chaps/first.md)
+             * [Second chapter](chaps/second.md)`,
+		"chaps/first.md":  "First line 1\nFirst line 2",
+		"chaps/second.md": "Second line 1\nSecond line 2",
+	}
+
+	// Substrings we expect to see in the HTML
+	expected := map[string]string{
+		"outdir/book.html":         "First chapter",
+		"outdir/chaps/first.html":  "First line 1",
+		"outdir/chaps/second.html": "Second line 1",
+	}
+
+	mockFileReader := func(inName string) (io.ReadCloser, error) {
+		content, okay := data[inName]
+		if !okay {
+			return nil, fmt.Errorf("No content found for key %q", inName)
+		}
+		return stringReadCloser{strings.NewReader(content)}, nil
+	}
+
+	err1 := firstPassForAll(&s, &d.doc, proc, mockFileReader)
+	if err1 != nil {
+		t.Errorf("Error on first pass for all: %s", err1.Error())
+	}
+
+	err2 := writeAllMarkdown(s.inNames, &d.doc)
+	if err2 != nil {
+		t.Errorf("Error on writeAllMarkdown: %s", err2.Error())
+	}
+
+	if len(d.outputs) != 3 {
+		t.Errorf("Expected 3 markdown docs but got %d: %#v",
+			len(d.outputs), d.outputs)
+		return
+	}
+
+	for name, sb := range d.outputs {
+		if expected[name] == "" {
+			t.Errorf("Did not expect markdown for file %s", name)
+			continue
+		}
+		expSub := expected[name]
+		act := sb.String()
+		if !strings.Contains(act, expSub) {
+			t.Errorf("File %s, expected to find substring %q but got string %q",
+				name, expSub, act)
+		}
+	}
+	fmt.Println("TestReadBookAndChapters_WriteToMarkdownOutDir: starting")
 }
 
 func TestMarkdownLink(t *testing.T) {

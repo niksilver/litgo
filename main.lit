@@ -97,6 +97,7 @@ type doc struct {
     secStarts map[string]map[int]section
     // Config
     lineDir string  // The string pattern for line directives
+    docOutDir string  // Output directory for the translated markdown
     // Function for opening a file to write to and close
     writeCloser func(string) (io.WriteCloser, error)
 }
@@ -391,9 +392,7 @@ In a line of markdown, the regular expression to find a link is:
 --- Track chapter files to read
 nextInName := markdownLink(line)
 if s.book != "" && !s.inChunk && nextInName != "" {
-    dir := filepath.Dir(s.inName)
-    relInName := filepath.Join(dir, nextInName)
-    s.inNames = append(s.inNames, relInName)
+    s.inNames = append(s.inNames, nextInName)
 }
 ---
 
@@ -892,16 +891,19 @@ func lineDirective(dir string, indent string, fName string, n int) string {
 When outputting the markdown there is an outer loop and an inner task.
 
 For the outer loop we want to go through each input file and
-write out the corresponding HTML.
+write out the corresponding HTML. There may be a "doc out dir" which
+tells us which output directory to write the documentation out to,
+in which case the output file location is:
 
-For the inner task we could just output the relevant markdown for that
-input file, but we also want to amend it (to create "final" markdown)
-to:
+* For the first (book) file, the doc out dir + the base filename;
+* For chapter files, the doc out dir + the whole filename referenced
+  in the book file.
 
-* Amend each start-of-chunk section so it includes the coding language;
-* insert post-chunk references;
+If there's no doc out dir then each file location is:
 
-and we can do that only if we output the markdown a line at a time.
+* For the first (book) file, the filename;
+* For the chapter files, the whole filename relative to the directory
+  of the book file.
 
 --- Write out the markdown as HTML
 if err := writeAllMarkdown(s.inNames, &d); err != nil {
@@ -912,19 +914,58 @@ if err := writeAllMarkdown(s.inNames, &d); err != nil {
 
 --- Functions +=
 func writeAllMarkdown(inNames []string, d *doc) error {
-    for _, inName := range inNames {
-        if err := writeHTML(inName, d); err != nil {
+    for i, fullOutName := range outNames(d.docOutDir, inNames) {
+        if err := writeHTML(inNames[i], fullOutName, d); err != nil {
             return err
         }
     }
     return nil
 }
 
-func writeHTML(inName string, d *doc) error {
-    oName := outName(inName)
+func outNames(outDir string, inNames []string) []string {
+    names := make([]string, len(inNames))
+
+    if outDir == "" {
+        in0Dir := filepath.Dir(inNames[0])
+        for i, inName := range inNames {
+            if i == 0 {
+                names[i] = outName(inName)
+            } else {
+                names[i] = outName(filepath.Join(in0Dir, inName))
+            }
+        }
+    } else {
+        fmt.Printf("outDir %q, inNames %q\n", outDir, inNames)
+        for i, inName := range inNames {
+            if i == 0 {
+                in0Base := filepath.Base(inNames[0])
+                names[i] = outName(filepath.Join(outDir, in0Base))
+            } else {
+                names[i] = outName(filepath.Join(outDir, inName))
+            }
+            fmt.Printf("Set names[%d] = %q\n", i, names[i])
+        }
+    }
+
+    return names
+}
+
+---
+
+For the inner task we could just output the relevant markdown for that
+input file, but we also want to amend it (to create "final" markdown)
+to:
+
+* Amend each start-of-chunk section so it includes the coding language;
+* insert post-chunk references;
+
+and we can do that only if we output the markdown a line at a time.
+
+--- Functions +=
+func writeHTML(inName string, fullOutName string, d *doc) error {
     md := finalMarkdown(inName, d).String()
     output := markdown.ToHTML([]byte(md), nil, nil)
-    outFile, err := os.Create(oName)
+    outFile, err := d.writeCloser(fullOutName)
     if err != nil {
         return err
     }
@@ -1137,24 +1178,29 @@ func (s1 *section) less(s2 section) bool {
 
 The command line is:
 
-    cmd [--book[=true|false]] [--line-dir <ldir>] <input-file>
+    cmd [--book[=true|false]] [--line-dir <ldir>]
+        [--doc-out-dir <docoutdir>] <input-file>
 
       <input-file> can be - (or omit it) to indicate stdin.
+
       --book if the input file is a book, in which case links
           to .md files are followed for that file.
       <ldir> is the line directive to preceed each code line.
           Use %f for filename, %l for line number,
           %i to include indentation, %% for percent sign.
+      <docoutdir> is the directory in which to write the documentation.
 
 --- Package level declarations +=
 var book bool
 var lDir string
+var docOutDir string
 
 ---
 
 --- Flag initialisation
 flag.BoolVar(&book, "book", false, "If the input file is a book")
 flag.StringVar(&lDir, "line-dir", "", "Pattern for line directives")
+flag.StringVar(&docOutDir, "doc-out-dir", "", "Directory for documentation output")
 ---
 
 --- Update the structs according to the command line
@@ -1171,14 +1217,14 @@ if flag.NArg() == 0 {
 if book {
     s.book = s.inName
 }
-if lDir != "" {
-    d.lineDir = lDir
-}
+d.lineDir = lDir
+d.docOutDir = docOutDir
 ---
 
 --- Functions +=
 func printHelp() {
-    msg := `litgo [--line-dir <ldir>] <input-file>
+    msg := `litgo [--book[=true|false]] [--line-dir <ldir>]
+    [-doc-out-dir <dir>] <input-file>
 
     <input-file> can be - (or be omitted) to indicate stdin.
 
@@ -1189,21 +1235,21 @@ func printHelp() {
         <ldir> is the line directive to preceed each code line.
         Use %f for filename, %l for line number,
         %i to include indentation, %% for percent sign.
+    --doc-out-dir <dir>
+        Output directory for the literate documentation.
 `
     fmt.Printf(msg)
 }
 
 func outName(fName string) string {
-    base := filepath.Base(fName)
+    if fName == "" || fName == "-" || fName == "." {
+        fName = "out"
+    }
     ext := filepath.Ext(fName)
-    if fName == "-" || base == "." {
-        base = "out"
-    }
-    pref := base
     if ext != "" {
-        pref = base[0:len(base)-len(ext)]
+        fName = fName[0:len(fName)-len(ext)]
     }
-    return pref + ".html"
+    return fName + ".html"
 }
 
 ---

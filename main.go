@@ -42,7 +42,8 @@ type doc struct {
 	// Lines where a section starts, per input file
 	secStarts map[string]map[int]section
 	// Config
-	lineDir string // The string pattern for line directives
+	lineDir   string // The string pattern for line directives
+	docOutDir string // Output directory for the translated markdown
 	// Function for opening a file to write to and close
 	writeCloser func(string) (io.WriteCloser, error)
 }
@@ -92,6 +93,7 @@ type lattice struct {
 
 var book bool
 var lDir string
+var docOutDir string
 
 // Functions
 
@@ -99,6 +101,7 @@ func init() {
 	// Flag initialisation
 	flag.BoolVar(&book, "book", false, "If the input file is a book")
 	flag.StringVar(&lDir, "line-dir", "", "Pattern for line directives")
+	flag.StringVar(&docOutDir, "doc-out-dir", "", "Directory for documentation output")
 
 }
 
@@ -121,9 +124,8 @@ func main() {
 	if book {
 		s.book = s.inName
 	}
-	if lDir != "" {
-		d.lineDir = lDir
-	}
+	d.lineDir = lDir
+	d.docOutDir = docOutDir
 
 	// Read the content
 	// Do a first pass through all the content
@@ -236,9 +238,7 @@ func proc(s *state, d *doc, line string) {
 	// Track chapter files to read
 	nextInName := markdownLink(line)
 	if s.book != "" && !s.inChunk && nextInName != "" {
-		dir := filepath.Dir(s.inName)
-		relInName := filepath.Join(dir, nextInName)
-		s.inNames = append(s.inNames, relInName)
+		s.inNames = append(s.inNames, nextInName)
 	}
 
 	// Track and mark section changes
@@ -530,12 +530,6 @@ func (d *doc) writeChunks(
 	fName string) error {
 
 	for _, name := range top {
-		xx := d.writeCloser
-		if xx == nil {
-			fmt.Printf("d.writeCloser is nil, d is %T\n", d)
-		} else {
-			fmt.Printf("d.writeCloser is not nil, d is %T\n", d)
-		}
 		wc, err := d.writeCloser(name)
 		if err != nil {
 			return err
@@ -632,19 +626,46 @@ func lineDirective(dir string, indent string, fName string, n int) string {
 }
 
 func writeAllMarkdown(inNames []string, d *doc) error {
-	for _, inName := range inNames {
-		if err := writeHTML(inName, d); err != nil {
+	for i, fullOutName := range outNames(d.docOutDir, inNames) {
+		if err := writeHTML(inNames[i], fullOutName, d); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func writeHTML(inName string, d *doc) error {
-	oName := outName(inName)
+func outNames(outDir string, inNames []string) []string {
+	names := make([]string, len(inNames))
+
+	if outDir == "" {
+		in0Dir := filepath.Dir(inNames[0])
+		for i, inName := range inNames {
+			if i == 0 {
+				names[i] = outName(inName)
+			} else {
+				names[i] = outName(filepath.Join(in0Dir, inName))
+			}
+		}
+	} else {
+		fmt.Printf("outDir %q, inNames %q\n", outDir, inNames)
+		for i, inName := range inNames {
+			if i == 0 {
+				in0Base := filepath.Base(inNames[0])
+				names[i] = outName(filepath.Join(outDir, in0Base))
+			} else {
+				names[i] = outName(filepath.Join(outDir, inName))
+			}
+			fmt.Printf("Set names[%d] = %q\n", i, names[i])
+		}
+	}
+
+	return names
+}
+
+func writeHTML(inName string, fullOutName string, d *doc) error {
 	md := finalMarkdown(inName, d).String()
 	output := markdown.ToHTML([]byte(md), nil, nil)
-	outFile, err := os.Create(oName)
+	outFile, err := d.writeCloser(fullOutName)
 	if err != nil {
 		return err
 	}
@@ -802,7 +823,8 @@ func (s1 *section) less(s2 section) bool {
 }
 
 func printHelp() {
-	msg := `litgo [--line-dir <ldir>] <input-file>
+	msg := `litgo [--book[=true|false]] [--line-dir <ldir>]
+    [-doc-out-dir <dir>] <input-file>
 
     <input-file> can be - (or be omitted) to indicate stdin.
 
@@ -813,19 +835,19 @@ func printHelp() {
         <ldir> is the line directive to preceed each code line.
         Use %f for filename, %l for line number,
         %i to include indentation, %% for percent sign.
+    --doc-out-dir <dir>
+        Output directory for the literate documentation.
 `
 	fmt.Printf(msg)
 }
 
 func outName(fName string) string {
-	base := filepath.Base(fName)
+	if fName == "" || fName == "-" || fName == "." {
+		fName = "out"
+	}
 	ext := filepath.Ext(fName)
-	if fName == "-" || base == "." {
-		base = "out"
-	}
-	pref := base
 	if ext != "" {
-		pref = base[0 : len(base)-len(ext)]
+		fName = fName[0 : len(fName)-len(ext)]
 	}
-	return pref + ".html"
+	return fName + ".html"
 }

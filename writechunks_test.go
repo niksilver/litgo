@@ -17,6 +17,7 @@ type builderDoc struct {
 func newBuilderDoc(d doc) builderDoc {
 	outputs := make(map[string]*strings.Builder)
 	wc := func(name string) (io.WriteCloser, error) {
+		fmt.Printf("Creating writeCloser for %s\n", name)
 		outputs[name] = &strings.Builder{}
 		b := outputs[name]
 		return builderWriteCloser{b}, nil
