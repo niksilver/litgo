@@ -17,8 +17,6 @@ type builderDoc struct {
 func newBuilderDoc(d doc) builderDoc {
 	outputs := make(map[string]*strings.Builder)
 	wc := func(name string) (io.WriteCloser, error) {
-		if outputs == nil {
-		}
 		outputs[name] = &strings.Builder{}
 		b := outputs[name]
 		return builderWriteCloser{b}, nil
@@ -27,7 +25,7 @@ func newBuilderDoc(d doc) builderDoc {
 	return builderDoc{d, outputs}
 }
 
-// A string.Builder we can also close
+// A strings.Builder we can also close
 type builderWriteCloser struct {
 	*strings.Builder
 }
@@ -45,8 +43,6 @@ type badDoc struct {
 func newBadDoc(d doc) badDoc {
 	outputs := make(map[string]*strings.Builder)
 	wc := func(name string) (io.WriteCloser, error) {
-		if outputs == nil {
-		}
 		outputs[name] = &strings.Builder{}
 		b := outputs[name]
 		return badWriteCloser{b, 0}, nil
