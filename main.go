@@ -554,7 +554,6 @@ func (d *doc) writeChunks(
 }
 
 func getWriteCloser(name string) (io.WriteCloser, error) {
-	fmt.Printf("doc.getWriteCloser: entering for %s\n", name)
 	return os.Create(name)
 }
 
@@ -647,7 +646,6 @@ func outNames(outDir string, inNames []string) []string {
 			}
 		}
 	} else {
-		fmt.Printf("outDir %q, inNames %q\n", outDir, inNames)
 		for i, inName := range inNames {
 			if i == 0 {
 				in0Base := filepath.Base(inNames[0])
@@ -655,7 +653,6 @@ func outNames(outDir string, inNames []string) []string {
 			} else {
 				names[i] = outName(filepath.Join(outDir, inName))
 			}
-			fmt.Printf("Set names[%d] = %q\n", i, names[i])
 		}
 	}
 

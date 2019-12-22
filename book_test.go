@@ -175,7 +175,6 @@ func TestReadBookAndChapters_FollowsLinksWhenBookNotInBaseDir(t *testing.T) {
 }
 
 func TestReadBookAndChapters_WriteToMarkdownOutDir(t *testing.T) {
-	fmt.Println("TestReadBookAndChapters_WriteToMarkdownOutDir: starting")
 	s := state{}
 	s.setFirstInName("../aaa/book.md")
 	s.book = "../aaa/book.md"
@@ -232,7 +231,6 @@ func TestReadBookAndChapters_WriteToMarkdownOutDir(t *testing.T) {
 				name, expSub, act)
 		}
 	}
-	fmt.Println("TestReadBookAndChapters_WriteToMarkdownOutDir: starting")
 }
 
 func TestMarkdownLink(t *testing.T) {

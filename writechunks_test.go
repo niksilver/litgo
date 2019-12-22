@@ -17,7 +17,6 @@ type builderDoc struct {
 func newBuilderDoc(d doc) builderDoc {
 	outputs := make(map[string]*strings.Builder)
 	wc := func(name string) (io.WriteCloser, error) {
-		fmt.Printf("Creating writeCloser for %s\n", name)
 		outputs[name] = &strings.Builder{}
 		b := outputs[name]
 		return builderWriteCloser{b}, nil
@@ -92,7 +91,6 @@ func contLNumCode(lNum int, code string) chunkCont {
 }
 
 func TestWriteChunks_Okay(t *testing.T) {
-	fmt.Println("TestWriteChunks_Okay: starting")
 	// Test code that looks like this (with line numbers):
 	//
 	// ``` One    1
@@ -175,7 +173,6 @@ Line 2.2
 		t.Errorf("For chunk Two expected\n%q\nbut got\n%q",
 			twoExpected, d.outputs["Two"].String())
 	}
-	fmt.Println("TestWriteChunks_Okay: ending")
 }
 
 func TestWriteChunks_ErrorWriting(t *testing.T) {
