@@ -7,7 +7,8 @@ import (
 )
 
 func TestProcForMarkdownWithChunkRefs_AddedToNowhereElse(t *testing.T) {
-	s := newState("chunktest.md")
+	s := state{}
+	s.setFirstInName("chunktest.md")
 	d := newDoc()
 	lines := []string{
 		"# Title", // Line 1
@@ -50,7 +51,8 @@ func stripHTML(str string) string {
 }
 
 func TestProcForMarkdownWithChunkRefs_AddedToOnce(t *testing.T) {
-	s := newState("once.md")
+	s := state{}
+	s.setFirstInName("once.md")
 	d := newDoc()
 	lines := []string{
 		"# Title", // Line 1
@@ -97,7 +99,8 @@ func TestProcForMarkdownWithChunkRefs_AddedToOnce(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_AddedToTwice(t *testing.T) {
-	s := newState("twice.md")
+	s := state{}
+	s.setFirstInName("twice.md")
 	d := newDoc()
 	lines := []string{
 		"# Title", // Line 1
@@ -153,7 +156,8 @@ func TestProcForMarkdownWithChunkRefs_AddedToTwice(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_AddedToThrice(t *testing.T) {
-	s := newState("thrice.md")
+	s := state{}
+	s.setFirstInName("thrice.md")
 	d := newDoc()
 	lines := []string{
 		"# Title", // Line 1
@@ -215,7 +219,8 @@ func TestProcForMarkdownWithChunkRefs_AddedToThrice(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_UsedNowhere(t *testing.T) {
-	s := newState("nowhere.md")
+	s := state{}
+	s.setFirstInName("nowhere.md")
 	d := newDoc()
 	lines := []string{
 		"# Title", // Line 1
@@ -238,7 +243,8 @@ func TestProcForMarkdownWithChunkRefs_UsedNowhere(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_UsedOnce(t *testing.T) {
-	s := newState("once.md")
+	s := state{}
+	s.setFirstInName("once.md")
 	d := newDoc()
 	lines := []string{
 		"# Title", // Line 1
@@ -280,7 +286,8 @@ func TestProcForMarkdownWithChunkRefs_UsedOnce(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_UsedTwice(t *testing.T) {
-	s := newState("twice.md")
+	s := state{}
+	s.setFirstInName("twice.md")
 	d := newDoc()
 	lines := []string{
 		"# Title", // Line 1
@@ -328,7 +335,8 @@ func TestProcForMarkdownWithChunkRefs_UsedTwice(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_UsedThrice(t *testing.T) {
-	s := newState("thrice.md")
+	s := state{}
+	s.setFirstInName("thrice.md")
 	d := newDoc()
 	lines := []string{
 		"# Title", // Line 1

@@ -95,7 +95,8 @@ func toSection(inName string, line string) section {
 }
 
 func TestProcForSectionTrackingHeadings(t *testing.T) {
-	s := newState("headings.md")
+	s := state{}
+	s.setFirstInName("headings.md")
 	d := newDoc()
 	tData := []struct {
 		line string // Next line
@@ -126,7 +127,8 @@ func TestProcForSectionTrackingHeadings(t *testing.T) {
 }
 
 func TestProcForSectionTrackingStartLines(t *testing.T) {
-	s := newState("startlines.md")
+	s := state{}
+	s.setFirstInName("startlines.md")
 	d := newDoc()
 	tData := []struct {
 		line  string // Next line
@@ -160,7 +162,8 @@ func TestProcForSectionTrackingStartLines(t *testing.T) {
 }
 
 func TestProcForSectionMarkingAnchors(t *testing.T) {
-	s := newState("anchors.md")
+	s := state{}
+	s.setFirstInName("anchors.md")
 	d := newDoc()
 	tData := []struct {
 		line string // Next line
@@ -194,7 +197,8 @@ func TestProcForSectionMarkingAnchors(t *testing.T) {
 
 func TestProcForNumsInSectionHeadings(t *testing.T) {
 	d := newDoc()
-	s := newState("headings.md")
+	s := state{}
+	s.setFirstInName("headings.md")
 	tData := []struct {
 		line string // Next line
 		exp  string // Expected markdown line

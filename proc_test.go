@@ -7,7 +7,8 @@ import (
 )
 
 func TestProcForMarkdown(t *testing.T) {
-	s := newState("markdown.md")
+	s := state{}
+	s.setFirstInName("markdown.md")
 	d := newDoc()
 	cs := []struct {
 		line     string // Next line
@@ -38,7 +39,8 @@ func TestProcForMarkdown(t *testing.T) {
 }
 
 func TestProcForInChunks(t *testing.T) {
-	s := newState("in.md")
+	s := state{}
+	s.setFirstInName("in.md")
 	d := newDoc()
 	cs := []struct {
 		line    string // Next line
@@ -63,7 +65,8 @@ func TestProcForInChunks(t *testing.T) {
 
 func TestProcForChunkNames(t *testing.T) {
 	d := newDoc()
-	s := newState("names.md")
+	s := state{}
+	s.setFirstInName("names.md")
 	lines := []string{
 		"``` First",
 		"Code line 1",
@@ -108,7 +111,8 @@ func TestProcForChunkNames(t *testing.T) {
 }
 
 func TestProcForChunkDetails(t *testing.T) {
-	s := newState("details.md")
+	s := state{}
+	s.setFirstInName("details.md")
 	d := newDoc()
 	lines := []string{
 		"``` First",
@@ -167,7 +171,8 @@ func TestProcForChunkDetails(t *testing.T) {
 }
 
 func TestProcForWarningsAroundChunks(t *testing.T) {
-	s := newState("testfile.lit")
+	s := state{}
+	s.setFirstInName("testfile.lit")
 	d := newDoc()
 	lines := []string{
 		"Title",
@@ -213,7 +218,8 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 }
 
 func TestProcForChunkRefs(t *testing.T) {
-	s := newState("testfile.lit")
+	s := state{}
+	s.setFirstInName("testfile.lit")
 	d := newDoc()
 	lines := []string{
 		"Opening text", // Line 1

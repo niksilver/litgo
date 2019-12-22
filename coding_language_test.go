@@ -5,15 +5,10 @@ import (
 	"testing"
 )
 
-func newState(name string) state {
-	s := state{}
-	s.setFirstInName(name)
-	return s
-}
-
 func TestFinalMarkDown_TwoCodingLanguages(t *testing.T) {
 	d := newDoc()
-	s := newState("test.md")
+	s := state{}
+	s.setFirstInName("test.md")
 	lines := []string{
 		"# Language one", // Line 1
 		"",
@@ -73,7 +68,8 @@ func TestFinalMarkDown_TwoCodingLanguages(t *testing.T) {
 
 func TestFinalMarkDown_MissingCodingLanguages(t *testing.T) {
 	d := newDoc()
-	s := newState("tester.md")
+	s := state{}
+	s.setFirstInName("tester.md")
 	lines := []string{
 		"# Language one", // Line 1
 		"",
