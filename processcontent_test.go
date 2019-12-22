@@ -9,10 +9,12 @@ func TestProcessContent(t *testing.T) {
 
 	// Make sure proc is called at least once normally
 	called := false
-	d := newDoc()
-	mockProc := func(s *state, d *doc, in string) { called = true }
+	s := newState()
+	s.proc = func(s *state, d *doc, in string) { called = true }
 
-	processContent(strings.NewReader("Hello"), &state{}, &d, mockProc)
+	d := newDoc()
+
+	processContent(strings.NewReader("Hello"), &s, &d)
 
 	if !called {
 		t.Error("proc should have been called at least once")
@@ -20,11 +22,12 @@ func TestProcessContent(t *testing.T) {
 
 	// Process three lines in order
 	lines := make([]string, 0)
-	d = newDoc()
-	mockProc = func(s *state, d *doc, in string) { lines = append(lines, in) }
+	s = newState()
+	s.proc = func(s *state, d *doc, in string) { lines = append(lines, in) }
 
-	processContent(strings.NewReader("One\nTwo\nThree"),
-		&state{}, &d, mockProc)
+	d = newDoc()
+
+	processContent(strings.NewReader("One\nTwo\nThree"), &s, &d)
 
 	if len(lines) != 3 {
 		t.Errorf("Should have returned 3 lines but got %d", len(lines))

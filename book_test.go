@@ -16,7 +16,7 @@ func (src stringReadCloser) Close() error {
 }
 
 func TestReadBookAndChapters_FollowsLinks(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("book.md")
 	s.book = "book.md"
 	d := newDoc()
@@ -32,7 +32,7 @@ func TestReadBookAndChapters_FollowsLinks(t *testing.T) {
 		return stringReadCloser{strings.NewReader(data[inName])}, nil
 	}
 
-	firstPassForAll(&s, &d, proc, mockFileReader)
+	firstPassForAll(&s, &d, mockFileReader)
 
 	if len(d.markdown) != 3 {
 		t.Errorf("Expected 3 markdown docs but got %d: %#v",
@@ -59,7 +59,7 @@ func TestReadBookAndChapters_FollowsLinks(t *testing.T) {
 }
 
 func TestReadBookAndChapters_DontFollowsLinksIfNotBook(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("not-a-book.md")
 	d := newDoc()
 
@@ -74,7 +74,7 @@ func TestReadBookAndChapters_DontFollowsLinksIfNotBook(t *testing.T) {
 		return stringReadCloser{strings.NewReader(data[inName])}, nil
 	}
 
-	firstPassForAll(&s, &d, proc, mockFileReader)
+	firstPassForAll(&s, &d, mockFileReader)
 
 	if len(d.markdown) != 1 {
 		t.Errorf("Expected 1 markdown doc but got %d: %#v",
@@ -89,7 +89,7 @@ func TestReadBookAndChapters_DontFollowsLinksIfNotBook(t *testing.T) {
 }
 
 func TestReadBookAndChapters_DontFollowsLinksBelowBookLevel(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("book.md")
 	s.book = "book.md"
 	d := newDoc()
@@ -104,7 +104,7 @@ func TestReadBookAndChapters_DontFollowsLinksBelowBookLevel(t *testing.T) {
 		return stringReadCloser{strings.NewReader(data[inName])}, nil
 	}
 
-	firstPassForAll(&s, &d, proc, mockFileReader)
+	firstPassForAll(&s, &d, mockFileReader)
 
 	if len(d.markdown) != 2 {
 		t.Errorf("Expected 2 markdown doc but got %d: %#v",
@@ -125,7 +125,7 @@ func TestReadBookAndChapters_DontFollowsLinksBelowBookLevel(t *testing.T) {
 }
 
 func TestReadBookAndChapters_FollowsLinksWhenBookNotInBaseDir(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("../aaa/book.md")
 	s.book = "../aaa/book.md"
 	d := newDoc()
@@ -145,7 +145,7 @@ func TestReadBookAndChapters_FollowsLinksWhenBookNotInBaseDir(t *testing.T) {
 		return stringReadCloser{strings.NewReader(content)}, nil
 	}
 
-	err := firstPassForAll(&s, &d, proc, mockFileReader)
+	err := firstPassForAll(&s, &d, mockFileReader)
 	if err != nil {
 		t.Errorf("Error on first pass for all: %s", err.Error())
 	}
@@ -175,7 +175,7 @@ func TestReadBookAndChapters_FollowsLinksWhenBookNotInBaseDir(t *testing.T) {
 }
 
 func TestReadBookAndChapters_WriteToMarkdownOutDir(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("../aaa/book.md")
 	s.book = "../aaa/book.md"
 	d := newBuilderDoc(newDoc())
@@ -203,7 +203,7 @@ func TestReadBookAndChapters_WriteToMarkdownOutDir(t *testing.T) {
 		return stringReadCloser{strings.NewReader(content)}, nil
 	}
 
-	err1 := firstPassForAll(&s, &d.doc, proc, mockFileReader)
+	err1 := firstPassForAll(&s, &d.doc, mockFileReader)
 	if err1 != nil {
 		t.Errorf("Error on first pass for all: %s", err1.Error())
 	}

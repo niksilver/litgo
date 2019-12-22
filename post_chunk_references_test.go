@@ -7,7 +7,7 @@ import (
 )
 
 func TestProcForMarkdownWithChunkRefs_AddedToNowhereElse(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("chunktest.md")
 	d := newDoc()
 	lines := []string{
@@ -28,7 +28,7 @@ func TestProcForMarkdownWithChunkRefs_AddedToNowhereElse(t *testing.T) {
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(r, &s, &d, proc)
+	processContent(r, &s, &d)
 	d.lat = compileLattice(d.chunks)
 	b := finalMarkdown(s.inName, &d)
 	out := strings.Split(b.String(), "\n")
@@ -51,7 +51,7 @@ func stripHTML(str string) string {
 }
 
 func TestProcForMarkdownWithChunkRefs_AddedToOnce(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("once.md")
 	d := newDoc()
 	lines := []string{
@@ -81,7 +81,7 @@ func TestProcForMarkdownWithChunkRefs_AddedToOnce(t *testing.T) {
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(r, &s, &d, proc)
+	processContent(r, &s, &d)
 	d.lat = compileLattice(d.chunks)
 	b := finalMarkdown(s.inName, &d)
 	out := strings.Split(b.String(), "\n")
@@ -99,7 +99,7 @@ func TestProcForMarkdownWithChunkRefs_AddedToOnce(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_AddedToTwice(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("twice.md")
 	d := newDoc()
 	lines := []string{
@@ -138,7 +138,7 @@ func TestProcForMarkdownWithChunkRefs_AddedToTwice(t *testing.T) {
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(r, &s, &d, proc)
+	processContent(r, &s, &d)
 	d.lat = compileLattice(d.chunks)
 	b := finalMarkdown(s.inName, &d)
 	out := strings.Split(b.String(), "\n")
@@ -156,7 +156,7 @@ func TestProcForMarkdownWithChunkRefs_AddedToTwice(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_AddedToThrice(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("thrice.md")
 	d := newDoc()
 	lines := []string{
@@ -201,7 +201,7 @@ func TestProcForMarkdownWithChunkRefs_AddedToThrice(t *testing.T) {
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(r, &s, &d, proc)
+	processContent(r, &s, &d)
 	d.lat = compileLattice(d.chunks)
 	b := finalMarkdown(s.inName, &d)
 	out := strings.Split(b.String(), "\n")
@@ -219,7 +219,7 @@ func TestProcForMarkdownWithChunkRefs_AddedToThrice(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_UsedNowhere(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("nowhere.md")
 	d := newDoc()
 	lines := []string{
@@ -231,7 +231,7 @@ func TestProcForMarkdownWithChunkRefs_UsedNowhere(t *testing.T) {
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(r, &s, &d, proc)
+	processContent(r, &s, &d)
 	d.lat = compileLattice(d.chunks)
 	b := finalMarkdown(s.inName, &d)
 	out := strings.Split(b.String(), "\n")
@@ -243,7 +243,7 @@ func TestProcForMarkdownWithChunkRefs_UsedNowhere(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_UsedOnce(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("once.md")
 	d := newDoc()
 	lines := []string{
@@ -268,7 +268,7 @@ func TestProcForMarkdownWithChunkRefs_UsedOnce(t *testing.T) {
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(r, &s, &d, proc)
+	processContent(r, &s, &d)
 	d.lat = compileLattice(d.chunks)
 	b := finalMarkdown(s.inName, &d)
 	out := strings.Split(b.String(), "\n")
@@ -286,7 +286,7 @@ func TestProcForMarkdownWithChunkRefs_UsedOnce(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_UsedTwice(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("twice.md")
 	d := newDoc()
 	lines := []string{
@@ -317,7 +317,7 @@ func TestProcForMarkdownWithChunkRefs_UsedTwice(t *testing.T) {
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(r, &s, &d, proc)
+	processContent(r, &s, &d)
 	d.lat = compileLattice(d.chunks)
 	b := finalMarkdown(s.inName, &d)
 	out := strings.Split(b.String(), "\n")
@@ -335,7 +335,7 @@ func TestProcForMarkdownWithChunkRefs_UsedTwice(t *testing.T) {
 }
 
 func TestProcForMarkdownWithChunkRefs_UsedThrice(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("thrice.md")
 	d := newDoc()
 	lines := []string{
@@ -368,7 +368,7 @@ func TestProcForMarkdownWithChunkRefs_UsedThrice(t *testing.T) {
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(r, &s, &d, proc)
+	processContent(r, &s, &d)
 	d.lat = compileLattice(d.chunks)
 	b := finalMarkdown(s.inName, &d)
 	out := strings.Split(b.String(), "\n")

@@ -7,7 +7,7 @@ import (
 
 func TestFinalMarkDown_TwoCodingLanguages(t *testing.T) {
 	d := newDoc()
-	s := state{}
+	s := newState()
 	s.setFirstInName("test.md")
 	lines := []string{
 		"# Language one", // Line 1
@@ -53,7 +53,7 @@ func TestFinalMarkDown_TwoCodingLanguages(t *testing.T) {
 	}
 	content := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(content, &s, &d, proc)
+	processContent(content, &s, &d)
 	d.lat = compileLattice(d.chunks)
 	b := finalMarkdown(s.inName, &d)
 	out := strings.Split(b.String(), "\n")
@@ -68,7 +68,7 @@ func TestFinalMarkDown_TwoCodingLanguages(t *testing.T) {
 
 func TestFinalMarkDown_MissingCodingLanguages(t *testing.T) {
 	d := newDoc()
-	s := state{}
+	s := newState()
 	s.setFirstInName("tester.md")
 	lines := []string{
 		"# Language one", // Line 1
@@ -104,7 +104,7 @@ func TestFinalMarkDown_MissingCodingLanguages(t *testing.T) {
 	}
 	content := strings.NewReader(strings.Join(lines, "\n"))
 
-	processContent(content, &s, &d, proc)
+	processContent(content, &s, &d)
 	d.lat = compileLattice(d.chunks)
 	b := finalMarkdown(s.inName, &d)
 	out := strings.Split(b.String(), "\n")

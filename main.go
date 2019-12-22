@@ -28,6 +28,8 @@ type state struct {
 	inChunk   bool      // If we're currently reading a chunk
 	warnings  []warning // Warnings we're collecting
 	sec       section   // Current section being read
+	// Function for processing a line
+	proc lineProc
 }
 
 type doc struct {
@@ -107,7 +109,7 @@ func init() {
 
 func main() {
 	// Set up the initial state
-	s := state{}
+	s := newState()
 	d := newDoc()
 
 	// Update the structs according to the command line
@@ -129,7 +131,7 @@ func main() {
 
 	// Read the content
 	// Do a first pass through all the content
-	if err := firstPassForAll(&s, &d, proc, fileReader); err != nil {
+	if err := firstPassForAll(&s, &d, fileReader); err != nil {
 		fmt.Println(err.Error())
 		return
 	}
@@ -174,6 +176,12 @@ func main() {
 
 }
 
+func newState() state {
+	return state{
+		proc: proc,
+	}
+}
+
 func newDoc() doc {
 	return doc{
 		markdown:    make(map[string]*strings.Builder),
@@ -185,10 +193,10 @@ func newDoc() doc {
 	}
 }
 
-func firstPassForAll(s *state, d *doc, lp lineProc, fileRdr func(string) (io.ReadCloser, error)) error {
+func firstPassForAll(s *state, d *doc, fileRdr func(string) (io.ReadCloser, error)) error {
 	for i := 0; i < len(s.inNames); i++ {
 		s.setInName(s.inNames[i])
-		if err := firstPass(s, d, proc, fileRdr); err != nil {
+		if err := firstPass(s, d, fileRdr); err != nil {
 			return err
 		}
 		s.book = ""
@@ -196,12 +204,12 @@ func firstPassForAll(s *state, d *doc, lp lineProc, fileRdr func(string) (io.Rea
 	return nil
 }
 
-func firstPass(s *state, d *doc, lp lineProc, fileRdr func(string) (io.ReadCloser, error)) error {
+func firstPass(s *state, d *doc, fileRdr func(string) (io.ReadCloser, error)) error {
 	fReader, err := fileRdr(s.inName)
 	if err != nil {
 		return err
 	}
-	processContent(fReader, s, d, lp)
+	processContent(fReader, s, d)
 	if err := fReader.Close(); err != nil {
 		return err
 	}
@@ -220,10 +228,10 @@ func fileReader(fName string) (io.ReadCloser, error) {
 	return f, err
 }
 
-func processContent(r io.Reader, s *state, d *doc, proc lineProc) {
+func processContent(r io.Reader, s *state, d *doc) {
 	sc := bufio.NewScanner(r)
 	for sc.Scan() {
-		proc(s, d, sc.Text())
+		s.proc(s, d, sc.Text())
 	}
 
 	if s.inChunk {

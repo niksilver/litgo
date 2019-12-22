@@ -13,7 +13,7 @@ Chunks
 - Have a --out-code-dir as an output base directory for code.
 
 Refactoring
-- Make proc a method of *state.
+- Make fileReader a field of state.
 
 Book and chapters
 - Reading books and chapters:
@@ -63,6 +63,7 @@ Refactoring
 - Rearrange the design doc to present more of a design.
 - In chunk struct definitions, change field file to be called inName
   for consistency and clarity.
+- proc, the line reader, is now a field of state.
 
 I/O
 - Read from a file specified by the command line

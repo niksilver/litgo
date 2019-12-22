@@ -7,7 +7,7 @@ import (
 )
 
 func TestProcForMarkdown(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("markdown.md")
 	d := newDoc()
 	cs := []struct {
@@ -29,7 +29,7 @@ func TestProcForMarkdown(t *testing.T) {
 	}
 
 	for i, c := range cs {
-		proc(&s, &d, c.line)
+		s.proc(&s, &d, c.line)
 		mdb := d.markdown[s.inName]
 		if mdb.String() != c.markdown {
 			t.Errorf("Line %d: Expected markdown %q but got %q",
@@ -39,7 +39,7 @@ func TestProcForMarkdown(t *testing.T) {
 }
 
 func TestProcForInChunks(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("in.md")
 	d := newDoc()
 	cs := []struct {
@@ -55,7 +55,7 @@ func TestProcForInChunks(t *testing.T) {
 	}
 
 	for i, c := range cs {
-		proc(&s, &d, c.line)
+		s.proc(&s, &d, c.line)
 		if s.inChunk != c.inChunk {
 			t.Errorf("Line %d: Expected inChunk=%v but got %v",
 				i+1, c.inChunk, s.inChunk)
@@ -65,7 +65,7 @@ func TestProcForInChunks(t *testing.T) {
 
 func TestProcForChunkNames(t *testing.T) {
 	d := newDoc()
-	s := state{}
+	s := newState()
 	s.setFirstInName("names.md")
 	lines := []string{
 		"``` First",
@@ -84,7 +84,7 @@ func TestProcForChunkNames(t *testing.T) {
 	}
 
 	for _, line := range lines {
-		proc(&s, &d, line)
+		s.proc(&s, &d, line)
 	}
 
 	if len(d.chunks) != 2 {
@@ -111,7 +111,7 @@ func TestProcForChunkNames(t *testing.T) {
 }
 
 func TestProcForChunkDetails(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("details.md")
 	d := newDoc()
 	lines := []string{
@@ -154,7 +154,7 @@ func TestProcForChunkDetails(t *testing.T) {
 	}
 
 	for _, line := range lines {
-		proc(&s, &d, line)
+		s.proc(&s, &d, line)
 	}
 
 	if len(d.chunks) != 2 {
@@ -171,7 +171,7 @@ func TestProcForChunkDetails(t *testing.T) {
 }
 
 func TestProcForWarningsAroundChunks(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("testfile.lit")
 	d := newDoc()
 	lines := []string{
@@ -197,7 +197,7 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 		{"testfile.lit", 11, "chunk not closed"},
 	}
 
-	processContent(r, &s, &d, proc)
+	processContent(r, &s, &d)
 
 	nWarn := len(s.warnings)
 	if nWarn != len(expected) {
@@ -218,7 +218,7 @@ func TestProcForWarningsAroundChunks(t *testing.T) {
 }
 
 func TestProcForChunkRefs(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("testfile.lit")
 	d := newDoc()
 	lines := []string{
@@ -245,7 +245,7 @@ func TestProcForChunkRefs(t *testing.T) {
 		13: chunkRef{"Chunk three", sec1},
 	}
 
-	processContent(r, &s, &d, proc)
+	processContent(r, &s, &d)
 
 	chRefs := d.chunkRefs[s.inName]
 	if len(chRefs) != len(expected) {

@@ -95,7 +95,7 @@ func toSection(inName string, line string) section {
 }
 
 func TestProcForSectionTrackingHeadings(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("headings.md")
 	d := newDoc()
 	tData := []struct {
@@ -117,7 +117,7 @@ func TestProcForSectionTrackingHeadings(t *testing.T) {
 	}
 
 	for i, p := range tData {
-		proc(&s, &d, p.line)
+		s.proc(&s, &d, p.line)
 		strSec := s.sec.toString()
 		if strSec != p.exp {
 			t.Errorf("Line %d: Expected sec=%q but got %q",
@@ -127,7 +127,7 @@ func TestProcForSectionTrackingHeadings(t *testing.T) {
 }
 
 func TestProcForSectionTrackingStartLines(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("startlines.md")
 	d := newDoc()
 	tData := []struct {
@@ -150,7 +150,7 @@ func TestProcForSectionTrackingStartLines(t *testing.T) {
 
 	// Process all the lines
 	for _, p := range tData {
-		proc(&s, &d, p.line)
+		s.proc(&s, &d, p.line)
 	}
 
 	for i, p := range tData {
@@ -162,7 +162,7 @@ func TestProcForSectionTrackingStartLines(t *testing.T) {
 }
 
 func TestProcForSectionMarkingAnchors(t *testing.T) {
-	s := state{}
+	s := newState()
 	s.setFirstInName("anchors.md")
 	d := newDoc()
 	tData := []struct {
@@ -185,7 +185,7 @@ func TestProcForSectionMarkingAnchors(t *testing.T) {
 
 	// Process all the lines
 	for i, p := range tData {
-		proc(&s, &d, p.line)
+		s.proc(&s, &d, p.line)
 		lines := strings.Split(d.markdown[s.inName].String(), "\n")
 		line := lines[len(lines)-2]
 		if !strings.HasPrefix(line, p.pref) {
@@ -197,7 +197,7 @@ func TestProcForSectionMarkingAnchors(t *testing.T) {
 
 func TestProcForNumsInSectionHeadings(t *testing.T) {
 	d := newDoc()
-	s := state{}
+	s := newState()
 	s.setFirstInName("headings.md")
 	tData := []struct {
 		line string // Next line
@@ -215,7 +215,7 @@ func TestProcForNumsInSectionHeadings(t *testing.T) {
 
 	for i, p := range tData {
 		d.markdown[s.inName] = &strings.Builder{}
-		proc(&s, &d, p.line)
+		s.proc(&s, &d, p.line)
 		line := d.markdown[s.inName].String()
 		md := line[0 : len(line)-1]
 		if stripHTML(md) != p.exp {

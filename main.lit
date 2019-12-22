@@ -64,7 +64,7 @@ we may be dealing with multiple input files - a book with chapters)
 which input file those things come from.
 
 --- Set up the initial state
-s := state{}
+s := newState()
 d := newDoc()
 
 @{Update the structs according to the command line}
@@ -82,6 +82,8 @@ type state struct {
     inChunk bool  // If we're currently reading a chunk
     warnings []warning  // Warnings we're collecting
     sec section  // Current section being read
+    // Function for processing a line
+    proc func(*state, *doc, string)
 }
 
 type doc struct {
@@ -106,8 +108,14 @@ type doc struct {
 ---
 
 --- Functions +=
+func newState() state {
+    return state {
+        proc: proc,
+    }
+}
+
 func newDoc() doc {
-    return doc{
+    return doc {
         markdown: make(map[string]*strings.Builder),
         chunks: make(map[string]*chunk),
         chunkStarts: make(map[string]map[int]string),
@@ -147,17 +155,17 @@ We will keep looping through the `nextIn` files until there are none left.
 If the filename is `"-"` then we use Stdin.
 
 --- Do a first pass through all the content
-if err := firstPassForAll(&s, &d, proc, fileReader); err != nil {
+if err := firstPassForAll(&s, &d, fileReader); err != nil {
     fmt.Println(err.Error())
     return
 }
 ---
 
 --- Functions +=
-func firstPassForAll(s *state, d *doc, lp lineProc, fileRdr func(string) (io.ReadCloser, error)) error {
+func firstPassForAll(s *state, d *doc, fileRdr func(string) (io.ReadCloser, error)) error {
     for i := 0; i < len(s.inNames); i++ {
         s.setInName(s.inNames[i])
-        if err := firstPass(s, d, proc, fileRdr); err != nil {
+        if err := firstPass(s, d, fileRdr); err != nil {
             return err
         }
         s.book = ""
@@ -165,12 +173,12 @@ func firstPassForAll(s *state, d *doc, lp lineProc, fileRdr func(string) (io.Rea
     return nil
 }
 
-func firstPass(s *state, d *doc, lp lineProc, fileRdr func(string) (io.ReadCloser, error)) error {
+func firstPass(s *state, d *doc, fileRdr func(string) (io.ReadCloser, error)) error {
     fReader, err := fileRdr(s.inName)
     if err != nil {
         return err
     }
-    processContent(fReader, s, d, lp)
+    processContent(fReader, s, d)
     if err := fReader.Close(); err != nil {
         return err
     }
@@ -199,15 +207,11 @@ We turn that into lines (without the newline characters) and
 read those lines one at a time, updating the document data structure
 (including relationships between code chunks) as we go.
 
---- Package level declarations +=
-type lineProc = func(*state, *doc, string)
----
-
 --- Functions +=
-func processContent(r io.Reader, s *state, d *doc, proc lineProc) {
+func processContent(r io.Reader, s *state, d *doc) {
     sc := bufio.NewScanner(r)
     for sc.Scan() {
-        proc(s, d, sc.Text())
+        s.proc(s, d, sc.Text())
     }
 
     if s.inChunk {
