@@ -82,8 +82,9 @@ type state struct {
     inChunk bool  // If we're currently reading a chunk
     warnings []warning  // Warnings we're collecting
     sec section  // Current section being read
-    // Function for processing a line
-    proc func(*state, *doc, string)
+    proc func(*state, *doc, string) // Function for processing a line
+    // Function for reading a named content source (e.g. a file)
+    reader func(fName string) (io.ReadCloser, error)
 }
 
 type doc struct {
@@ -111,6 +112,7 @@ type doc struct {
 func newState() state {
     return state {
         proc: proc,
+        reader: fileReader,
     }
 }
 
@@ -155,17 +157,17 @@ We will keep looping through the `nextIn` files until there are none left.
 If the filename is `"-"` then we use Stdin.
 
 --- Do a first pass through all the content
-if err := firstPassForAll(&s, &d, fileReader); err != nil {
+if err := firstPassForAll(&s, &d); err != nil {
     fmt.Println(err.Error())
     return
 }
 ---
 
 --- Functions +=
-func firstPassForAll(s *state, d *doc, fileRdr func(string) (io.ReadCloser, error)) error {
+func firstPassForAll(s *state, d *doc) error {
     for i := 0; i < len(s.inNames); i++ {
         s.setInName(s.inNames[i])
-        if err := firstPass(s, d, fileRdr); err != nil {
+        if err := firstPass(s, d); err != nil {
             return err
         }
         s.book = ""
@@ -173,8 +175,8 @@ func firstPassForAll(s *state, d *doc, fileRdr func(string) (io.ReadCloser, erro
     return nil
 }
 
-func firstPass(s *state, d *doc, fileRdr func(string) (io.ReadCloser, error)) error {
-    fReader, err := fileRdr(s.inName)
+func firstPass(s *state, d *doc) error {
+    fReader, err := s.reader(s.inName)
     if err != nil {
         return err
     }

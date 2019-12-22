@@ -10,10 +10,8 @@ Sections
 Chunks
 - Write out the chunk name before each chunk.
 - Make chunk starts linkable.
-- Have a --out-code-dir as an output base directory for code.
 
 Refactoring
-- Make fileReader a field of state.
 
 Book and chapters
 - Reading books and chapters:
@@ -64,6 +62,7 @@ Refactoring
 - In chunk struct definitions, change field file to be called inName
   for consistency and clarity.
 - proc, the line reader, is now a field of state.
+- fileReader is a field of state.
 
 I/O
 - Read from a file specified by the command line

@@ -19,17 +19,18 @@ import (
 // Package level declarations
 type state struct {
 	// Tracking
-	book      string    // Name of the top level book file, or empty if none.
-	inName    string    // Name of file being processed, relative to working dir
-	outName   string    // Name of final file to write to
-	inNames   []string  // Name of all input files, including the first
-	lineNum   int       // Current line number
-	chunkName string    // Name of current chunk
-	inChunk   bool      // If we're currently reading a chunk
-	warnings  []warning // Warnings we're collecting
-	sec       section   // Current section being read
-	// Function for processing a line
-	proc lineProc
+	book      string                     // Name of the top level book file, or empty if none.
+	inName    string                     // Name of file being processed, relative to working dir
+	outName   string                     // Name of final file to write to
+	inNames   []string                   // Name of all input files, including the first
+	lineNum   int                        // Current line number
+	chunkName string                     // Name of current chunk
+	inChunk   bool                       // If we're currently reading a chunk
+	warnings  []warning                  // Warnings we're collecting
+	sec       section                    // Current section being read
+	proc      func(*state, *doc, string) // Function for processing a line
+	// Function for reading a named content source (e.g. a file)
+	reader func(fName string) (io.ReadCloser, error)
 }
 
 type doc struct {
@@ -50,7 +51,6 @@ type doc struct {
 	writeCloser func(string) (io.WriteCloser, error)
 }
 
-type lineProc = func(*state, *doc, string)
 type warning struct {
 	fName string
 	line  int
@@ -131,7 +131,7 @@ func main() {
 
 	// Read the content
 	// Do a first pass through all the content
-	if err := firstPassForAll(&s, &d, fileReader); err != nil {
+	if err := firstPassForAll(&s, &d); err != nil {
 		fmt.Println(err.Error())
 		return
 	}
@@ -178,7 +178,8 @@ func main() {
 
 func newState() state {
 	return state{
-		proc: proc,
+		proc:   proc,
+		reader: fileReader,
 	}
 }
 
@@ -193,10 +194,10 @@ func newDoc() doc {
 	}
 }
 
-func firstPassForAll(s *state, d *doc, fileRdr func(string) (io.ReadCloser, error)) error {
+func firstPassForAll(s *state, d *doc) error {
 	for i := 0; i < len(s.inNames); i++ {
 		s.setInName(s.inNames[i])
-		if err := firstPass(s, d, fileRdr); err != nil {
+		if err := firstPass(s, d); err != nil {
 			return err
 		}
 		s.book = ""
@@ -204,8 +205,8 @@ func firstPassForAll(s *state, d *doc, fileRdr func(string) (io.ReadCloser, erro
 	return nil
 }
 
-func firstPass(s *state, d *doc, fileRdr func(string) (io.ReadCloser, error)) error {
-	fReader, err := fileRdr(s.inName)
+func firstPass(s *state, d *doc) error {
+	fReader, err := s.reader(s.inName)
 	if err != nil {
 		return err
 	}

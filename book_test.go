@@ -16,11 +16,6 @@ func (src stringReadCloser) Close() error {
 }
 
 func TestReadBookAndChapters_FollowsLinks(t *testing.T) {
-	s := newState()
-	s.setFirstInName("book.md")
-	s.book = "book.md"
-	d := newDoc()
-
 	data := map[string]string{
 		"book.md": `* [First chapter](first.md)
              * [Second chapter](second.md)`,
@@ -28,11 +23,15 @@ func TestReadBookAndChapters_FollowsLinks(t *testing.T) {
 		"second.md": "Second line 1\nSecond line 2",
 	}
 
-	mockFileReader := func(inName string) (io.ReadCloser, error) {
+	s := newState()
+	s.setFirstInName("book.md")
+	s.book = "book.md"
+	s.reader = func(inName string) (io.ReadCloser, error) {
 		return stringReadCloser{strings.NewReader(data[inName])}, nil
 	}
+	d := newDoc()
 
-	firstPassForAll(&s, &d, mockFileReader)
+	firstPassForAll(&s, &d)
 
 	if len(d.markdown) != 3 {
 		t.Errorf("Expected 3 markdown docs but got %d: %#v",
@@ -59,10 +58,6 @@ func TestReadBookAndChapters_FollowsLinks(t *testing.T) {
 }
 
 func TestReadBookAndChapters_DontFollowsLinksIfNotBook(t *testing.T) {
-	s := newState()
-	s.setFirstInName("not-a-book.md")
-	d := newDoc()
-
 	data := map[string]string{
 		"not-a-book.md": `* [First chapter](first.md)
              * [Second chapter](second.md)`,
@@ -70,11 +65,14 @@ func TestReadBookAndChapters_DontFollowsLinksIfNotBook(t *testing.T) {
 		"second.md": "Second line 1\nSecond line 2", // Should not read this
 	}
 
-	mockFileReader := func(inName string) (io.ReadCloser, error) {
+	s := newState()
+	s.setFirstInName("not-a-book.md")
+	s.reader = func(inName string) (io.ReadCloser, error) {
 		return stringReadCloser{strings.NewReader(data[inName])}, nil
 	}
+	d := newDoc()
 
-	firstPassForAll(&s, &d, mockFileReader)
+	firstPassForAll(&s, &d)
 
 	if len(d.markdown) != 1 {
 		t.Errorf("Expected 1 markdown doc but got %d: %#v",
@@ -89,22 +87,21 @@ func TestReadBookAndChapters_DontFollowsLinksIfNotBook(t *testing.T) {
 }
 
 func TestReadBookAndChapters_DontFollowsLinksBelowBookLevel(t *testing.T) {
-	s := newState()
-	s.setFirstInName("book.md")
-	s.book = "book.md"
-	d := newDoc()
-
 	data := map[string]string{
 		"book.md":   `* [First chapter](first.md)`,
 		"first.md":  `[Second link](second.md)`,
 		"second.md": "Second line 1\nSecond line 2", // Should not read this
 	}
 
-	mockFileReader := func(inName string) (io.ReadCloser, error) {
+	s := newState()
+	s.setFirstInName("book.md")
+	s.book = "book.md"
+	s.reader = func(inName string) (io.ReadCloser, error) {
 		return stringReadCloser{strings.NewReader(data[inName])}, nil
 	}
+	d := newDoc()
 
-	firstPassForAll(&s, &d, mockFileReader)
+	firstPassForAll(&s, &d)
 
 	if len(d.markdown) != 2 {
 		t.Errorf("Expected 2 markdown doc but got %d: %#v",
@@ -125,11 +122,6 @@ func TestReadBookAndChapters_DontFollowsLinksBelowBookLevel(t *testing.T) {
 }
 
 func TestReadBookAndChapters_FollowsLinksWhenBookNotInBaseDir(t *testing.T) {
-	s := newState()
-	s.setFirstInName("../aaa/book.md")
-	s.book = "../aaa/book.md"
-	d := newDoc()
-
 	data := map[string]string{
 		"../aaa/book.md": `* [First chapter](chaps/first.md)
              * [Second chapter](chaps/second.md)`,
@@ -137,15 +129,19 @@ func TestReadBookAndChapters_FollowsLinksWhenBookNotInBaseDir(t *testing.T) {
 		"chaps/second.md": "Second line 1\nSecond line 2",
 	}
 
-	mockFileReader := func(inName string) (io.ReadCloser, error) {
+	s := newState()
+	s.setFirstInName("../aaa/book.md")
+	s.book = "../aaa/book.md"
+	s.reader = func(inName string) (io.ReadCloser, error) {
 		content, okay := data[inName]
 		if !okay {
 			return nil, fmt.Errorf("No content found for key %q", inName)
 		}
 		return stringReadCloser{strings.NewReader(content)}, nil
 	}
+	d := newDoc()
 
-	err := firstPassForAll(&s, &d, mockFileReader)
+	err := firstPassForAll(&s, &d)
 	if err != nil {
 		t.Errorf("Error on first pass for all: %s", err.Error())
 	}
@@ -175,12 +171,6 @@ func TestReadBookAndChapters_FollowsLinksWhenBookNotInBaseDir(t *testing.T) {
 }
 
 func TestReadBookAndChapters_WriteToMarkdownOutDir(t *testing.T) {
-	s := newState()
-	s.setFirstInName("../aaa/book.md")
-	s.book = "../aaa/book.md"
-	d := newBuilderDoc(newDoc())
-	d.docOutDir = "outdir"
-
 	data := map[string]string{
 		"../aaa/book.md": `* [First chapter](chaps/first.md)
              * [Second chapter](chaps/second.md)`,
@@ -195,7 +185,10 @@ func TestReadBookAndChapters_WriteToMarkdownOutDir(t *testing.T) {
 		"outdir/chaps/second.html": "Second line 1",
 	}
 
-	mockFileReader := func(inName string) (io.ReadCloser, error) {
+	s := newState()
+	s.setFirstInName("../aaa/book.md")
+	s.book = "../aaa/book.md"
+	s.reader = func(inName string) (io.ReadCloser, error) {
 		content, okay := data[inName]
 		if !okay {
 			return nil, fmt.Errorf("No content found for key %q", inName)
@@ -203,7 +196,10 @@ func TestReadBookAndChapters_WriteToMarkdownOutDir(t *testing.T) {
 		return stringReadCloser{strings.NewReader(content)}, nil
 	}
 
-	err1 := firstPassForAll(&s, &d.doc, mockFileReader)
+	d := newBuilderDoc(newDoc())
+	d.docOutDir = "outdir"
+
+	err1 := firstPassForAll(&s, &d.doc)
 	if err1 != nil {
 		t.Errorf("Error on first pass for all: %s", err1.Error())
 	}
