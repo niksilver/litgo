@@ -691,6 +691,11 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 	for sc.Scan() {
 		count++
 		mkup := sc.Text()
+		// Insert chunk name before start of chunk
+		if name, okay := d.chunkStarts[inName][count]; okay {
+			b.WriteString(name + "\n\n")
+		}
+
 		// Amend chunk starts to include coding language
 		if name, okay := d.chunkStarts[inName][count]; okay {
 			mkup = backticks(mkup)

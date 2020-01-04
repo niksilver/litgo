@@ -8,8 +8,9 @@ Sections
 - Warning when a section jumps a level (e.g. 1 to 3, or nothing to 2)
 
 Chunks
-- Write out the chunk name before each chunk.
+- Style the chunk name before each chunk.
 - Make chunk starts linkable.
+- Make chunk references link to the first time that chunk is defined.
 
 Refactoring
 
@@ -75,3 +76,4 @@ Chunks
 - HTML code chunks have the language suffix for code highlighting
 - Select line directives on the command line.
 - Line directives mustn't be indented without a %i
+- Write out the chunk name before each chunk.

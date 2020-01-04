@@ -988,6 +988,7 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
     for sc.Scan() {
         count ++
         mkup := sc.Text()
+        @{Insert chunk name before start of chunk}
         @{Amend chunk starts to include coding language}
         b.WriteString(mkup + "\n")
         @{Include post-chunk reference if necessary}
@@ -995,6 +996,18 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
     return &b
 }
 
+---
+
+
+@s Outputting the markdown: Inserting the chunk name before a chunk
+
+Before any chunk we want to say what that chunk is, and insert a blank
+line after.
+
+--- Insert chunk name before start of chunk
+if name, okay := d.chunkStarts[inName][count]; okay {
+    b.WriteString(name + "\n\n")
+}
 ---
 
 

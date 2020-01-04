@@ -13,18 +13,22 @@ func TestProcForMarkdownWithChunkRefs_AddedToNowhereElse(t *testing.T) {
 	lines := []string{
 		"# Title", // Line 1
 		"",
+		// Chunk name header
+		// Blank line
 		"``` Chunk one",
 		"Chunk content",
-		"```", // Line 5
+		"```", // Line 7
 		"# T2",
+		// Chunk name header
+		// Blank line
 		"``` Chunk two",
-		"```", // Line 8
-		// Plus one line after the final \n // Line 9
+		"```", // Line 12
+		// Plus one line after the final \n // Line 13
 	}
 	expected := map[int]string{
-		5: "```",
-		6: "# 2 T2",
-		8: "```",
+		7:  "```",
+		8:  "# 2 T2",
+		12: "```",
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
@@ -33,9 +37,9 @@ func TestProcForMarkdownWithChunkRefs_AddedToNowhereElse(t *testing.T) {
 	b := finalMarkdown(s.inName, &d)
 	out := strings.Split(b.String(), "\n")
 
-	if len(out) != 9 {
+	if len(out) != 13 {
 		t.Errorf("Expected %d lines but got %d:\n%q",
-			9, len(out), b.String())
+			13, len(out), b.String())
 	}
 	for n, s := range expected {
 		if stripHTML(out[n-1]) != s {
@@ -57,27 +61,31 @@ func TestProcForMarkdownWithChunkRefs_AddedToOnce(t *testing.T) {
 	lines := []string{
 		"# Title", // Line 1
 		"",
+		// Chunk name header
+		// Blank line
 		"``` Chunk one",
 		"Chunk content",
 		"```",
-		// Post-chunk blank // Line 6
+		// Post-chunk blank // Line 8
 		// Post-chunk ref
 		// Post-chunk blank
 		"# T2",
+		// Chunk name header
+		// Blank line
 		"``` Chunk one",
 		"```",
-		// Post-chunk blank // Line 12
+		// Post-chunk blank // Line 16
 		// Post-chunk ref
 		// Post-chunk blank
-		// plus another (15) when the processor adds a final \n
+		// plus another when the processor adds a final \n // Line 19
 	}
 	expected := map[int]string{
-		6:  "",
-		7:  "Added to in section 2.",
 		8:  "",
-		12: "",
-		13: "Added to in section 1.",
-		14: "",
+		9:  "Added to in section 2.",
+		10: "",
+		16: "",
+		17: "Added to in section 1.",
+		18: "",
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
@@ -86,9 +94,9 @@ func TestProcForMarkdownWithChunkRefs_AddedToOnce(t *testing.T) {
 	b := finalMarkdown(s.inName, &d)
 	out := strings.Split(b.String(), "\n")
 
-	if len(out) != 15 {
+	if len(out) != 19 {
 		t.Errorf("Expected %d lines but got %d:\n%q",
-			15, len(out), b.String())
+			19, len(out), b.String())
 	}
 	for n, s := range expected {
 		if out[n-1] != s {
@@ -105,82 +113,25 @@ func TestProcForMarkdownWithChunkRefs_AddedToTwice(t *testing.T) {
 	lines := []string{
 		"# Title", // Line 1
 		"",
+		// Chunk name header
+		// Blank line
 		"``` Chunk one",
 		"Chunk content",
 		"```",
-		// Post-chunk blank // Line 6
+		// Post-chunk blank // Line 8
 		// Post-chunk ref
 		// Post-chunk blank
 		"# T2",
+		// Chunk name header
+		// Blank line
 		"``` Chunk one",
 		"```",
-		// Post-chunk blank // Line 12
+		// Post-chunk blank // Line 16
 		// Post-chunk ref
 		// Post-chunk blank
 		"",
-		"``` Chunk one",
-		"```",
-		// Post-chunk blank // Line 18
-		// Post-chunk ref
-		// Post-chunk blank
-		// Spare line after final \n // Line 21
-	}
-	expected := map[int]string{
-		6:  "",
-		7:  "Added to in sections 2 and 2.",
-		8:  "",
-		12: "",
-		13: "Added to in sections 1 and 2.",
-		14: "",
-		18: "",
-		19: "Added to in sections 1 and 2.",
-		20: "",
-	}
-	r := strings.NewReader(strings.Join(lines, "\n"))
-
-	processContent(r, &s, &d)
-	d.lat = compileLattice(d.chunks)
-	b := finalMarkdown(s.inName, &d)
-	out := strings.Split(b.String(), "\n")
-
-	if len(out) != 21 {
-		t.Errorf("Expected %d lines but got %d:\n%q",
-			21, len(out), b.String())
-	}
-	for n, s := range expected {
-		if out[n-1] != s {
-			t.Errorf("Expected line %d to be %q but got %q",
-				n, s, out[n-1])
-		}
-	}
-}
-
-func TestProcForMarkdownWithChunkRefs_AddedToThrice(t *testing.T) {
-	s := newState()
-	s.setFirstInName("thrice.md")
-	d := newDoc()
-	lines := []string{
-		"# Title", // Line 1
-		"",
-		"``` Chunk one",
-		"Chunk content",
-		"```",
-		// Post-chunk blank // Line 6
-		// Post-chunk ref
-		// Post-chunk blank
-		"# T2",
-		"``` Chunk one",
-		"```",
-		// Post-chunk blank // Line 12
-		// Post-chunk ref
-		// Post-chunk blank
-		"",
-		"``` Chunk one",
-		"```",
-		// Post-chunk blank // Line 18
-		// Post-chunk ref
-		// Post-chunk blank
-		"# Title 3",
+		// Chunk name header
+		// Blank line
 		"``` Chunk one",
 		"```",
 		// Post-chunk blank // Line 24
@@ -189,14 +140,15 @@ func TestProcForMarkdownWithChunkRefs_AddedToThrice(t *testing.T) {
 		// Spare line after final \n // Line 27
 	}
 	expected := map[int]string{
-		6:  "",
-		7:  "Added to in sections 2, 2 and 3.",
 		8:  "",
-		12: "",
-		13: "Added to in sections 1, 2 and 3.",
-		14: "",
+		9:  "Added to in sections 2 and 2.",
+		10: "",
+		16: "",
+		17: "Added to in sections 1 and 2.",
+		18: "",
+
 		24: "",
-		25: "Added to in sections 1, 2 and 2.",
+		25: "Added to in sections 1 and 2.",
 		26: "",
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
@@ -218,16 +170,63 @@ func TestProcForMarkdownWithChunkRefs_AddedToThrice(t *testing.T) {
 	}
 }
 
-func TestProcForMarkdownWithChunkRefs_UsedNowhere(t *testing.T) {
+func TestProcForMarkdownWithChunkRefs_AddedToThrice(t *testing.T) {
 	s := newState()
-	s.setFirstInName("nowhere.md")
+	s.setFirstInName("thrice.md")
 	d := newDoc()
 	lines := []string{
 		"# Title", // Line 1
 		"",
+		// Chunk name header
+		// Blank line
 		"``` Chunk one",
-		"```", // Line 4
-		// Plus one line after the final \n // Line 5
+		"Chunk content",
+		"```",
+		// Post-chunk blank // Line 8
+		// Post-chunk ref
+		// Post-chunk blank
+		"# T2",
+		// Chunk name header
+		// Blank line
+		"``` Chunk one",
+		"```",
+		// Post-chunk blank // Line 16
+		// Post-chunk ref
+		// Post-chunk blank
+		"",
+		// Chunk name header
+		// Blank line
+		"``` Chunk one",
+		"```",
+		// Post-chunk blank // Line 24
+		// Post-chunk ref
+		// Post-chunk blank
+		"# Title 3",
+		// Chunk name header
+		// Blank line
+		"``` Chunk one",
+		"```",
+		// Post-chunk blank // Line 32
+		// Post-chunk ref
+		// Post-chunk blank
+		// Spare line after final \n // Line 35
+	}
+	expected := map[int]string{
+		8:  "",
+		9:  "Added to in sections 2, 2 and 3.",
+		10: "",
+
+		16: "",
+		17: "Added to in sections 1, 2 and 3.",
+		18: "",
+
+		24: "",
+		25: "Added to in sections 1, 2 and 3.",
+		26: "",
+
+		32: "",
+		33: "Added to in sections 1, 2 and 2.",
+		34: "",
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
@@ -236,9 +235,41 @@ func TestProcForMarkdownWithChunkRefs_UsedNowhere(t *testing.T) {
 	b := finalMarkdown(s.inName, &d)
 	out := strings.Split(b.String(), "\n")
 
-	if len(out) != 5 {
+	if len(out) != 35 {
 		t.Errorf("Expected %d lines but got %d:\n%q",
-			5, len(out), b.String())
+			35, len(out), b.String())
+	}
+	for n, s := range expected {
+		if out[n-1] != s {
+			t.Errorf("Expected line %d to be %q but got %q",
+				n, s, out[n-1])
+		}
+	}
+}
+
+func TestProcForMarkdownWithChunkRefs_UsedNowhere(t *testing.T) {
+	s := newState()
+	s.setFirstInName("nowhere.md")
+	d := newDoc()
+	lines := []string{
+		"# Title", // Line 1
+		"",
+		// Chunk name header
+		// Blank line
+		"``` Chunk one",
+		"```", // Line 6
+		// Plus one line after the final \n // Line 7
+	}
+	r := strings.NewReader(strings.Join(lines, "\n"))
+
+	processContent(r, &s, &d)
+	d.lat = compileLattice(d.chunks)
+	b := finalMarkdown(s.inName, &d)
+	out := strings.Split(b.String(), "\n")
+
+	if len(out) != 7 {
+		t.Errorf("Expected %d lines but got %d:\n%q",
+			7, len(out), b.String())
 	}
 }
 
@@ -249,22 +280,26 @@ func TestProcForMarkdownWithChunkRefs_UsedOnce(t *testing.T) {
 	lines := []string{
 		"# Title", // Line 1
 		"",
+		// Chunk name header
+		// Blank line
 		"``` Chunk one",
 		"Chunk content",
 		"```",
-		// Post-chunk blank // Line 6
+		// Post-chunk blank // Line 8
 		// Post-chunk ref
 		// Post-chunk blank
 		"# T2",
+		// Chunk name header
+		// Blank line
 		"``` Chunk two",
 		"@{Chunk one}",
 		"```", // Not added to, so no post-chunk refs
-		// plus another when the processor adds a final \n // Line 13
+		// plus another when the processor adds a final \n // Line 17
 	}
 	expected := map[int]string{
-		6: "",
-		7: "Used in section 2.",
-		8: "",
+		8:  "",
+		9:  "Used in section 2.",
+		10: "",
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
@@ -273,9 +308,9 @@ func TestProcForMarkdownWithChunkRefs_UsedOnce(t *testing.T) {
 	b := finalMarkdown(s.inName, &d)
 	out := strings.Split(b.String(), "\n")
 
-	if len(out) != 13 {
+	if len(out) != 17 {
 		t.Errorf("Expected %d lines but got %d:\n%q",
-			13, len(out), b.String())
+			17, len(out), b.String())
 	}
 	for n, s := range expected {
 		if out[n-1] != s {
@@ -292,28 +327,34 @@ func TestProcForMarkdownWithChunkRefs_UsedTwice(t *testing.T) {
 	lines := []string{
 		"# Title", // Line 1
 		"",
+		// Chunk name header
+		// Blank line
 		"``` Chunk one",
 		"  # Some comment",
 		"  @{Chunk two}",
 		"  More chunk content",
 		"```",
-		"# T2", // Line 8
+		"# T2", // Line 10
+		// Chunk name header
+		// Blank line
 		"``` Chunk two",
 		"  Some content here",
 		"```",
-		// Post-chunk blank // Line 12
+		// Post-chunk blank // Line 16
 		// Post-chunk ref
 		// Post-chunk blank
 		"",
+		// Chunk name header
+		// Blank line
 		"``` Chunk three",
 		"@{Chunk two}",
 		"```",
-		// Spare line after final \n // Line 19
+		// Spare line after final \n // Line 25
 	}
 	expected := map[int]string{
-		12: "",
-		13: "Used in sections 1 and 2.",
-		14: "",
+		16: "",
+		17: "Used in sections 1 and 2.",
+		18: "",
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
@@ -322,9 +363,9 @@ func TestProcForMarkdownWithChunkRefs_UsedTwice(t *testing.T) {
 	b := finalMarkdown(s.inName, &d)
 	out := strings.Split(b.String(), "\n")
 
-	if len(out) != 19 {
+	if len(out) != 25 {
 		t.Errorf("Expected %d lines but got %d:\n%q",
-			19, len(out), b.String())
+			25, len(out), b.String())
 	}
 	for n, s := range expected {
 		if out[n-1] != s {
@@ -341,30 +382,38 @@ func TestProcForMarkdownWithChunkRefs_UsedThrice(t *testing.T) {
 	lines := []string{
 		"# Title", // Line 1
 		"",
+		// Chunk name header
+		// Blank line
 		"``` Chunk one",
 		"  @{Chunk two}",
 		"```",
-		"# T2", // Line 6
+		"# T2", // Line 8
+		// Chunk name header
+		// Blank line
 		"``` Chunk two",
 		"```",
-		// Post-chunk blank // Line 9
+		// Post-chunk blank // Line 13
 		// Post-chunk ref
 		// Post-chunk blank
 		"",
+		// Chunk name header
+		// Blank line
 		"``` Chunk three",
 		"  Some code",
 		"  @{Chunk two}",
 		"```",
-		"# Title 3", // Line 17
+		"# Title 3", // Line 23
+		// Chunk name header
+		// Blank line
 		"``` Chunk four",
 		"@{Chunk two}",
 		"```",
-		// Spare line after final \n // Line 21
+		// Spare line after final \n // Line 29
 	}
 	expected := map[int]string{
-		9:  "",
-		10: "Used in sections 1, 2 and 3.",
-		11: "",
+		13: "",
+		14: "Used in sections 1, 2 and 3.",
+		15: "",
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
 
@@ -373,9 +422,9 @@ func TestProcForMarkdownWithChunkRefs_UsedThrice(t *testing.T) {
 	b := finalMarkdown(s.inName, &d)
 	out := strings.Split(b.String(), "\n")
 
-	if len(out) != 21 {
+	if len(out) != 29 {
 		t.Errorf("Expected %d lines but got %d:\n%q",
-			21, len(out), b.String())
+			29, len(out), b.String())
 	}
 	for n, s := range expected {
 		if out[n-1] != s {
