@@ -134,7 +134,7 @@ func TestProcForSectionTrackingStartLines(t *testing.T) {
 		line  string // Next line
 		start bool   // True if it's supposed to be a section start
 	}{
-		{"Aaa", false},
+		{"Aaa", true}, // First line is always a section start
 		{"# Title", true},
 		{"", false},
 		{"## Subtitle", true},

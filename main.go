@@ -251,14 +251,14 @@ func proc(s *state, d *doc, line string) {
 	}
 
 	// Track and mark section changes
+	if s.lineNum == 1 {
+		d.addSectionStart(s.inName, s.lineNum, s.sec)
+	}
 	if !s.inChunk && strings.HasPrefix(line, "#") {
 		var changed bool
 		s.sec, changed = s.sec.next(line)
 		if changed {
-			if _, okay := d.secStarts[s.inName]; !okay {
-				d.secStarts[s.inName] = make(map[int]section)
-			}
-			d.secStarts[s.inName][s.lineNum] = s.sec
+			d.addSectionStart(s.inName, s.lineNum, s.sec)
 		}
 	}
 
@@ -353,6 +353,13 @@ func (s *section) next(line string) (section, bool) {
 	}
 
 	return section{s.inName, nums, find[2]}, true
+}
+
+func (d *doc) addSectionStart(inName string, lineNum int, sec section) {
+	if _, okay := d.secStarts[inName]; !okay {
+		d.secStarts[inName] = make(map[int]section)
+	}
+	d.secStarts[inName][lineNum] = sec
 }
 
 func (s *state) setInName(name string) *state {
@@ -690,9 +697,13 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 		mdown := sc.Text()
 		// Amend section heading
 		if sec, okay := d.secStarts[inName][lineNum]; okay {
-			mdown = strings.Repeat("#", len(sec.nums)) +
-				" <a name=\"section-" + sec.numsToString() + "\"></a>" +
-				sec.toString()
+			if strings.HasPrefix(mdown, "#") {
+				mdown = strings.Repeat("#", len(sec.nums)) +
+					" <a name=\"section-" + sec.numsToString() + "\"></a>" +
+					sec.toString()
+			} else if lineNum == 1 {
+				mdown = "<a name=\"section-" + sec.numsToString() + "\"></a>\n" + mdown
+			}
 		}
 
 		// Insert chunk name before start of chunk

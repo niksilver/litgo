@@ -346,21 +346,30 @@ We will track section changes in our state.
 Note we'll always update the current section's input filename if we
 change files, even if there hasn't been a new section heading since
 changing file.
+We'll also say that the start of a new file is the start of a section,
+in case we need to link to that section in that file.
 
 --- Track and mark section changes
+if s.lineNum == 1 {
+    d.addSectionStart(s.inName, s.lineNum, s.sec)
+}
 if !s.inChunk && strings.HasPrefix(line, "#") {
     var changed bool
     s.sec, changed = s.sec.next(line)
     if changed {
-        if _, okay := d.secStarts[s.inName]; !okay {
-            d.secStarts[s.inName] = make(map[int]section)
-        }
-        d.secStarts[s.inName][s.lineNum] = s.sec
+        d.addSectionStart(s.inName, s.lineNum, s.sec)
     }
 }
 ---
 
 --- Functions +=
+func (d *doc) addSectionStart(inName string, lineNum int, sec section) {
+    if _, okay := d.secStarts[inName]; !okay {
+        d.secStarts[inName] = make(map[int]section)
+    }
+    d.secStarts[inName][lineNum] = sec
+}
+
 func (s *state) setInName(name string) *state {
     s.inName = name
     s.sec.inName = name
@@ -1000,13 +1009,21 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 
 @s Outputting the markdown: Adding anchors for sections
 
-We need an anchor to link to the start of a section.
+We need an anchor to link to the start of a section and the start of a file.
+If we're anchoring the start of a section then
+we'll amend the line to be have the anchor as part of the heading,
+but if not, and if the anchor is the first the line of the file,
+then we'll make the anchor an additional (first) line.
 
 --- Amend section heading
 if sec, okay := d.secStarts[inName][lineNum]; okay {
-    mdown = strings.Repeat("#", len(sec.nums)) +
-            " <a name=\"section-" + sec.numsToString() + "\"></a>" +
-            sec.toString()
+    if strings.HasPrefix(mdown, "#") {
+        mdown = strings.Repeat("#", len(sec.nums)) +
+                " <a name=\"section-" + sec.numsToString() + "\"></a>" +
+                sec.toString()
+    } else if lineNum == 1 {
+        mdown = "<a name=\"section-" + sec.numsToString() + "\"></a>\n" + mdown
+    }
 }
 ---
 

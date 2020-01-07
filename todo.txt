@@ -4,9 +4,6 @@ To do
 Sections
 - Keep track of a contents list (section and its name)
 - Add a directive for including the contents list
-- Enable the start of a section to be linkable:
-  - A new chapter file should be linkable as the section that was
-    current at the end of the previous chapter file.
 - Link from each section reference to the section
 - Warning when a section jumps a level (e.g. 1 to 3, or nothing to 2)
 
@@ -14,6 +11,7 @@ Chunks
 - Style the chunk name before each chunk.
 - Make chunk starts linkable.
 - Make chunk references link to the first time that chunk is defined.
+- Make it an error if a file ends in the middle of a chunk.
 
 Refactoring
 
@@ -60,6 +58,8 @@ Sections
 - For "Used in..." make sure the sections come out in order.
 - Enable the start of a section to be linkable:
   - A new section should be linkable.
+  - A new chapter file should be linkable as the section that was
+    current at the end of the previous chapter file.
 
 Refactoring
 - Put the lattice into the state.
