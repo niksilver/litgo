@@ -984,9 +984,9 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
     b := strings.Builder{}
     r := strings.NewReader(d.markdown[inName].String())
     sc := bufio.NewScanner(r)
-    count := 0
+    lineNum := 0
     for sc.Scan() {
-        count ++
+        lineNum++
         mkup := sc.Text()
         @{Insert chunk name before start of chunk}
         @{Amend chunk starts to include coding language}
@@ -1005,7 +1005,7 @@ Before any chunk we want to say what that chunk is, and insert a blank
 line after.
 
 --- Insert chunk name before start of chunk
-if name, okay := d.chunkStarts[inName][count]; okay {
+if name, okay := d.chunkStarts[inName][lineNum]; okay {
     b.WriteString(name + "\n\n")
 }
 ---
@@ -1019,7 +1019,7 @@ of the filename. For other chunks we need to work up the lattice until
 we find the top chunk.
 
 --- Amend chunk starts to include coding language
-if name, okay := d.chunkStarts[inName][count]; okay {
+if name, okay := d.chunkStarts[inName][lineNum]; okay {
     mkup = backticks(mkup)
     top := topOf(name, d.lat)
     re, _ := regexp.Compile("[-_a-zA-Z0-9]*$")
@@ -1068,7 +1068,7 @@ There are two kinds of post-chunk references: "Added to in..."
 in its own paragraph.
 
 --- Include post-chunk reference if necessary
-if ref, ok := d.chunkRefs[inName][count]; ok {
+if ref, ok := d.chunkRefs[inName][lineNum]; ok {
     str1 := addedToChunkRef(d, ref)
     b.WriteString(str1)
     str2 := usedInChunkRef(d, ref)

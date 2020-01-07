@@ -687,17 +687,17 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 	b := strings.Builder{}
 	r := strings.NewReader(d.markdown[inName].String())
 	sc := bufio.NewScanner(r)
-	count := 0
+	lineNum := 0
 	for sc.Scan() {
-		count++
+		lineNum++
 		mkup := sc.Text()
 		// Insert chunk name before start of chunk
-		if name, okay := d.chunkStarts[inName][count]; okay {
+		if name, okay := d.chunkStarts[inName][lineNum]; okay {
 			b.WriteString(name + "\n\n")
 		}
 
 		// Amend chunk starts to include coding language
-		if name, okay := d.chunkStarts[inName][count]; okay {
+		if name, okay := d.chunkStarts[inName][lineNum]; okay {
 			mkup = backticks(mkup)
 			top := topOf(name, d.lat)
 			re, _ := regexp.Compile("[-_a-zA-Z0-9]*$")
@@ -709,7 +709,7 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 
 		b.WriteString(mkup + "\n")
 		// Include post-chunk reference if necessary
-		if ref, ok := d.chunkRefs[inName][count]; ok {
+		if ref, ok := d.chunkRefs[inName][lineNum]; ok {
 			str1 := addedToChunkRef(d, ref)
 			b.WriteString(str1)
 			str2 := usedInChunkRef(d, ref)
