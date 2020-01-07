@@ -332,6 +332,10 @@ func (s *section) toString() string {
 }
 
 func (s *section) numsToString() string {
+	if len(s.nums) == 0 {
+		return "0"
+	}
+
 	num := ""
 	for i, n := range s.nums {
 		num += strconv.Itoa(n)

@@ -60,11 +60,11 @@ func TestFinalMarkdown_Anchors_AtFileStarts(t *testing.T) {
 		cont string
 	}{
 		"book.md": {
-			{1, "<a name=\"section-\"></a>"}, // Section 0 has no number
+			{1, "<a name=\"section-0\"></a>"},
 			{2, "* [First chapter](first.md)"},
 		},
 		"first.md": {
-			{1, "<a name=\"section-\"></a>"}, // Section 0 has no number
+			{1, "<a name=\"section-0\"></a>"},
 			{2, "First line 1"},
 		},
 		"second.md": {
