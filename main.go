@@ -194,6 +194,19 @@ func newDoc() doc {
 	}
 }
 
+func (s *state) setInName(name string) *state {
+	s.inName = name
+	s.sec.inName = name
+	return s
+}
+
+func (s *state) setFirstInName(name string) *state {
+	s.inName = name
+	s.sec.inName = name
+	s.inNames = []string{name}
+	return s
+}
+
 func firstPassForAll(s *state, d *doc) error {
 	for i := 0; i < len(s.inNames); i++ {
 		s.setInName(s.inNames[i])
@@ -360,19 +373,6 @@ func (d *doc) addSectionStart(inName string, lineNum int, sec section) {
 		d.secStarts[inName] = make(map[int]section)
 	}
 	d.secStarts[inName][lineNum] = sec
-}
-
-func (s *state) setInName(name string) *state {
-	s.inName = name
-	s.sec.inName = name
-	return s
-}
-
-func (s *state) setFirstInName(name string) *state {
-	s.inName = name
-	s.sec.inName = name
-	s.inNames = []string{name}
-	return s
 }
 
 func markdownLink(line string) string {

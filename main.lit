@@ -129,6 +129,26 @@ func newDoc() doc {
 
 ---
 
+The name of the current input file (possibly the when we are reading
+our first file) needs to be set consistently in the state and in
+the current section.
+
+--- Functions +=
+func (s *state) setInName(name string) *state {
+    s.inName = name
+    s.sec.inName = name
+    return s
+}
+
+func (s *state) setFirstInName(name string) *state {
+    s.inName = name
+    s.sec.inName = name
+    s.inNames = []string{ name }
+    return s
+}
+
+---
+
 @s Processing the content: Overview
 
 There is one pass reading the content, which is just designed to
@@ -368,19 +388,6 @@ func (d *doc) addSectionStart(inName string, lineNum int, sec section) {
         d.secStarts[inName] = make(map[int]section)
     }
     d.secStarts[inName][lineNum] = sec
-}
-
-func (s *state) setInName(name string) *state {
-    s.inName = name
-    s.sec.inName = name
-    return s
-}
-
-func (s *state) setFirstInName(name string) *state {
-    s.inName = name
-    s.sec.inName = name
-    s.inNames = []string{ name }
-    return s
 }
 
 ---
