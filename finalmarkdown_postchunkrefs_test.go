@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestProcForMarkdownWithChunkRefs_AddedToNowhereElse(t *testing.T) {
+func TestFinalMarkdown_ChunkRefs_AddedToNowhereElse(t *testing.T) {
 	s := newState()
 	s.setFirstInName("chunktest.md")
 	d := newDoc()
@@ -54,7 +54,7 @@ func stripHTML(str string) string {
 	return html.ReplaceAllString(str, "")
 }
 
-func TestProcForMarkdownWithChunkRefs_AddedToOnce(t *testing.T) {
+func TestFinalMarkdown_ChunkRefs_AddedToOnce(t *testing.T) {
 	s := newState()
 	s.setFirstInName("once.md")
 	d := newDoc()
@@ -106,7 +106,7 @@ func TestProcForMarkdownWithChunkRefs_AddedToOnce(t *testing.T) {
 	}
 }
 
-func TestProcForMarkdownWithChunkRefs_AddedToTwice(t *testing.T) {
+func TestFinalMarkdown_ChunkRefs_AddedToTwice(t *testing.T) {
 	s := newState()
 	s.setFirstInName("twice.md")
 	d := newDoc()
@@ -170,7 +170,7 @@ func TestProcForMarkdownWithChunkRefs_AddedToTwice(t *testing.T) {
 	}
 }
 
-func TestProcForMarkdownWithChunkRefs_AddedToThrice(t *testing.T) {
+func TestFinalMarkdown_ChunkRefs_AddedToThrice(t *testing.T) {
 	s := newState()
 	s.setFirstInName("thrice.md")
 	d := newDoc()
@@ -247,7 +247,7 @@ func TestProcForMarkdownWithChunkRefs_AddedToThrice(t *testing.T) {
 	}
 }
 
-func TestProcForMarkdownWithChunkRefs_UsedNowhere(t *testing.T) {
+func TestFinalMarkdown_ChunkRefs_UsedNowhere(t *testing.T) {
 	s := newState()
 	s.setFirstInName("nowhere.md")
 	d := newDoc()
@@ -273,7 +273,7 @@ func TestProcForMarkdownWithChunkRefs_UsedNowhere(t *testing.T) {
 	}
 }
 
-func TestProcForMarkdownWithChunkRefs_UsedOnce(t *testing.T) {
+func TestFinalMarkdown_ChunkRefs_UsedOnce(t *testing.T) {
 	s := newState()
 	s.setFirstInName("once.md")
 	d := newDoc()
@@ -320,7 +320,7 @@ func TestProcForMarkdownWithChunkRefs_UsedOnce(t *testing.T) {
 	}
 }
 
-func TestProcForMarkdownWithChunkRefs_UsedTwice(t *testing.T) {
+func TestFinalMarkdown_ChunkRefs_UsedTwice(t *testing.T) {
 	s := newState()
 	s.setFirstInName("twice.md")
 	d := newDoc()
@@ -375,7 +375,7 @@ func TestProcForMarkdownWithChunkRefs_UsedTwice(t *testing.T) {
 	}
 }
 
-func TestProcForMarkdownWithChunkRefs_UsedThrice(t *testing.T) {
+func TestFinalMarkdown_ChunkRefs_UsedThrice(t *testing.T) {
 	s := newState()
 	s.setFirstInName("thrice.md")
 	d := newDoc()

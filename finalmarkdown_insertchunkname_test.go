@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestInsertChunkName_ChunkNamesGiven(t *testing.T) {
+func TestFinalMarkdown_ChunkStart_ChunkNamesGiven(t *testing.T) {
 	d := newDoc()
 	s := newState()
 	s.setFirstInName("test.md")

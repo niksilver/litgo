@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestFinalMarkDown_TwoCodingLanguages(t *testing.T) {
+func TestFinalMarkdown_CodingLanguage_TwoLanguages(t *testing.T) {
 	d := newDoc()
 	s := newState()
 	s.setFirstInName("test.md")
@@ -76,7 +76,7 @@ func TestFinalMarkDown_TwoCodingLanguages(t *testing.T) {
 	}
 }
 
-func TestFinalMarkDown_MissingCodingLanguages(t *testing.T) {
+func TestFinalMarkdown_CodingLanguage_MissingLanguages(t *testing.T) {
 	d := newDoc()
 	s := newState()
 	s.setFirstInName("tester.md")
