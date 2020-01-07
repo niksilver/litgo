@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -167,6 +168,44 @@ func TestReadBookAndChapters_FollowsLinksWhenBookNotInBaseDir(t *testing.T) {
 	if second != data["chaps/second.md"]+"\n" {
 		t.Errorf("Expected second.md markdown to be %q but got %q",
 			data["chaps/second.md"]+"\n", second)
+	}
+}
+
+func TestReadBookAndChapters_PreservesSectionForNewChapter(t *testing.T) {
+	data := map[string]string{
+		"book.md": `* [First chapter](first.md)
+             * [Second chapter](second.md)`,
+		"first.md":  "# Section 1\n# Section 2\n## Section 2.1",
+		"second.md": "Second line 1",
+	}
+
+	s := newState()
+	s.setFirstInName("book.md")
+	s.book = "book.md"
+	s.reader = func(inName string) (io.ReadCloser, error) {
+		return stringReadCloser{strings.NewReader(data[inName])}, nil
+	}
+	var sec section
+	secSet := false
+	secExp := section{"second.md", []int{2, 1}, "Section 2.1"}
+	procOrig := s.proc
+	s.proc = func(s *state, d *doc, line string) {
+		if !secSet && s.inName == "second.md" {
+			sec = s.sec
+			secSet = true
+		}
+		procOrig(s, d, line)
+	}
+	d := newDoc()
+
+	firstPassForAll(&s, &d)
+
+	if !secSet {
+		t.Errorf("Finished reading markup but sec was not set")
+	}
+	if !reflect.DeepEqual(sec, secExp) {
+		t.Errorf("At start of new file, got section %#v but expected %#v",
+			sec, secExp)
 	}
 }
 

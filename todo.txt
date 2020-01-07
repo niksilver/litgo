@@ -4,6 +4,10 @@ To do
 Sections
 - Keep track of a contents list (section and its name)
 - Add a directive for including the contents list
+- Enable the start of a section to be linkable:
+  - A new section should be linkable.
+  - A new chapter file should be linkable as the section that was
+    current at the end of the previous chapter file.
 - Link from each section reference to the section
 - Warning when a section jumps a level (e.g. 1 to 3, or nothing to 2)
 
@@ -16,8 +20,6 @@ Refactoring
 
 Book and chapters
 - Reading books and chapters:
-  - If reading chapters, preserve the section number between successive
-    files... but make sure the filename changes.
   - Only amend chapter links in the book file, not other files.
   - When amending chapter links don't amend the path, just the suffix,
     even if the book file is not in the base directory.
@@ -44,6 +46,8 @@ Book and chapters
   - Have a command line flag to say if the markdown file is book with chapters
   - When following chapter links, read the input file relative
     to the book directory.
+  - If reading chapters, preserve the section number between successive
+    files... but make sure the filename changes.
 - Writing books and chapters:
     - Output one documentation file for each input file read.
     - Allow a --doc-out-dir option to write markdown files to directory.
