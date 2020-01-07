@@ -255,9 +255,6 @@ func proc(s *state, d *doc, line string) {
 		var changed bool
 		s.sec, changed = s.sec.next(line)
 		if changed {
-			line = strings.Repeat("#", len(s.sec.nums)) +
-				" <a name=\"sec" + s.sec.numsToString() + "\"></a>" +
-				s.sec.toString()
 			if _, okay := d.secStarts[s.inName]; !okay {
 				d.secStarts[s.inName] = make(map[int]section)
 			}
@@ -690,7 +687,14 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 	lineNum := 0
 	for sc.Scan() {
 		lineNum++
-		mkup := sc.Text()
+		mdown := sc.Text()
+		// Amend section heading
+		if sec, okay := d.secStarts[inName][lineNum]; okay {
+			mdown = strings.Repeat("#", len(sec.nums)) +
+				" <a name=\"section-" + sec.numsToString() + "\"></a>" +
+				sec.toString()
+		}
+
 		// Insert chunk name before start of chunk
 		if name, okay := d.chunkStarts[inName][lineNum]; okay {
 			b.WriteString(name + "\n\n")
@@ -698,16 +702,16 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 
 		// Amend chunk starts to include coding language
 		if name, okay := d.chunkStarts[inName][lineNum]; okay {
-			mkup = backticks(mkup)
+			mdown = backticks(mdown)
 			top := topOf(name, d.lat)
 			re, _ := regexp.Compile("[-_a-zA-Z0-9]*$")
 			langs := re.FindStringSubmatch(top)
 			if langs != nil {
-				mkup += langs[0]
+				mdown += langs[0]
 			}
 		}
 
-		b.WriteString(mkup + "\n")
+		b.WriteString(mdown + "\n")
 		// Include post-chunk reference if necessary
 		if ref, ok := d.chunkRefs[inName][lineNum]; ok {
 			str1 := addedToChunkRef(d, ref)
@@ -733,9 +737,9 @@ func topOf(name string, lat lattice) string {
 }
 
 // backticks gets all the backticks at the start of a string
-func backticks(mkup string) string {
+func backticks(mdown string) string {
 	out := ""
-	for _, roon := range mkup {
+	for _, roon := range mdown {
 		if roon != '`' {
 			return out
 		}
