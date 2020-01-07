@@ -5,7 +5,6 @@ Sections
 - Keep track of a contents list (section and its name)
 - Add a directive for including the contents list
 - Enable the start of a section to be linkable:
-  - A new section should be linkable.
   - A new chapter file should be linkable as the section that was
     current at the end of the previous chapter file.
 - Link from each section reference to the section
@@ -59,7 +58,8 @@ Sections
 - Remove the current section from the list "Added to in..."
 - Add text after chunk "Used in sections X, Y and Z"
 - For "Used in..." make sure the sections come out in order.
-- Enable each section to be linkable
+- Enable the start of a section to be linkable:
+  - A new section should be linkable.
 
 Refactoring
 - Put the lattice into the state.
