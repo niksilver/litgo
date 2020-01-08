@@ -49,9 +49,9 @@ func TestFinalMarkdown_Anchors_AtFileStarts(t *testing.T) {
 	s := newState()
 	s.setFirstInName("book.md")
 	s.book = "book.md"
-	s.reader = func(inName string) (io.ReadCloser, error) {
+	s.reader = func(fName string) (io.ReadCloser, error) {
 		s.lineNum = 0
-		return stringReadCloser{strings.NewReader(data[inName])}, nil
+		return stringReadCloser{strings.NewReader(data[fName])}, nil
 	}
 	d := newDoc()
 

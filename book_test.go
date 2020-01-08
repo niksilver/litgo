@@ -27,8 +27,8 @@ func TestReadBookAndChapters_FollowsLinks(t *testing.T) {
 	s := newState()
 	s.setFirstInName("book.md")
 	s.book = "book.md"
-	s.reader = func(inName string) (io.ReadCloser, error) {
-		return stringReadCloser{strings.NewReader(data[inName])}, nil
+	s.reader = func(fName string) (io.ReadCloser, error) {
+		return stringReadCloser{strings.NewReader(data[fName])}, nil
 	}
 	d := newDoc()
 
@@ -68,8 +68,8 @@ func TestReadBookAndChapters_DontFollowsLinksIfNotBook(t *testing.T) {
 
 	s := newState()
 	s.setFirstInName("not-a-book.md")
-	s.reader = func(inName string) (io.ReadCloser, error) {
-		return stringReadCloser{strings.NewReader(data[inName])}, nil
+	s.reader = func(fName string) (io.ReadCloser, error) {
+		return stringReadCloser{strings.NewReader(data[fName])}, nil
 	}
 	d := newDoc()
 
@@ -97,8 +97,8 @@ func TestReadBookAndChapters_DontFollowsLinksBelowBookLevel(t *testing.T) {
 	s := newState()
 	s.setFirstInName("book.md")
 	s.book = "book.md"
-	s.reader = func(inName string) (io.ReadCloser, error) {
-		return stringReadCloser{strings.NewReader(data[inName])}, nil
+	s.reader = func(fName string) (io.ReadCloser, error) {
+		return stringReadCloser{strings.NewReader(data[fName])}, nil
 	}
 	d := newDoc()
 
@@ -186,8 +186,8 @@ func TestReadBookAndChapters_PreservesSectionForNewChapter(t *testing.T) {
 	s := newState()
 	s.setFirstInName("book.md")
 	s.book = "book.md"
-	s.reader = func(inName string) (io.ReadCloser, error) {
-		return stringReadCloser{strings.NewReader(data[inName])}, nil
+	s.reader = func(fName string) (io.ReadCloser, error) {
+		return stringReadCloser{strings.NewReader(data[fName])}, nil
 	}
 	var sec section
 	secSet := false
@@ -231,10 +231,10 @@ func TestReadBookAndChapters_WriteToMarkdownOutDir(t *testing.T) {
 	s := newState()
 	s.setFirstInName("../aaa/book.md")
 	s.book = "../aaa/book.md"
-	s.reader = func(inName string) (io.ReadCloser, error) {
-		content, okay := data[inName]
+	s.reader = func(fName string) (io.ReadCloser, error) {
+		content, okay := data[fName]
 		if !okay {
-			return nil, fmt.Errorf("No content found for key %q", inName)
+			return nil, fmt.Errorf("No content found for file %q", fName)
 		}
 		return stringReadCloser{strings.NewReader(content)}, nil
 	}

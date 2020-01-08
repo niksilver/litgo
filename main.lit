@@ -76,7 +76,8 @@ type state struct {
     book string  // Name of the top level book file, or empty if none.
     inName string  // Name of file being processed, relative to working dir
     outName string  // Name of final file to write to
-    inNames []string  // Name of all input files, including the first
+    // Name of all input files, including the first, as presented in markdown
+    inNames []string
     lineNum int  // Current line number
     chunkName string  // Name of current chunk
     inChunk bool  // If we're currently reading a chunk
