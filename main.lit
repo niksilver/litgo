@@ -164,17 +164,20 @@ check for problems, and prepare for output (code and markup).
 ---
 
 
-@s Processing the content: First pass, basic file handling
+@s Processing the content: Reading in the markdown, basic file handling
 
 We open a file, process the content, and close the file.
-If the top file is book then we will also collect links to `.md` files
+If the top file is a book then we will also collect links to `.md` files
 and follow those, too. But we'll only follow those links in the book
 file, not any others.
 
-When reading a book, future files to read in are stored in `s.nextIn`.
-We will keep looping through the `nextIn` files until there are none left.
-
 If the filename is `"-"` then we use Stdin.
+
+When reading a book, future files to read in are appended to `s.inNames`.
+We will keep looping through the `inNames` files until there are none left.
+However, when reading those chapter files we need to be careful about
+their filenames; they should be relative to the directory of the
+book file.
 
 --- Do a first pass through all the content
 if err := firstPassForAll(&s, &d); err != nil {
@@ -196,7 +199,13 @@ func firstPassForAll(s *state, d *doc) error {
 }
 
 func firstPass(s *state, d *doc) error {
-    fReader, err := s.reader(s.inName)
+    var inName string
+    if s.inName == s.book {
+        inName = s.inName
+    } else {
+        inName = filepath.Join(filepath.Dir(s.inNames[0]), s.inName)
+    }
+    fReader, err := s.reader(inName)
     if err != nil {
         return err
     }
@@ -404,6 +413,13 @@ that's a sign we should add the file to our input list.
 We should make sure any link we follow is relative to the
 input file.
 
+--- Track chapter files to read
+nextInName := markdownLink(line)
+if s.book != "" && !s.inChunk && nextInName != "" {
+    s.inNames = append(s.inNames, nextInName)
+}
+---
+
 In a line of markdown, the regular expression to find a link is:
 
 * A `]` character followed by
@@ -411,13 +427,6 @@ In a line of markdown, the regular expression to find a link is:
 * the filename followed by
 * an optional space and title in double quotes, followed by
 * A `)` character.
-
---- Track chapter files to read
-nextInName := markdownLink(line)
-if s.book != "" && !s.inChunk && nextInName != "" {
-    s.inNames = append(s.inNames, nextInName)
-}
----
 
 --- Functions +=
 func markdownLink(line string) string {
@@ -924,8 +933,7 @@ in which case the output file location is:
 If there's no doc out dir then each file location is:
 
 * For the first (book) file, the filename;
-* For the chapter files, the whole filename relative to the directory
-  of the book file.
+* For the chapter files, the whole filename.
 
 --- Write out the markdown as HTML
 if err := writeAllMarkdown(s.inNames, &d); err != nil {

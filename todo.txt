@@ -48,6 +48,8 @@ Book and chapters
 - Writing books and chapters:
     - Output one documentation file for each input file read.
     - Allow a --doc-out-dir option to write markdown files to directory.
+- Fix an error that it wouldn't read chapter files if the book was
+  referenced as being in a directory.
 
 Sections
 - Track current section

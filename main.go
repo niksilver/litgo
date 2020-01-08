@@ -219,7 +219,13 @@ func firstPassForAll(s *state, d *doc) error {
 }
 
 func firstPass(s *state, d *doc) error {
-	fReader, err := s.reader(s.inName)
+	var inName string
+	if s.inName == s.book {
+		inName = s.inName
+	} else {
+		inName = filepath.Join(filepath.Dir(s.inNames[0]), s.inName)
+	}
+	fReader, err := s.reader(inName)
 	if err != nil {
 		return err
 	}

@@ -32,11 +32,11 @@ func TestOutNames(t *testing.T) {
 		exp     []string
 	}{
 		{"",
-			[]string{"../aaa/book.md", "sub/ch1.md", "sub/ch2.md"},
-			[]string{"../aaa/book.html", "../aaa/sub/ch1.html", "../aaa/sub/ch2.html"},
+			[]string{"../aa/book.md", "sub/ch1.md", "sub/ch2.md"},
+			[]string{"../aa/book.html", "../aa/sub/ch1.html", "../aa/sub/ch2.html"},
 		},
 		{"docs",
-			[]string{"../aaa/book.md", "sub/ch1.md", "sub/ch2.md"},
+			[]string{"../aa/book.md", "sub/ch1.md", "sub/ch2.md"},
 			[]string{"docs/book.html", "docs/sub/ch1.html", "docs/sub/ch2.html"},
 		},
 	}
@@ -45,7 +45,7 @@ func TestOutNames(t *testing.T) {
 		actNames := outNames(d.outDir, d.inNames)
 		for i, actName := range actNames {
 			if actName != d.exp[i] {
-				t.Errorf("our dir = %q, book in = %q, for %q got %q but expected %q",
+				t.Errorf("out dir = %q, book in = %q, for %q got %q but expected %q",
 					d.outDir, d.inNames[0], d.inNames[i], actName, d.exp[i])
 			}
 		}

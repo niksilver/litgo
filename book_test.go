@@ -126,17 +126,17 @@ func TestReadBookAndChapters_FollowsLinksWhenBookNotInBaseDir(t *testing.T) {
 	data := map[string]string{
 		"../aaa/book.md": `* [First chapter](chaps/first.md)
              * [Second chapter](chaps/second.md)`,
-		"chaps/first.md":  "First line 1\nFirst line 2",
-		"chaps/second.md": "Second line 1\nSecond line 2",
+		"../aaa/chaps/first.md":  "First line 1\nFirst line 2",
+		"../aaa/chaps/second.md": "Second line 1\nSecond line 2",
 	}
 
 	s := newState()
 	s.setFirstInName("../aaa/book.md")
 	s.book = "../aaa/book.md"
-	s.reader = func(inName string) (io.ReadCloser, error) {
-		content, okay := data[inName]
+	s.reader = func(fName string) (io.ReadCloser, error) {
+		content, okay := data[fName]
 		if !okay {
-			return nil, fmt.Errorf("No content found for key %q", inName)
+			return nil, fmt.Errorf("No content found for file name %q", fName)
 		}
 		return stringReadCloser{strings.NewReader(content)}, nil
 	}
@@ -158,16 +158,20 @@ func TestReadBookAndChapters_FollowsLinksWhenBookNotInBaseDir(t *testing.T) {
 		t.Errorf("Markdown for ../aaa/book.md is too short. Got %q", book)
 	}
 
-	first := d.markdown["chaps/first.md"].String()
-	if first != data["chaps/first.md"]+"\n" {
+	firstFName := "../aaa/chaps/first.md"
+	firstInName := "chaps/first.md"
+	first := d.markdown[firstInName].String()
+	if first != data[firstFName]+"\n" {
 		t.Errorf("Expected first.md markdown to be %q but got %q",
-			data["chaps/first.md"]+"\n", first)
+			data[firstFName]+"\n", first)
 	}
 
-	second := d.markdown["chaps/second.md"].String()
-	if second != data["chaps/second.md"]+"\n" {
+	secondFName := "../aaa/chaps/second.md"
+	secondInName := "chaps/second.md"
+	second := d.markdown[secondInName].String()
+	if second != data[secondFName]+"\n" {
 		t.Errorf("Expected second.md markdown to be %q but got %q",
-			data["chaps/second.md"]+"\n", second)
+			data[secondFName]+"\n", second)
 	}
 }
 
@@ -213,8 +217,8 @@ func TestReadBookAndChapters_WriteToMarkdownOutDir(t *testing.T) {
 	data := map[string]string{
 		"../aaa/book.md": `* [First chapter](chaps/first.md)
              * [Second chapter](chaps/second.md)`,
-		"chaps/first.md":  "First line 1\nFirst line 2",
-		"chaps/second.md": "Second line 1\nSecond line 2",
+		"../aaa/chaps/first.md":  "First line 1\nFirst line 2",
+		"../aaa/chaps/second.md": "Second line 1\nSecond line 2",
 	}
 
 	// Substrings we expect to see in the HTML
