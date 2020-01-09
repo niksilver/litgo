@@ -16,14 +16,9 @@ Chunks
 Refactoring
 
 Book and chapters
-- Reading books and chapters:
-  - Only amend chapter links in the book file, not other files.
-  - When amending chapter links don't amend the path, just the suffix,
-    even if the book file is not in the base directory.
 - Amending for books and chapters:
-  - In the book, amend chapter links to be .html files.
   - Ensure amended chapter links retain their relative prefix.
-  - Don't amend links to markdown files if initial input file isn't a book.
+  - Don't amend something that looks like a link but is in a chunk.
 - Allow section links between chapters.
 
 Directives
@@ -50,6 +45,9 @@ Book and chapters
     - Allow a --doc-out-dir option to write markdown files to directory.
 - Fix an error that it wouldn't read chapter files if the book was
   referenced as being in a directory.
+- Amending for books and chapters:
+  - Amend chapter and book links (but no others) to be .html files.
+  - Don't amend links to markdown files if initial input file isn't a book.
 
 Sections
 - Track current section

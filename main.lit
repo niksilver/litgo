@@ -982,14 +982,10 @@ func outNames(outDir string, inNames []string) []string {
 ---
 
 For the inner task we could just output the relevant markdown for that
-input file, but we also want to amend it (to create "final" markdown)
-to:
-
-* Amend section headings to include section number and anchor;
-* Amend each start-of-chunk line so it includes the coding language;
-* insert post-chunk references;
-
-and we can do that only if we output the markdown a line at a time.
+input file, but we also want to amend it (to create "final" markdown).
+This includes, for example, adding section numbers and post-chunk
+references.
+We can do that only if we output the markdown a line at a time.
 
 --- Functions +=
 func writeHTML(inName string, fullOutName string, d *doc) error {
@@ -1015,6 +1011,7 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
     for sc.Scan() {
         lineNum++
         mdown := sc.Text()
+        @{Re-link chapters and the book}
         @{Amend section heading}
         @{Insert chunk name before start of chunk}
         @{Amend chunk starts to include coding language}
@@ -1022,6 +1019,33 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
         @{Include post-chunk reference if necessary}
     }
     return &b
+}
+
+---
+
+
+@s Outputting the markdown: Re-linking chapters and the book
+
+In our original markdown there may be references to other literate
+source files as `.md` documents. We'll need to update those links
+to go to the correct `.html` files.
+
+--- Re-link chapters and the book
+link := markdownLink(mdown)
+if link != "" && isInName(d, link) {
+    idx := strings.Index(mdown, link)
+    mdown = mdown[0:idx] + outName(link) + mdown[idx+len(link):]
+}
+---
+
+--- Functions +=
+func isInName(d *doc, link string) bool {
+    for inName, _ := range d.markdown {
+        if inName == link {
+            return true
+        }
+    }
+    return false
 }
 
 ---

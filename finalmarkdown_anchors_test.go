@@ -61,7 +61,7 @@ func TestFinalMarkdown_Anchors_AtFileStarts(t *testing.T) {
 	}{
 		"book.md": {
 			{1, "<a name=\"section-0\"></a>"},
-			{2, "* [First chapter](first.md)"},
+			{2, "* [First chapter](first.html)"},
 		},
 		"first.md": {
 			{1, "<a name=\"section-0\"></a>"},

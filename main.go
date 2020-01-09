@@ -706,6 +706,13 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 	for sc.Scan() {
 		lineNum++
 		mdown := sc.Text()
+		// Re-link chapters and the book
+		link := markdownLink(mdown)
+		if link != "" && isInName(d, link) {
+			idx := strings.Index(mdown, link)
+			mdown = mdown[0:idx] + outName(link) + mdown[idx+len(link):]
+		}
+
 		// Amend section heading
 		if sec, okay := d.secStarts[inName][lineNum]; okay {
 			if strings.HasPrefix(mdown, "#") {
@@ -744,6 +751,15 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 
 	}
 	return &b
+}
+
+func isInName(d *doc, link string) bool {
+	for inName, _ := range d.markdown {
+		if inName == link {
+			return true
+		}
+	}
+	return false
 }
 
 // topOf takes a chunk name and returns the top-most parent name
