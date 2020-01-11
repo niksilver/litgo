@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestProcessContent(t *testing.T) {
+func TestProcessContent_CallsProc(t *testing.T) {
 
 	// Make sure proc is called at least once normally
 	called := false

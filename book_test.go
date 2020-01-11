@@ -16,7 +16,7 @@ func (src stringReadCloser) Close() error {
 	return nil
 }
 
-func TestReadBookAndChapters_FollowsLinks(t *testing.T) {
+func TestFirstPassForAll_FollowsLinks(t *testing.T) {
 	data := map[string]string{
 		"book.md": `* [First chapter](first.md)
              * [Second chapter](second.md)`,
@@ -58,7 +58,7 @@ func TestReadBookAndChapters_FollowsLinks(t *testing.T) {
 	}
 }
 
-func TestReadBookAndChapters_DontFollowsLinksIfNotBook(t *testing.T) {
+func TestFirstPassForAll_DontFollowsLinksIfNotBook(t *testing.T) {
 	data := map[string]string{
 		"not-a-book.md": `* [First chapter](first.md)
              * [Second chapter](second.md)`,
@@ -87,7 +87,7 @@ func TestReadBookAndChapters_DontFollowsLinksIfNotBook(t *testing.T) {
 	}
 }
 
-func TestReadBookAndChapters_DontFollowsLinksBelowBookLevel(t *testing.T) {
+func TestFirstPassForAll_DontFollowsLinksBelowBookLevel(t *testing.T) {
 	data := map[string]string{
 		"book.md":   `* [First chapter](first.md)`,
 		"first.md":  `[Second link](second.md)`,
@@ -122,7 +122,7 @@ func TestReadBookAndChapters_DontFollowsLinksBelowBookLevel(t *testing.T) {
 	}
 }
 
-func TestReadBookAndChapters_FollowsLinksWhenBookNotInBaseDir(t *testing.T) {
+func TestFirstPassForAll_FollowsLinksWhenBookNotInBaseDir(t *testing.T) {
 	data := map[string]string{
 		"../aaa/book.md": `* [First chapter](chaps/first.md)
              * [Second chapter](chaps/second.md)`,
@@ -175,7 +175,7 @@ func TestReadBookAndChapters_FollowsLinksWhenBookNotInBaseDir(t *testing.T) {
 	}
 }
 
-func TestReadBookAndChapters_PreservesSectionForNewChapter(t *testing.T) {
+func TestFirstPassForAll_PreservesSectionForNewChapter(t *testing.T) {
 	data := map[string]string{
 		"book.md": `* [First chapter](first.md)
              * [Second chapter](second.md)`,
@@ -213,7 +213,7 @@ func TestReadBookAndChapters_PreservesSectionForNewChapter(t *testing.T) {
 	}
 }
 
-func TestReadBookAndChapters_WriteToMarkdownOutDir(t *testing.T) {
+func TestFirstPassForAll_WriteToMarkdownOutDir(t *testing.T) {
 	data := map[string]string{
 		"../aaa/book.md": `* [First chapter](chaps/first.md)
              * [Second chapter](chaps/second.md)`,
