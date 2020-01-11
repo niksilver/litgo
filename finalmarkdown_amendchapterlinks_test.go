@@ -61,3 +61,58 @@ func TestFinalMarkdown_AmendChapterLinks(t *testing.T) {
 		}
 	}
 }
+
+func TestFinalMarkdown_AmendedChapterLinksCorrectWhenBookInDir(t *testing.T) {
+	data := map[string]string{
+		"../aaa/book.md": `* [First chapter](chap/first.md)
+             * [Second chapter](chap/second.md)`,
+		"../aaa/chap/first.md": `First line 1
+            First [line 2](second.md)
+            First line 3`,
+		"../aaa/chap/second.md": `Second line 1\
+            Second [line 2](not-a-chapter.md)
+            Second line 3`,
+	}
+	expected := map[string][]string{
+		"../aaa/book.md": []string{
+			"\\[First chapter\\]\\(chap/first.html\\)",
+			"\\[Second chapter\\]\\(chap/second.html\\)",
+		},
+		"chap/first.md": []string{
+			"\\[line 2\\]\\(second.html\\)",
+		},
+		"chap/second.md": []string{
+			"\\[line 2\\]\\(not-a-chapter.md\\)",
+		},
+	}
+
+	s := newState()
+	s.setFirstInName("../aaa/book.md")
+	s.book = "../aaa/book.md"
+	s.reader = func(fName string) (io.ReadCloser, error) {
+		s.lineNum = 0
+		return stringReadCloser{strings.NewReader(data[fName])}, nil
+	}
+	d := newDoc()
+
+	firstPassForAll(&s, &d)
+
+	for inName, reStrs := range expected {
+		if _, okay := d.markdown[inName]; !okay {
+			t.Errorf("No markdown for inName %s", inName)
+			continue
+		}
+		mdown := finalMarkdown(inName, &d).String()
+		for _, reStr := range reStrs {
+			match, err := regexp.MatchString(reStr+"(?m)", mdown)
+			if err != nil {
+				t.Errorf("Problem with regexp %q: %s", reStr, err.Error())
+				continue
+			}
+			if !match {
+				t.Errorf("Input %s did not match regexp %q. Content is\n%s",
+					inName, reStr, mdown)
+			}
+		}
+	}
+}
