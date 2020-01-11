@@ -272,6 +272,34 @@ func TestFirstPassForAll_WriteToMarkdownOutDir(t *testing.T) {
 	}
 }
 
+func TestFirstPassForAll_ErrorsIfInChunkAtEndOfFile(t *testing.T) {
+	data := map[string]string{
+		"book.md":  "* [First chapter](first.md)",
+		"first.md": "First line 1\n``` Chunk one\n\n",
+	}
+
+	s := newState()
+	s.setFirstInName("book.md")
+	s.book = "book.md"
+	s.reader = func(fName string) (io.ReadCloser, error) {
+		return stringReadCloser{strings.NewReader(data[fName])}, nil
+	}
+	d := newDoc()
+
+	err := firstPassForAll(&s, &d)
+	if err == nil {
+		t.Errorf("Should have errored due to end of file within chunk")
+		return
+	}
+	errStr := err.Error()
+	if !strings.Contains(errStr, "in chunk") {
+		t.Errorf("Error should mention it's in a chunk, but error was: %s", errStr)
+	}
+	if !strings.Contains(errStr, "first.md") {
+		t.Errorf("Error should mention input file first.md but was: %s", errStr)
+	}
+}
+
 func TestMarkdownLink(t *testing.T) {
 	data := []struct {
 		line string

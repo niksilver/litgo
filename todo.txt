@@ -11,7 +11,6 @@ Chunks
 - Style the chunk name before each chunk.
 - Make chunk starts linkable.
 - Make chunk references link to the first time that chunk is defined.
-- Make it an error if a file ends in the middle of a chunk.
 
 Refactoring
 
@@ -81,3 +80,4 @@ Chunks
 - Select line directives on the command line.
 - Line directives mustn't be indented without a %i
 - Write out the chunk name before each chunk.
+- Make it an error if a file ends in the middle of a chunk.

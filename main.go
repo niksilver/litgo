@@ -234,6 +234,9 @@ func firstPass(s *state, d *doc) error {
 	if err := fReader.Close(); err != nil {
 		return err
 	}
+	if s.inChunk {
+		return fmt.Errorf("File %s ended while in chunk", s.inName)
+	}
 	return nil
 }
 
