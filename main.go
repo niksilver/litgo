@@ -22,7 +22,7 @@ type state struct {
 	book    string // Name of the top level book file, or empty if none.
 	inName  string // Name of file being processed, relative to working dir
 	outName string // Name of final file to write to
-	// Name of all input files, including the first, as presented in markdown
+	// Name of all input files, including the first, relative to working dir
 	inNames   []string
 	lineNum   int                        // Current line number
 	chunkName string                     // Name of current chunk
@@ -45,6 +45,8 @@ type doc struct {
 	lat       lattice // A lattice of chunk parent/child relationships
 	// Lines where a section starts, per input file
 	secStarts map[string]map[int]section
+	// Map of normalised input file names to output names
+	outNames map[string]string
 	// Config
 	lineDir   string // The string pattern for line directives
 	docOutDir string // Output directory for the translated markdown
@@ -128,6 +130,9 @@ func main() {
 		s.book = s.inName
 	}
 	d.lineDir = lDir
+	if docOutDir == "" {
+		docOutDir = filepath.Dir(docOutDir)
+	}
 	d.docOutDir = docOutDir
 
 	// Read the content
@@ -191,6 +196,7 @@ func newDoc() doc {
 		chunkStarts: make(map[string]map[int]string),
 		chunkRefs:   make(map[string]map[int]chunkRef),
 		secStarts:   make(map[string]map[int]section),
+		outNames:    make(map[string]string),
 		writeCloser: getWriteCloser,
 	}
 }
@@ -210,7 +216,12 @@ func (s *state) setFirstInName(name string) *state {
 
 func firstPassForAll(s *state, d *doc) error {
 	for i := 0; i < len(s.inNames); i++ {
-		s.setInName(s.inNames[i])
+		inName := s.inNames[i]
+		s.setInName(inName)
+		if i == 0 {
+			base := simpleOutName(filepath.Base(inName))
+			d.outNames[inName] = filepath.Join(d.docOutDir, base)
+		}
 		if err := firstPass(s, d); err != nil {
 			return err
 		}
@@ -220,13 +231,7 @@ func firstPassForAll(s *state, d *doc) error {
 }
 
 func firstPass(s *state, d *doc) error {
-	var inName string
-	if s.inName == s.book {
-		inName = s.inName
-	} else {
-		inName = filepath.Join(filepath.Dir(s.inNames[0]), s.inName)
-	}
-	fReader, err := s.reader(inName)
+	fReader, err := s.reader(s.inName)
 	if err != nil {
 		return err
 	}
@@ -268,9 +273,14 @@ func processContent(r io.Reader, s *state, d *doc) {
 func proc(s *state, d *doc, line string) {
 	s.lineNum++
 	// Track chapter files to read
-	nextInName := markdownLink(line)
-	if s.book != "" && !s.inChunk && nextInName != "" {
-		s.inNames = append(s.inNames, nextInName)
+	foundInName := markdownLink(line)
+	if s.book != "" && !s.inChunk && foundInName != "" {
+		currDir := filepath.Dir(s.inName)
+		normInName := filepath.Join(currDir, foundInName)
+		s.inNames = append(s.inNames, normInName)
+		// Update map of input to output names
+		d.outNames[normInName] = chapterOutName(d.docOutDir, foundInName)
+
 	}
 
 	// Track and mark section changes
@@ -397,6 +407,10 @@ func markdownLink(line string) string {
 		return ""
 	}
 	return s[1]
+}
+
+func chapterOutName(docOutDir string, foundInName string) string {
+	return simpleOutName(filepath.Join(docOutDir, foundInName))
 }
 
 func compileLattice(chunks map[string]*chunk) lattice {
@@ -652,44 +666,18 @@ func lineDirective(dir string, indent string, fName string, n int) string {
 }
 
 func writeAllMarkdown(inNames []string, d *doc) error {
-	for i, fullOutName := range outNames(d.docOutDir, inNames) {
-		if err := writeHTML(inNames[i], fullOutName, d); err != nil {
+	for _, inName := range inNames {
+		if err := writeHTML(inName, d.outNames[inName], d); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func outNames(outDir string, inNames []string) []string {
-	names := make([]string, len(inNames))
-
-	if outDir == "" {
-		in0Dir := filepath.Dir(inNames[0])
-		for i, inName := range inNames {
-			if i == 0 {
-				names[i] = outName(inName)
-			} else {
-				names[i] = outName(filepath.Join(in0Dir, inName))
-			}
-		}
-	} else {
-		for i, inName := range inNames {
-			if i == 0 {
-				in0Base := filepath.Base(inNames[0])
-				names[i] = outName(filepath.Join(outDir, in0Base))
-			} else {
-				names[i] = outName(filepath.Join(outDir, inName))
-			}
-		}
-	}
-
-	return names
-}
-
-func writeHTML(inName string, fullOutName string, d *doc) error {
+func writeHTML(inName string, outName string, d *doc) error {
 	md := finalMarkdown(inName, d).String()
 	output := markdown.ToHTML([]byte(md), nil, nil)
-	outFile, err := d.writeCloser(fullOutName)
+	outFile, err := d.writeCloser(outName)
 	if err != nil {
 		return err
 	}
@@ -710,10 +698,11 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 		lineNum++
 		mdown := sc.Text()
 		// Re-link chapters and the book
-		link := markdownLink(mdown)
-		if link != "" && isInName(d, link) {
-			idx := strings.Index(mdown, link)
-			mdown = mdown[0:idx] + outName(link) + mdown[idx+len(link):]
+		foundInName := markdownLink(mdown)
+		normFoundInName := filepath.Clean(filepath.Join(filepath.Dir(inName), foundInName))
+		if foundInName != "" && isInName(d, normFoundInName) {
+			idx := strings.Index(mdown, foundInName)
+			mdown = mdown[0:idx] + simpleOutName(foundInName) + mdown[idx+len(foundInName):]
 		}
 
 		// Amend section heading
@@ -892,12 +881,13 @@ func printHelp() {
         Use %f for filename, %l for line number,
         %i to include indentation, %% for percent sign.
     --doc-out-dir <dir>
-        Output directory for the literate documentation.
+        Output directory for the literate documentation. Default is
+        the directory of the input file.
 `
 	fmt.Printf(msg)
 }
 
-func outName(fName string) string {
+func simpleOutName(fName string) string {
 	if fName == "" || fName == "-" || fName == "." {
 		fName = "out"
 	}

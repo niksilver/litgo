@@ -16,7 +16,6 @@ Refactoring
 
 Book and chapters
 - Amending for books and chapters:
-  - Ensure amended chapter links retain their relative directory prefix.
   - Don't amend something that looks like a link but is in a chunk.
 - Allow section links between chapters.
 
@@ -47,6 +46,7 @@ Book and chapters
 - Amending for books and chapters:
   - Amend chapter and book links (but no others) to be .html files.
   - Don't amend links to markdown files if initial input file isn't a book.
+  - Ensure amended chapter links retain their relative directory prefix.
 
 Sections
 - Track current section

@@ -158,20 +158,18 @@ func TestFirstPassForAll_FollowsLinksWhenBookNotInBaseDir(t *testing.T) {
 		t.Errorf("Markdown for ../aaa/book.md is too short. Got %q", book)
 	}
 
-	firstFName := "../aaa/chaps/first.md"
-	firstInName := "chaps/first.md"
+	firstInName := "../aaa/chaps/first.md"
 	first := d.markdown[firstInName].String()
-	if first != data[firstFName]+"\n" {
+	if first != data[firstInName]+"\n" {
 		t.Errorf("Expected first.md markdown to be %q but got %q",
-			data[firstFName]+"\n", first)
+			data[firstInName]+"\n", first)
 	}
 
-	secondFName := "../aaa/chaps/second.md"
-	secondInName := "chaps/second.md"
+	secondInName := "../aaa/chaps/second.md"
 	second := d.markdown[secondInName].String()
-	if second != data[secondFName]+"\n" {
+	if second != data[secondInName]+"\n" {
 		t.Errorf("Expected second.md markdown to be %q but got %q",
-			data[secondFName]+"\n", second)
+			data[secondInName]+"\n", second)
 	}
 }
 
@@ -260,7 +258,7 @@ func TestFirstPassForAll_WriteToMarkdownOutDir(t *testing.T) {
 
 	for name, sb := range d.outputs {
 		if expected[name] == "" {
-			t.Errorf("Did not expect markdown for file %s", name)
+			t.Errorf("Did not expect markdown for file %q", name)
 			continue
 		}
 		expSub := expected[name]

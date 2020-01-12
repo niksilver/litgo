@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestOutName(t *testing.T) {
+func TestSimpleOutName(t *testing.T) {
 	data := []struct {
 		in  string
 		exp string
@@ -18,36 +18,38 @@ func TestOutName(t *testing.T) {
 	}
 
 	for _, d := range data {
-		act := outName(d.in)
+		act := simpleOutName(d.in)
 		if act != d.exp {
 			t.Errorf("Input %q, expected %q but got %q", d.in, d.exp, act)
 		}
 	}
 }
 
-func TestOutNames(t *testing.T) {
+func TestChapterOutName(t *testing.T) {
 	data := []struct {
-		outDir  string
-		inNames []string
-		exp     []string
+		outDir      string
+		foundInName string
+		exp         string
 	}{
-		{"",
-			[]string{"../aa/book.md", "sub/ch1.md", "sub/ch2.md"},
-			[]string{"../aa/book.html", "../aa/sub/ch1.html", "../aa/sub/ch2.html"},
-		},
-		{"docs",
-			[]string{"../aa/book.md", "sub/ch1.md", "sub/ch2.md"},
-			[]string{"docs/book.html", "docs/sub/ch1.html", "docs/sub/ch2.html"},
-		},
+		// Out dir is current dir, book in current dir
+		{".", "first.md", "first.html"},
+		{".", "chaps/second.md", "chaps/second.html"},
+		// Out dir is current dir, book is elsewhere
+		{".", "first.md", "first.html"},
+		{".", "chaps/second.md", "chaps/second.html"},
+		// Some out dir, book in current dir
+		{"odir", "first.md", "odir/first.html"},
+		{"odir", "chaps/second.md", "odir/chaps/second.html"},
+		// Out dir is current dir, book is elsewhere
+		{"odir", "first.md", "odir/first.html"},
+		{"odir", "chaps/second.md", "odir/chaps/second.html"},
 	}
 
 	for _, d := range data {
-		actNames := outNames(d.outDir, d.inNames)
-		for i, actName := range actNames {
-			if actName != d.exp[i] {
-				t.Errorf("out dir = %q, book in = %q, for %q got %q but expected %q",
-					d.outDir, d.inNames[0], d.inNames[i], actName, d.exp[i])
-			}
+		actual := chapterOutName(d.outDir, d.foundInName)
+		if actual != d.exp {
+			t.Errorf("outName(%q, %q) got %q, expected %q",
+				d.outDir, d.foundInName, actual, d.exp)
 		}
 	}
 }

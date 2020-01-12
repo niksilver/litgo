@@ -76,7 +76,7 @@ type state struct {
     book string  // Name of the top level book file, or empty if none.
     inName string  // Name of file being processed, relative to working dir
     outName string  // Name of final file to write to
-    // Name of all input files, including the first, as presented in markdown
+    // Name of all input files, including the first, relative to working dir
     inNames []string
     lineNum int  // Current line number
     chunkName string  // Name of current chunk
@@ -99,6 +99,8 @@ type doc struct {
     lat lattice  // A lattice of chunk parent/child relationships
     // Lines where a section starts, per input file
     secStarts map[string]map[int]section
+    // Map of normalised input file names to output names
+    outNames map[string]string
     // Config
     lineDir string  // The string pattern for line directives
     docOutDir string  // Output directory for the translated markdown
@@ -124,6 +126,7 @@ func newDoc() doc {
         chunkStarts: make(map[string]map[int]string),
         chunkRefs: make(map[string]map[int]chunkRef),
         secStarts: make(map[string]map[int]section),
+        outNames: make(map[string]string),
         writeCloser: getWriteCloser,
     }
 }
@@ -168,7 +171,8 @@ check for problems, and prepare for output (code and markup).
 @s Processing the content: Reading in the markdown, basic file handling
 
 We open a file, process the content, and close the file.
-If the top file is a book then we will also collect links to `.md` files
+When we read the initial file we should set its output name.
+If that initial file is a book then we will also collect links to `.md` files
 and follow those, too. But we'll only follow those links in the book
 file, not any others.
 
@@ -176,9 +180,6 @@ If the filename is `"-"` then we use Stdin.
 
 When reading a book, future files to read in are appended to `s.inNames`.
 We will keep looping through the `inNames` files until there are none left.
-However, when reading those chapter files we need to be careful about
-their filenames; they should be relative to the directory of the
-book file.
 
 --- Do a first pass through all the content
 if err := firstPassForAll(&s, &d); err != nil {
@@ -190,7 +191,12 @@ if err := firstPassForAll(&s, &d); err != nil {
 --- Functions +=
 func firstPassForAll(s *state, d *doc) error {
     for i := 0; i < len(s.inNames); i++ {
-        s.setInName(s.inNames[i])
+        inName := s.inNames[i]
+        s.setInName(inName)
+        if i == 0 {
+            base := simpleOutName(filepath.Base(inName))
+            d.outNames[inName] = filepath.Join(d.docOutDir, base)
+        }
         if err := firstPass(s, d); err != nil {
             return err
         }
@@ -200,13 +206,7 @@ func firstPassForAll(s *state, d *doc) error {
 }
 
 func firstPass(s *state, d *doc) error {
-    var inName string
-    if s.inName == s.book {
-        inName = s.inName
-    } else {
-        inName = filepath.Join(filepath.Dir(s.inNames[0]), s.inName)
-    }
-    fReader, err := s.reader(inName)
+    fReader, err := s.reader(s.inName)
     if err != nil {
         return err
     }
@@ -412,15 +412,24 @@ func (d *doc) addSectionStart(inName string, lineNum int, sec section) {
 
 @s Processing content: Watching for links to chapter files
 
-If a line of markdown contains a link to a .md file then
+If we're reading a book file and
+a line of markdown contains a link to a .md file then
 that's a sign we should add the file to our input list.
-We should make sure any link we follow is relative to the
-input file.
+We should make sure any link we follow is recorded relative to
+the working directory. That means we take what's written and
+create a correct path as: directory of current input file +
+what's written. We'll call this the "normalised" input name.
+
+We should also maintain a map from normalised input name to
+the intended output name.
 
 --- Track chapter files to read
-nextInName := markdownLink(line)
-if s.book != "" && !s.inChunk && nextInName != "" {
-    s.inNames = append(s.inNames, nextInName)
+foundInName := markdownLink(line)
+if s.book != "" && !s.inChunk && foundInName != "" {
+    currDir := filepath.Dir(s.inName)
+    normInName := filepath.Join(currDir, foundInName)
+    s.inNames = append(s.inNames, normInName)
+    @{Update map of input to output names}
 }
 ---
 
@@ -441,6 +450,28 @@ func markdownLink(line string) string {
         return ""
     }
     return s[1]
+}
+
+---
+
+
+@s Processing content: Updating the map of input to output names
+
+We want to maintain a map of normalised input names to intended
+output names. We collect these names only when reading a book file,
+because the initial file will already be mapped. Any new input
+names are chapter files mentioned in the book file.
+Aside from switching a `.html` to `.md`, if we've found
+a reference to a chapter file its output name
+is the doc out dir + the found name as given.
+
+--- Update map of input to output names
+d.outNames[normInName] = chapterOutName(d.docOutDir, foundInName)
+---
+
+--- Functions +=
+func chapterOutName(docOutDir string, foundInName string) string {
+    return simpleOutName(filepath.Join(docOutDir, foundInName))
 }
 
 ---
@@ -926,18 +957,7 @@ func lineDirective(dir string, indent string, fName string, n int) string {
 When outputting the markdown there is an outer loop and an inner task.
 
 For the outer loop we want to go through each input file and
-write out the corresponding HTML. There may be a "doc out dir" which
-tells us which output directory to write the documentation out to,
-in which case the output file location is:
-
-* For the first (book) file, the doc out dir + the base filename;
-* For chapter files, the doc out dir + the whole filename referenced
-  in the book file.
-
-If there's no doc out dir then each file location is:
-
-* For the first (book) file, the filename;
-* For the chapter files, the whole filename.
+write out the corresponding HTML.
 
 --- Write out the markdown as HTML
 if err := writeAllMarkdown(s.inNames, &d); err != nil {
@@ -948,38 +968,12 @@ if err := writeAllMarkdown(s.inNames, &d); err != nil {
 
 --- Functions +=
 func writeAllMarkdown(inNames []string, d *doc) error {
-    for i, fullOutName := range outNames(d.docOutDir, inNames) {
-        if err := writeHTML(inNames[i], fullOutName, d); err != nil {
+    for _, inName := range inNames {
+        if err := writeHTML(inName, d.outNames[inName], d); err != nil {
             return err
         }
     }
     return nil
-}
-
-func outNames(outDir string, inNames []string) []string {
-    names := make([]string, len(inNames))
-
-    if outDir == "" {
-        in0Dir := filepath.Dir(inNames[0])
-        for i, inName := range inNames {
-            if i == 0 {
-                names[i] = outName(inName)
-            } else {
-                names[i] = outName(filepath.Join(in0Dir, inName))
-            }
-        }
-    } else {
-        for i, inName := range inNames {
-            if i == 0 {
-                in0Base := filepath.Base(inNames[0])
-                names[i] = outName(filepath.Join(outDir, in0Base))
-            } else {
-                names[i] = outName(filepath.Join(outDir, inName))
-            }
-        }
-    }
-
-    return names
 }
 
 ---
@@ -991,10 +985,10 @@ references.
 We can do that only if we output the markdown a line at a time.
 
 --- Functions +=
-func writeHTML(inName string, fullOutName string, d *doc) error {
+func writeHTML(inName string, outName string, d *doc) error {
     md := finalMarkdown(inName, d).String()
     output := markdown.ToHTML([]byte(md), nil, nil)
-    outFile, err := d.writeCloser(fullOutName)
+    outFile, err := d.writeCloser(outName)
     if err != nil {
         return err
     }
@@ -1031,13 +1025,16 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 
 In our original markdown there may be references to other literate
 source files as `.md` documents. We'll need to update those links
-to go to the correct `.html` files.
+to go to the correct `.html` files, part of which is noting that
+such a link is written relative to the current input file, but will
+be recorded originally relative to the book file.
 
 --- Re-link chapters and the book
-link := markdownLink(mdown)
-if link != "" && isInName(d, link) {
-    idx := strings.Index(mdown, link)
-    mdown = mdown[0:idx] + outName(link) + mdown[idx+len(link):]
+foundInName := markdownLink(mdown)
+normFoundInName := filepath.Clean(filepath.Join(filepath.Dir(inName), foundInName))
+if foundInName != "" && isInName(d, normFoundInName) {
+    idx := strings.Index(mdown, foundInName)
+    mdown = mdown[0:idx] + simpleOutName(foundInName) + mdown[idx+len(foundInName):]
 }
 ---
 
@@ -1280,6 +1277,7 @@ The command line is:
           Use %f for filename, %l for line number,
           %i to include indentation, %% for percent sign.
       <docoutdir> is the directory in which to write the documentation.
+          Default is the directory of the input file.
 
 --- Package level declarations +=
 var book bool
@@ -1309,6 +1307,9 @@ if book {
     s.book = s.inName
 }
 d.lineDir = lDir
+if docOutDir == "" {
+    docOutDir = filepath.Dir(docOutDir)
+}
 d.docOutDir = docOutDir
 ---
 
@@ -1327,12 +1328,13 @@ func printHelp() {
         Use %f for filename, %l for line number,
         %i to include indentation, %% for percent sign.
     --doc-out-dir <dir>
-        Output directory for the literate documentation.
+        Output directory for the literate documentation. Default is
+        the directory of the input file.
 `
     fmt.Printf(msg)
 }
 
-func outName(fName string) string {
+func simpleOutName(fName string) string {
     if fName == "" || fName == "-" || fName == "." {
         fName = "out"
     }
