@@ -6,6 +6,17 @@
 
 @s Application structure
 
+There are three high level phases to generating output from markup:
+
+# Read the markup and extract/generate the relevant data structures.
+# Output the code.
+# Output the literate source.
+  # Amend the markup as needed (e.g. adding section numbers, etc).
+  # Push the markup through a markup-to-HTML generator.
+
+
+@s High level code structure
+
 --- main.go
 package main
 
@@ -153,7 +164,7 @@ func (s *state) setFirstInName(name string) *state {
 
 ---
 
-@s Processing the content: Overview
+@s Read the markup: Overview
 
 There is one pass reading the content, which is just designed to
 assemble the basic data structures, make some light amendments,
@@ -168,7 +179,7 @@ check for problems, and prepare for output (code and markup).
 ---
 
 
-@s Processing the content: Reading in the markdown, basic file handling
+@s Read the markup: Reading in the markdown, basic file handling
 
 We open a file, process the content, and close the file.
 When we read the initial file we should set its output name.
@@ -235,7 +246,7 @@ func fileReader(fName string) (io.ReadCloser, error) {
 ---
 
 
-@s Processing content: Reading the document
+@s Read the markup: Reading the document
 
 When we process the content on the first pass through it's a slice of bytes.
 We turn that into lines (without the newline characters) and
@@ -284,7 +295,7 @@ func proc(s *state, d *doc, line string) {
 ---
 
 
-@s Processing content: Warnings
+@s Read the markup: Warnings
 
 As part of our evolving processing state we will collect warnings,
 such as a chunk appearing without a name.
@@ -410,7 +421,7 @@ func (d *doc) addSectionStart(inName string, lineNum int, sec section) {
 ---
 
 
-@s Processing content: Watching for links to chapter files
+@s Read the markup: Watching for links to chapter files
 
 If we're reading a book file and
 a line of markdown contains a link to a .md file then
@@ -455,7 +466,7 @@ func markdownLink(line string) string {
 ---
 
 
-@s Processing content: Updating the map of input to output names
+@s Read the markup: Updating the map of input to output names
 
 We want to maintain a map of normalised input names to intended
 output names. We collect these names only when reading a book file,
@@ -477,7 +488,7 @@ func chapterOutName(docOutDir string, foundInName string) string {
 ---
 
 
-@s Processing content: Collect lines in code chunks
+@s Read the markup: Collect lines in code chunks
 
 Code chunks start with three backticks, a space, and a name.
 They end with three backticks.
@@ -545,7 +556,7 @@ if s.inChunk && line == "```" {
 ---
 
 
-@s Processing content: Flagging lines for post-chunk references
+@s Read the markup: Flagging lines for post-chunk references
 
 After each code chunk we want some text to say it was "Added to in
 sections X, Y and Z." However, as we process the content the first
@@ -570,7 +581,7 @@ d.chunkRefs[s.inName][s.lineNum] = chunkRef{ s.chunkName, s.sec }
 ---
 
 
-@s Processing content: Checking code chunks
+@s Read the markup: Checking code chunks
 
 We don't want to output the code and discover half way through we have
 a problem with the assembly. So we'll do checks on it first. Checks will be:
@@ -806,7 +817,7 @@ func assertAllChunksDefined(chunks map[string]*chunk, lat lattice) error {
 ---
 
 
-@s Outputting the code: Basic output
+@s Output the code: Basic output
 
 To output our code chunks we need three things:
 * The top level chunks (filenames); and
@@ -917,7 +928,7 @@ func initialWS(code string) string {
 ---
 
 
-@s Outputting the code: Line directives
+@s Output the code: Line directives
 
 A line directive is only output if it's non-empty.
 
@@ -952,7 +963,7 @@ func lineDirective(dir string, indent string, fName string, n int) string {
 ---
 
 
-@s Outputting the markdown: Basic output
+@s Output the literate source: Basic output
 
 When outputting the markdown there is an outer loop and an inner task.
 
@@ -1021,7 +1032,7 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 ---
 
 
-@s Outputting the markdown: Re-linking chapters and the book
+@s Output the literate source: Re-linking chapters and the book
 
 In our original markdown there may be references to other literate
 source files as `.md` documents. We'll need to update those links
@@ -1051,7 +1062,7 @@ func isInName(d *doc, link string) bool {
 ---
 
 
-@s Outputting the markdown: Adding anchors for sections
+@s Output the literate source: Adding anchors for sections
 
 We need an anchor to link to the start of a section and the start of a file.
 If we're anchoring the start of a section then
@@ -1071,7 +1082,7 @@ if sec, okay := d.secStarts[inName][lineNum]; okay {
 }
 ---
 
-@s Outputting the markdown: Inserting the chunk name before a chunk
+@s Output the literate source: Inserting the chunk name before a chunk
 
 Before any chunk we want to say what that chunk is, and insert a blank
 line after.
@@ -1083,7 +1094,7 @@ if name, okay := d.chunkStarts[inName][lineNum]; okay {
 ---
 
 
-@s Outputting the markdown: Including the coding language per chunk
+@s Output the literate source: Including the coding language per chunk
 
 The start of any code chunk should be the backticks followed immediately
 (no spaces) by the language. For top level chunks this is the suffix
@@ -1129,7 +1140,7 @@ func backticks(mdown string) string {
 
 ---
 
-@s Outputting the markdown: Including chunk references
+@s Output the literate source: Including chunk references
 
 When outputting the markdown we may be outputting a line that's the
 end of a chunk, in which case we'll see what post-chunk references

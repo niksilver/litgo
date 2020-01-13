@@ -6,11 +6,15 @@ Sections
 - Add a directive for including the contents list
 - Link from each section reference to the section
 - Warning when a section jumps a level (e.g. 1 to 3, or nothing to 2)
+- Allow a manual link to a section
 
 Chunks
 - Style the chunk name before each chunk.
 - Make chunk starts linkable.
 - Make chunk references link to the first time that chunk is defined.
+- Add style sheets so the chunks format in the target language.
+- In the code output, allow a comment with the chunk name before
+  the code. Do this as a command line argument.
 
 Refactoring
 
@@ -18,12 +22,21 @@ Book and chapters
 - Amending for books and chapters:
   - Don't amend something that looks like a link but is in a chunk.
 - Allow section links between chapters.
+- Allow a link to another file to end with an anchor.
+  E.g. `book.md#list-of-items`.
 
 Directives
 - Add a dummy "ignore" directive just to make sure line numbers
   don't get corrupted.
 
 I/O
+
+Vim
+- Choose a markup editor to build on.
+
+Documentation
+- Create decent documentation.
+
 
 Done
 ----
