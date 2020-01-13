@@ -806,7 +806,7 @@ func addedToChunkRef(d *doc, ref chunkRef) string {
 func sectionsAsEnglish(secs []section) string {
 	list := ""
 	for i, sec := range secs {
-		list += sec.anchorLink()
+		list += sec.link()
 		if i < len(secs)-2 {
 			list += ", "
 		} else if i == len(secs)-2 {
@@ -822,7 +822,7 @@ func sectionsAsEnglish(secs []section) string {
 	return prefix + list
 }
 
-func (s *section) anchorLink() string {
+func (s *section) link() string {
 	return "[" + s.numsToString() + "](#" + s.anchor() + ")"
 }
 
