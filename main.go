@@ -823,7 +823,7 @@ func sectionsAsEnglish(secs []section) string {
 }
 
 func (s *section) link() string {
-	return "[" + s.numsToString() + "](#" + s.anchor() + ")"
+	return "[" + s.numsToString() + "](" + s.inName + "#" + s.anchor() + ")"
 }
 
 func usedInChunkRef(d *doc, ref chunkRef) string {

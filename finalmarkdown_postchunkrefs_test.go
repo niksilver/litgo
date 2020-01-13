@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"regexp"
 	"strings"
 	"testing"
@@ -81,10 +82,10 @@ func TestFinalMarkdown_ChunkRefs_AddedToOnce(t *testing.T) {
 	}
 	expected := map[int]string{
 		8:  "",
-		9:  "Added to in section [2](#section-2).",
+		9:  "Added to in section [2](once.md#section-2).",
 		10: "",
 		16: "",
-		17: "Added to in section [1](#section-1).",
+		17: "Added to in section [1](once.md#section-1).",
 		18: "",
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
@@ -141,14 +142,14 @@ func TestFinalMarkdown_ChunkRefs_AddedToTwice(t *testing.T) {
 	}
 	expected := map[int]string{
 		8:  "",
-		9:  "Added to in sections [2](#section-2) and [2](#section-2).",
+		9:  "Added to in sections [2](twice.md#section-2) and [2](twice.md#section-2).",
 		10: "",
 		16: "",
-		17: "Added to in sections [1](#section-1) and [2](#section-2).",
+		17: "Added to in sections [1](twice.md#section-1) and [2](twice.md#section-2).",
 		18: "",
 
 		24: "",
-		25: "Added to in sections [1](#section-1) and [2](#section-2).",
+		25: "Added to in sections [1](twice.md#section-1) and [2](twice.md#section-2).",
 		26: "",
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
@@ -213,19 +214,19 @@ func TestFinalMarkdown_ChunkRefs_AddedToThrice(t *testing.T) {
 	}
 	expected := map[int]string{
 		8:  "",
-		9:  "Added to in sections [2](#section-2), [2](#section-2) and [3](#section-3).",
+		9:  "Added to in sections [2](thrice.md#section-2), [2](thrice.md#section-2) and [3](thrice.md#section-3).",
 		10: "",
 
 		16: "",
-		17: "Added to in sections [1](#section-1), [2](#section-2) and [3](#section-3).",
+		17: "Added to in sections [1](thrice.md#section-1), [2](thrice.md#section-2) and [3](thrice.md#section-3).",
 		18: "",
 
 		24: "",
-		25: "Added to in sections [1](#section-1), [2](#section-2) and [3](#section-3).",
+		25: "Added to in sections [1](thrice.md#section-1), [2](thrice.md#section-2) and [3](thrice.md#section-3).",
 		26: "",
 
 		32: "",
-		33: "Added to in sections [1](#section-1), [2](#section-2) and [2](#section-2).",
+		33: "Added to in sections [1](thrice.md#section-1), [2](thrice.md#section-2) and [2](thrice.md#section-2).",
 		34: "",
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
@@ -244,6 +245,59 @@ func TestFinalMarkdown_ChunkRefs_AddedToThrice(t *testing.T) {
 			t.Errorf("Expected line %d to be %q but got %q",
 				n, s, out[n-1])
 		}
+	}
+}
+
+func TestFinalMarkdown_ChunkRefs_CrossFileBoundaries(t *testing.T) {
+	data := map[string]string{
+		"book.md": "# Section one\n" +
+			"* [Chap 1](ch1/first.md)\n" +
+			"* [Chap 2](ch2/second.md)\n" +
+			"``` Chunk one\n" +
+			"chunkone(1)\n" +
+			"```\n",
+		"ch1/first.md": "## Section one p one\n" +
+			"``` Chunk one\n" +
+			"chunkonepone(1.1)\n" +
+			"```\n",
+		"ch2/second.md": "# Section two\n" +
+			"``` Chunk two\n" +
+			"@{Chunk one}\n" +
+			"````\n",
+	}
+
+	s := newState()
+	s.setFirstInName("book.md")
+	s.book = "book.md"
+	s.reader = func(fName string) (io.ReadCloser, error) {
+		s.lineNum = 0
+		return stringReadCloser{strings.NewReader(data[fName])}, nil
+	}
+	d := newDoc()
+
+	expected := map[string][]string{
+		"book.md": {
+			"Added to in section [1.1](ch1/first.md#section-1.1)",
+			"Used in section [2](ch2/second.md#section-2)",
+		},
+		"ch1/first.md": {
+			"Added to in section [1](../book.md#section-1)",
+			"Used in section [2](../ch2/second.md#section-2)",
+		},
+	}
+
+	firstPassForAll(&s, &d)
+	d.lat = compileLattice(d.chunks)
+
+	for fName, subs := range expected {
+		mdown := finalMarkdown(fName, &d).String()
+		for _, sub := range subs {
+			if !strings.Contains(mdown, sub) {
+				t.Errorf("Expected %s to contain %q but it is\n%s",
+					fName, sub, mdown)
+			}
+		}
+
 	}
 }
 
@@ -298,7 +352,7 @@ func TestFinalMarkdown_ChunkRefs_UsedOnce(t *testing.T) {
 	}
 	expected := map[int]string{
 		8:  "",
-		9:  "Used in section [2](#section-2).",
+		9:  "Used in section [2](once.md#section-2).",
 		10: "",
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
@@ -353,7 +407,7 @@ func TestFinalMarkdown_ChunkRefs_UsedTwice(t *testing.T) {
 	}
 	expected := map[int]string{
 		16: "",
-		17: "Used in sections [1](#section-1) and [2](#section-2).",
+		17: "Used in sections [1](twice.md#section-1) and [2](twice.md#section-2).",
 		18: "",
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
@@ -412,7 +466,7 @@ func TestFinalMarkdown_ChunkRefs_UsedThrice(t *testing.T) {
 	}
 	expected := map[int]string{
 		13: "",
-		14: "Used in sections [1](#section-1), [2](#section-2) and [3](#section-3).",
+		14: "Used in sections [1](thrice.md#section-1), [2](thrice.md#section-2) and [3](thrice.md#section-3).",
 		15: "",
 	}
 	r := strings.NewReader(strings.Join(lines, "\n"))
