@@ -8,11 +8,11 @@
 
 There are three high level phases to generating output from markup:
 
-# Read the markup and extract/generate the relevant data structures.
-# Output the code.
-# Output the literate source.
-  # Amend the markup as needed (e.g. adding section numbers, etc).
-  # Push the markup through a markup-to-HTML generator.
+1. Read the markup and extract/generate the relevant data structures.
+2. Output the code.
+3. Output the literate source.
+  1. Amend the markup as needed (e.g. adding section numbers, etc).
+  2. Push the markup through a markup-to-HTML generator.
 
 
 @s High level code structure
