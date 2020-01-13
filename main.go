@@ -709,10 +709,10 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 		if sec, okay := d.secStarts[inName][lineNum]; okay {
 			if strings.HasPrefix(mdown, "#") {
 				mdown = strings.Repeat("#", len(sec.nums)) +
-					" <a name=\"section-" + sec.numsToString() + "\"></a>" +
+					" <a name=\"" + sec.anchor() + "\"></a>" +
 					sec.toString()
 			} else if lineNum == 1 {
-				mdown = "<a name=\"section-" + sec.numsToString() + "\"></a>\n" + mdown
+				mdown = "<a name=\"" + sec.anchor() + "\"></a>\n" + mdown
 			}
 		}
 
@@ -752,6 +752,10 @@ func isInName(d *doc, link string) bool {
 		}
 	}
 	return false
+}
+
+func (s *section) anchor() string {
+	return "section-" + s.numsToString()
 }
 
 // topOf takes a chunk name and returns the top-most parent name
@@ -802,7 +806,7 @@ func addedToChunkRef(d *doc, ref chunkRef) string {
 func sectionsAsEnglish(secs []section) string {
 	list := ""
 	for i, sec := range secs {
-		list += sec.numsToString()
+		list += sec.anchorLink()
 		if i < len(secs)-2 {
 			list += ", "
 		} else if i == len(secs)-2 {
@@ -816,6 +820,10 @@ func sectionsAsEnglish(secs []section) string {
 	}
 
 	return prefix + list
+}
+
+func (s *section) anchorLink() string {
+	return "[" + s.numsToString() + "](#" + s.anchor() + ")"
 }
 
 func usedInChunkRef(d *doc, ref chunkRef) string {

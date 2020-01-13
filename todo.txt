@@ -4,7 +4,6 @@ To do
 Sections
 - Keep track of a contents list (section and its name)
 - Add a directive for including the contents list
-- Link from each section reference to the section
 - Warning when a section jumps a level (e.g. 1 to 3, or nothing to 2)
 - Allow a manual link to a section
 
@@ -72,6 +71,7 @@ Sections
   - A new section should be linkable.
   - A new chapter file should be linkable as the section that was
     current at the end of the previous chapter file.
+- Link from each section reference to the section
 
 Refactoring
 - Put the lattice into the state.
