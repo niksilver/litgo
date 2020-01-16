@@ -20,7 +20,7 @@ Refactoring
 Book and chapters
 - Amending for books and chapters:
   - Don't amend something that looks like a link but is in a chunk.
-- Allow section links between chapters.
+- Handle several links to other chapter/book files on one line.
 - Allow a link to another file to end with an anchor.
   E.g. `book.md#list-of-items`.
 
@@ -94,3 +94,5 @@ Chunks
 - Line directives mustn't be indented without a %i
 - Write out the chunk name before each chunk.
 - Make it an error if a file ends in the middle of a chunk.
+- In post-chunk references, references to sections in other files
+  are now correct.

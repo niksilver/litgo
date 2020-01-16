@@ -735,9 +735,9 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 		b.WriteString(mdown + "\n")
 		// Include post-chunk reference if necessary
 		if ref, ok := d.chunkRefs[inName][lineNum]; ok {
-			str1 := addedToChunkRef(d, ref)
+			str1 := addedToChunkRef(inName, d, ref)
 			b.WriteString(str1)
-			str2 := usedInChunkRef(d, ref)
+			str2 := usedInChunkRef(inName, d, ref)
 			b.WriteString(str2)
 		}
 
@@ -782,7 +782,7 @@ func backticks(mdown string) string {
 	return out
 }
 
-func addedToChunkRef(d *doc, ref chunkRef) string {
+func addedToChunkRef(inName string, d *doc, ref chunkRef) string {
 	chunk := d.chunks[ref.name]
 	secs := make([]section, len(chunk.def))
 	for i, def := range chunk.def {
@@ -800,13 +800,13 @@ func addedToChunkRef(d *doc, ref chunkRef) string {
 		return ""
 	}
 
-	return "\nAdded to in " + sectionsAsEnglish(secs) + ".\n\n"
+	return "\nAdded to in " + sectionsAsEnglish(inName, secs) + ".\n\n"
 }
 
-func sectionsAsEnglish(secs []section) string {
+func sectionsAsEnglish(inName string, secs []section) string {
 	list := ""
 	for i, sec := range secs {
-		list += sec.link()
+		list += sec.link(inName)
 		if i < len(secs)-2 {
 			list += ", "
 		} else if i == len(secs)-2 {
@@ -822,11 +822,15 @@ func sectionsAsEnglish(secs []section) string {
 	return prefix + list
 }
 
-func (s *section) link() string {
-	return "[" + s.numsToString() + "](" + s.inName + "#" + s.anchor() + ")"
+func (s *section) link(hereInName string) string {
+	fName, err := filepath.Rel(filepath.Dir(hereInName), s.inName)
+	if err != nil {
+		fName = "!!!" + err.Error() + "!!!"
+	}
+	return "[" + s.numsToString() + "](" + fName + "#" + s.anchor() + ")"
 }
 
-func usedInChunkRef(d *doc, ref chunkRef) string {
+func usedInChunkRef(inName string, d *doc, ref chunkRef) string {
 	secs := make([]section, 0)
 
 	// Get the sections
@@ -852,7 +856,7 @@ func usedInChunkRef(d *doc, ref chunkRef) string {
 	// Sort the sections
 	sort.Slice(secs, func(i, j int) bool { return secs[i].less(secs[j]) })
 
-	return "\nUsed in " + sectionsAsEnglish(secs) + ".\n\n"
+	return "\nUsed in " + sectionsAsEnglish(inName, secs) + ".\n\n"
 }
 
 func (s1 *section) less(s2 section) bool {
