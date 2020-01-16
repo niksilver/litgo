@@ -21,7 +21,7 @@ Book and chapters
 - Amending for books and chapters:
   - Don't amend something that looks like a link but is in a chunk.
 - Handle several links to other chapter/book files on one line.
-- Allow a link to another file to end with an anchor.
+- Handle a link to another file when it ends with an anchor.
   E.g. `book.md#list-of-items`.
 
 Directives
