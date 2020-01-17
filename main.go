@@ -296,15 +296,15 @@ func proc(s *state, d *doc, line string) {
 	}
 
 	// Collect lines in code chunks
-	if s.inChunk && line == "```" {
-		s.inChunk = false
+	inChunkChanged, newChunkName := chunkChanged(&s.inChunk, line)
+	if !s.inChunk && inChunkChanged {
 		// Capture data for post-chunk references
 		if _, okay := d.chunkRefs[s.inName]; !okay {
 			d.chunkRefs[s.inName] = make(map[int]chunkRef)
 		}
 		d.chunkRefs[s.inName][s.lineNum] = chunkRef{s.chunkName, s.sec}
 
-	} else if s.inChunk {
+	} else if s.inChunk && !inChunkChanged {
 		d.chunks[s.chunkName].cont = append(
 			d.chunks[s.chunkName].cont,
 			chunkCont{
@@ -312,8 +312,8 @@ func proc(s *state, d *doc, line string) {
 				lNum:   s.lineNum,
 				code:   line,
 			})
-	} else if !s.inChunk && strings.HasPrefix(line, "```") {
-		s.chunkName = strings.TrimSpace(line[3:])
+	} else if s.inChunk && inChunkChanged {
+		s.chunkName = newChunkName
 		if s.chunkName == "" {
 			s.warnings = append(s.warnings,
 				warning{s.inName, s.lineNum, "Chunk has no name"})
@@ -334,7 +334,6 @@ func proc(s *state, d *doc, line string) {
 				line:   s.lineNum,
 				sec:    s.sec,
 			})
-		s.inChunk = true
 	}
 
 	if _, okay := d.markdown[s.inName]; !okay {
@@ -411,6 +410,20 @@ func markdownLink(line string) string {
 
 func chapterOutName(docOutDir string, foundInName string) string {
 	return simpleOutName(filepath.Join(docOutDir, foundInName))
+}
+
+// chunkChanged sees if we're entering or leaving a chunk and updates
+// `inChunk` as needed.
+func chunkChanged(inChunk *bool, line string) (changed bool, newName string) {
+	if *inChunk && line == "```" {
+		*inChunk = false
+		return true, ""
+	}
+	if !*inChunk && strings.HasPrefix(line, "```") {
+		*inChunk = true
+		return true, strings.TrimSpace(line[3:])
+	}
+	return false, ""
 }
 
 func compileLattice(chunks map[string]*chunk) lattice {
@@ -694,13 +707,15 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 	r := strings.NewReader(d.markdown[inName].String())
 	sc := bufio.NewScanner(r)
 	lineNum := 0
+	inChunk := false
 	for sc.Scan() {
 		lineNum++
 		mdown := sc.Text()
+		chunkChanged(&inChunk, mdown)
 		// Re-link chapters and the book
 		foundInName := markdownLink(mdown)
 		normFoundInName := filepath.Clean(filepath.Join(filepath.Dir(inName), foundInName))
-		if foundInName != "" && isInName(d, normFoundInName) {
+		if !inChunk && foundInName != "" && isInName(d, normFoundInName) {
 			idx := strings.Index(mdown, foundInName)
 			mdown = mdown[0:idx] + simpleOutName(foundInName) + mdown[idx+len(foundInName):]
 		}
