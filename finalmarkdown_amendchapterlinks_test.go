@@ -58,6 +58,58 @@ func TestFinalMarkdown_AmendChapterLinks(t *testing.T) {
 	}
 }
 
+func TestFinalMarkdown_AmendChapterLinksWithAnchors(t *testing.T) {
+	data := map[string]string{
+		"book.md": `* [First chapter](first.md#intro)
+             * [Second chapter](sec/second.md#summary)`,
+		"first.md": `* First [line 1](book.md#preface)
+            * First [line 2](sec/second.md)
+            * First line 3`,
+		"sec/second.md": `* Second line 1\
+            * Second [line 2](not-a-chapter.md)
+            * [First chapter](../first.md)`,
+	}
+	expected := map[string][]string{
+		"book.md": []string{
+			"[First chapter](first.html#intro)",
+			"[Second chapter](sec/second.html#summary)",
+		},
+		"first.md": []string{
+			"[line 1](book.html#preface)",
+			"[line 2](sec/second.html)",
+		},
+		"sec/second.md": []string{
+			"[line 2](not-a-chapter.md)",
+			"[First chapter](../first.html)",
+		},
+	}
+
+	s := newState()
+	s.setFirstInName("book.md")
+	s.book = "book.md"
+	s.reader = func(fName string) (io.ReadCloser, error) {
+		s.lineNum = 0
+		return stringReadCloser{strings.NewReader(data[fName])}, nil
+	}
+	d := newDoc()
+
+	firstPassForAll(&s, &d)
+
+	for inName, subs := range expected {
+		if _, okay := d.markdown[inName]; !okay {
+			t.Errorf("No markdown for inName %s", inName)
+			continue
+		}
+		mdown := finalMarkdown(inName, &d).String()
+		for _, sub := range subs {
+			if !strings.Contains(mdown, sub) {
+				t.Errorf("Input %s did not contain %q. Content is\n%s",
+					inName, sub, mdown)
+			}
+		}
+	}
+}
+
 func TestFinalMarkdown_AmendedChapterLinksCorrectWhenBookInDir(t *testing.T) {
 	data := map[string]string{
 		"../aaa/book.md": `* [First chapter](chap/first.md)
