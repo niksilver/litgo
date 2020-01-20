@@ -449,13 +449,14 @@ In a line of markdown, the regular expression to find a link is:
 * A `]` character followed by
 * a `)` character followed by
 * the filename followed by
+* an optional `#anchor-name`
 * an optional space and title in double quotes, followed by
 * A `)` character.
 
 --- Functions +=
 func markdownLink(line string) string {
     titleRE := `(\s+"[^"]*")?`
-    re, _ := regexp.Compile("\\]\\(([^)]+\\.md)" + titleRE + "\\)")
+    re, _ := regexp.Compile("\\]\\(([^)#]+\\.md(#[-A-Za-z0-9_.]*)?)" + titleRE + "\\)")
     s := re.FindStringSubmatch(line)
     if len(s) == 0 {
         return ""

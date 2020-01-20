@@ -25,6 +25,8 @@ Book and chapters
 Directives
 - Add a dummy "ignore" directive just to make sure line numbers
   don't get corrupted.
+- Allow command line options to also be set via directives.
+- Warn when encountering an unrecognised directive.
 
 I/O
 
