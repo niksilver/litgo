@@ -400,7 +400,8 @@ func (d *doc) addSectionStart(inName string, lineNum int, sec section) {
 
 func markdownLink(line string) string {
 	titleRE := `(\s+"[^"]*")?`
-	re, _ := regexp.Compile("\\]\\(([^)#]+\\.md(#[-A-Za-z0-9_.]*)?)" + titleRE + "\\)")
+	anchorRE := `(#[-A-Za-z0-9_.]*)?`
+	re, _ := regexp.Compile("\\]\\(([^)#]+\\.md)" + anchorRE + titleRE + "\\)")
 	s := re.FindStringSubmatch(line)
 	if len(s) == 0 {
 		return ""
