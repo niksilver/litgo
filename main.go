@@ -181,6 +181,12 @@ func main() {
 		return
 	}
 
+	// Write out the stylesheet
+	if err := writeStylesheet(&d); err != nil {
+		fmt.Print(err.Error())
+		return
+	}
+
 }
 
 func newState() state {
@@ -902,6 +908,25 @@ func (s1 *section) less(s2 section) bool {
 		}
 	}
 	return len(n1) < len(n2)
+}
+
+func writeStylesheet(d *doc) error {
+	stylesheet := `
+    .chunk-name: {
+        background-color: #e0e0ff;
+    }`
+
+	fName := filepath.Join(d.docOutDir, "literate-source.css")
+	outFile, err := d.writeCloser(fName)
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(outFile, stylesheet)
+	if err != nil {
+		outFile.Close()
+		return err
+	}
+	return outFile.Close()
 }
 
 func printHelp() {
