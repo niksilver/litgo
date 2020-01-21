@@ -9,6 +9,8 @@ Sections
 
 Chunks
 - Style the chunk name before each chunk.
+  - Style markdown before chunk start.
+  - CSS file created and referenced.
 - Make chunk starts linkable.
 - Make chunk references link to the first time that chunk is defined.
 - Add style sheets so the chunks format in the target language.

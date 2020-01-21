@@ -12,8 +12,9 @@ func TestFinalMarkdown_ChunkStart_ChunkNamesGiven(t *testing.T) {
 	lines := []string{
 		"# Section one", // Line 1
 		"",
-		// Chunk name  // Line 3
-		// Blank link after chunk name  // Line 4
+		// Styling for chunk name  // Line 3
+		// Chunk name header  // Line 4
+		// Blank link after chunk name  // Line 5
 		"``` Chunk one",
 		"Content 1.1",
 		"```",
@@ -21,14 +22,16 @@ func TestFinalMarkdown_ChunkStart_ChunkNamesGiven(t *testing.T) {
 		// Post-chunk ref (added to in...)
 		// Post-chunk blank
 		"",
-		// Chunk name  // Line 12
-		// Blank link after chunk name  // Line 13
+		// Styling for chunk name  // Line 13
+		// Chunk name header  // Line 14
+		// Blank link after chunk name  // Line 15
 		"``` Chunk two",
 		"Content 2",
 		"```",
 		"",
-		// Chunk name  // Line 18
-		// Blank link after chunk name  // Line 19
+		// Styling for chunk name  // Line 20
+		// Chunk name header  // Line 21
+		// Blank link after chunk name  // Line 22
 		"``` Chunk one",
 		"Content 1.2",
 		"```",
@@ -37,12 +40,15 @@ func TestFinalMarkdown_ChunkStart_ChunkNamesGiven(t *testing.T) {
 		// Post-chunk blank
 	}
 	expected := map[int]string{
-		3:  "Chunk one",
-		4:  "",
-		12: "Chunk two",
-		13: "",
-		18: "Chunk one",
-		19: "",
+		3:  "{.chunk-name}",
+		4:  "Chunk one",
+		5:  "",
+		13: "{.chunk-name}",
+		14: "Chunk two",
+		15: "",
+		20: "{.chunk-name}",
+		21: "Chunk one",
+		22: "",
 	}
 	content := strings.NewReader(strings.Join(lines, "\n"))
 

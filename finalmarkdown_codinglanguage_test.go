@@ -12,40 +12,45 @@ func TestFinalMarkdown_CodingLanguage_TwoLanguages(t *testing.T) {
 	lines := []string{
 		"# Language one", // Line 1
 		"",
+		// Styling before chunk name
 		// Chunk name header
 		// Blank line after chunk name
-		"``` Chunk one", // Line 5
+		"``` Chunk one", // Line 6
 		"@{Chunk 1a}",
 		"```",
 		// Post-chunk blank
 		// Post-chunk ref (added to in...)
 		// Post-chunk blank
+		// Styling before chunk name
 		// Chunk name header
 		// Blank line after chunk name
-		"``` Chunk one", // Line 13
+		"``` Chunk one", // Line 15
 		"Content 1.2",
 		"```",
 		// Post-chunk blank
 		// Post-chunk ref (added to in...)
 		// Post-chunk blank
+		// Styling before chunk name
 		// Chunk name header
 		// Blank line after chunk name
-		"```Chunk 1a", // Line 21
+		"```Chunk 1a", // Line 24
 		"Content 1a.1",
 		"```",
 		// Post-chunk blank
 		// Post-chunk ref (used in...)
 		// Post-chunk blank
 		"# Language two",
+		// Styling before chunk name
 		// Chunk name header
 		// Blank line after chunk name
-		"``` Chunk.two", // Line 30
+		"``` Chunk.two", // Line 34
 		"@{Chunk 2a}",
 		"```",
 		"",
+		// Styling before chunk name
 		// Chunk name header
 		// Blank line after chunk name
-		"``` Chunk 2a", // Line 36
+		"``` Chunk 2a", // Line 41
 		"Content 2a.1",
 		"```",
 		// Post-chunk blank
@@ -53,13 +58,13 @@ func TestFinalMarkdown_CodingLanguage_TwoLanguages(t *testing.T) {
 		// Post-chunk blank
 	}
 	expected := map[int]string{
-		5:  "```one",
-		7:  "```",
-		13: "```one",
-		15: "```",
-		21: "```one",
-		30: "```two",
-		36: "```two",
+		6:  "```one",
+		8:  "```",
+		15: "```one",
+		17: "```",
+		24: "```one",
+		34: "```two",
+		41: "```two",
 	}
 	content := strings.NewReader(strings.Join(lines, "\n"))
 
@@ -83,30 +88,34 @@ func TestFinalMarkdown_CodingLanguage_MissingLanguages(t *testing.T) {
 	lines := []string{
 		"# Language one", // Line 1
 		"",
+		// Styling before chunk name
 		// Chunk name header
 		// Blank line
-		"```", // Missing language // Line 5
+		"```", // Missing language // Line 6
 		"@{Chunk 1a}",
-		"```",
+		"```", // Line 8
 		"",
+		// Styling before chunk name
 		// Chunk name header
 		// Blank line
-		"```Chunk 1a", // Line 11
+		"```Chunk 1a", // Line 13
 		"Content 1a.1",
 		"```",
 		// Post-chunk blank
 		// Post-chunk ref (used in...)
 		// Post-chunk blank
 		"# Language two",
+		// Styling before chunk name
 		// Chunk name header
 		// Blank line
-		"``` Chunk.two", // Line 20
+		"``` Chunk.two", // Line 23
 		"@{Chunk 2a}",
 		"```",
 		"",
+		// Styling before chunk name
 		// Chunk name header
 		// Blank line
-		"``` Chunk 2a", // Line 26
+		"``` Chunk 2a", // Line 30
 		"Content 2a.1",
 		"```",
 		// Post-chunk blank
@@ -114,11 +123,11 @@ func TestFinalMarkdown_CodingLanguage_MissingLanguages(t *testing.T) {
 		// Post-chunk blank
 	}
 	expected := map[int]string{
-		5:  "```",
-		7:  "```",
-		11: "```",
-		20: "```two",
-		26: "```two",
+		6:  "```",
+		8:  "```",
+		13: "```",
+		23: "```two",
+		30: "```two",
 	}
 	content := strings.NewReader(strings.Join(lines, "\n"))
 

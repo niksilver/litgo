@@ -735,7 +735,7 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 
 		// Insert chunk name before start of chunk
 		if name, okay := d.chunkStarts[inName][lineNum]; okay {
-			b.WriteString(name + "\n\n")
+			b.WriteString("{.chunk-name}\n" + name + "\n\n")
 		}
 
 		// Amend chunk starts to include coding language
