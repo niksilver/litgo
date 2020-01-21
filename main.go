@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/parser"
 	"io"
 	"os"
 	"path/filepath"
@@ -690,8 +691,15 @@ func writeAllMarkdown(inNames []string, d *doc) error {
 }
 
 func writeHTML(inName string, outName string, d *doc) error {
+	// Get the final markdown
 	md := finalMarkdown(inName, d).String()
-	output := markdown.ToHTML([]byte(md), nil, nil)
+
+	// Render the HTML, using a parser with an appropriate extension
+	extensions := parser.CommonExtensions | parser.Attributes
+	parser := parser.NewWithExtensions(extensions)
+	output := markdown.ToHTML([]byte(md), parser, nil)
+
+	// Write the HTML
 	outFile, err := d.writeCloser(outName)
 	if err != nil {
 		return err

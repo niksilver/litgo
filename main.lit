@@ -25,6 +25,7 @@ import (
     "flag"
     "fmt"
     "github.com/gomarkdown/markdown"
+    "github.com/gomarkdown/markdown/parser"
     "io"
     "os"
     "path/filepath"
@@ -1008,16 +1009,28 @@ func writeAllMarkdown(inNames []string, d *doc) error {
 
 ---
 
-For the inner task we could just output the relevant markdown for that
-input file, but we also want to amend it (to create "final" markdown).
+For the inner task we want to take the markdown and render it as HTML.
+
+However, we first want to amend the markdown (to create "final" markdown).
 This includes, for example, adding section numbers and post-chunk
-references.
-We can do that only if we output the markdown a line at a time.
+references. We do that by going through the markdown line by line.
+
+Also, we want to [customise our HTML
+renderer](https://github.com/gomarkdown/markdown#customizing-markdown-parser).
+It should include an
+extension to allow block level attributes. This enables styling.
 
 --- Functions +=
 func writeHTML(inName string, outName string, d *doc) error {
+    // Get the final markdown
     md := finalMarkdown(inName, d).String()
-    output := markdown.ToHTML([]byte(md), nil, nil)
+    
+    // Render the HTML, using a parser with an appropriate extension
+    extensions := parser.CommonExtensions | parser.Attributes
+    parser := parser.NewWithExtensions(extensions)
+    output := markdown.ToHTML([]byte(md), parser, nil)
+
+    // Write the HTML
     outFile, err := d.writeCloser(outName)
     if err != nil {
         return err
