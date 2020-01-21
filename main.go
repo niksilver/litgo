@@ -710,7 +710,11 @@ func writeHTML(inName string, outName string, d *doc) error {
 	if err != nil {
 		return err
 	}
-	_, err = io.WriteString(outFile, string(output))
+	strOutput := `<html><head>
+    <link href="literate-source.css" rel="stylesheet"/>
+    </head>
+    <body>` + string(output) + "</body></html>"
+	_, err = io.WriteString(outFile, strOutput)
 	if err != nil {
 		outFile.Close()
 		return err
@@ -912,9 +916,10 @@ func (s1 *section) less(s2 section) bool {
 
 func writeStylesheet(d *doc) error {
 	stylesheet := `
-    .chunk-name: {
+    .chunk-name {
         background-color: #e0e0ff;
-    }`
+    }
+`
 
 	fName := filepath.Join(d.docOutDir, "literate-source.css")
 	outFile, err := d.writeCloser(fName)
