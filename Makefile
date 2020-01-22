@@ -12,17 +12,20 @@ tangle:
 install: tangle
 	go install
 
-test-input: install
-	~/go/bin/litgo test/input.md
+test-setup: install
+	mkdir test-out
 
-test-one-code-file: install
-	~/go/bin/litgo test/one-code-file.md
+test-input: test-setup
+	~/go/bin/litgo --doc-out-dir test-out test/input.md
 
-test-two-code-files: install
-	~/go/bin/litgo test/two-code-files.md
+test-one-code-file: test-setup
+	~/go/bin/litgo --doc-out-dir test-out test/one-code-file.md
 
-test-non-existent-file: install
-	~/go/bin/litgo test/no-such-file.md
+test-two-code-files: test-setup
+	~/go/bin/litgo --doc-out-dir test-out test/two-code-files.md
 
-test-simple-book: install
-	~/go/bin/litgo --book test/simple-book.md
+test-non-existent-file: test-setup
+	~/go/bin/litgo --doc-out-dir test-out test/no-such-file.md
+
+test-simple-book: test-setup
+	~/go/bin/litgo --book --doc-out-dir test-out test/simple-book.md

@@ -6,6 +6,7 @@ Here is chapter one...
 package main
 
 func main() {
+    a < b
     @{Later inclusion}
 }
 ```

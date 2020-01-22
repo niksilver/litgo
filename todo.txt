@@ -20,6 +20,7 @@ Book and chapters
 - Handle several links to other chapter/book files on one line.
 
 Directives
+- Allow a code-out dir
 - Add a dummy "ignore" directive just to make sure line numbers
   don't get corrupted.
 - Allow command line options to also be set via directives.

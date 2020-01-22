@@ -123,7 +123,7 @@ func main() {
 	} else if flag.NArg() == 1 {
 		s.setFirstInName(flag.Arg(0))
 	} else if flag.NArg() > 1 {
-		fmt.Print("Too many arguments\n\n")
+		fmt.Println("Too many arguments\n")
 		printHelp()
 		return
 	}
@@ -177,13 +177,13 @@ func main() {
 
 	// Write out the markdown as HTML
 	if err := writeAllMarkdown(s.inNames, &d); err != nil {
-		fmt.Print(err.Error())
+		fmt.Println(err.Error())
 		return
 	}
 
 	// Write out the stylesheet
 	if err := writeStylesheet(&d); err != nil {
-		fmt.Print(err.Error())
+		fmt.Println(err.Error())
 		return
 	}
 
