@@ -49,8 +49,9 @@ type doc struct {
 	// Map of normalised input file names to output names
 	outNames map[string]string
 	// Config
-	lineDir   string // The string pattern for line directives
-	docOutDir string // Output directory for the translated markdown
+	lineDir    string // The string pattern for line directives
+	codeOutDir string // Output directory for the source code
+	docOutDir  string // Output directory for the translated markdown
 	// Function for opening a file to write to and close
 	writeCloser func(string) (io.WriteCloser, error)
 }
@@ -99,6 +100,7 @@ type lattice struct {
 
 var book bool
 var lDir string
+var codeOutDir string
 var docOutDir string
 
 // Functions
@@ -107,6 +109,7 @@ func init() {
 	// Flag initialisation
 	flag.BoolVar(&book, "book", false, "If the input file is a book")
 	flag.StringVar(&lDir, "line-dir", "", "Pattern for line directives")
+	flag.StringVar(&codeOutDir, "code-out-dir", "", "Directory for code output")
 	flag.StringVar(&docOutDir, "doc-out-dir", "", "Directory for documentation output")
 
 }
@@ -123,14 +126,22 @@ func main() {
 	} else if flag.NArg() == 1 {
 		s.setFirstInName(flag.Arg(0))
 	} else if flag.NArg() > 1 {
-		fmt.Println("Too many arguments\n")
+		fmt.Print("Too many arguments\n\n")
 		printHelp()
 		return
 	}
+
 	if book {
 		s.book = s.inName
 	}
+
 	d.lineDir = lDir
+
+	if codeOutDir == "" {
+		codeOutDir = filepath.Dir(codeOutDir)
+	}
+	d.codeOutDir = codeOutDir
+
 	if docOutDir == "" {
 		docOutDir = filepath.Dir(docOutDir)
 	}
@@ -593,7 +604,8 @@ func (d *doc) writeChunks(
 	fName string) error {
 
 	for _, name := range top {
-		wc, err := d.writeCloser(name)
+		targetName := filepath.Join(d.codeOutDir, name)
+		wc, err := d.writeCloser(targetName)
 		if err != nil {
 			return err
 		}

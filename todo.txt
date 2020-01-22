@@ -15,18 +15,19 @@ Chunks
   the code. Do this as a command line argument.
 
 Refactoring
+- Remove redundant lineDir arg from writeChunks() and writeChunk().
 
 Book and chapters
 - Handle several links to other chapter/book files on one line.
 
 Directives
-- Allow a code-out dir
 - Add a dummy "ignore" directive just to make sure line numbers
   don't get corrupted.
 - Allow command line options to also be set via directives.
 - Warn when encountering an unrecognised directive.
 
 I/O
+- Allow --out-dir as a shortcut for --doc-out-dir and --code-out-dir.
 
 Vim
 - Choose a markup editor to build on.
@@ -98,3 +99,5 @@ Chunks
 - In post-chunk references, references to sections in other files
   are now correct.
 - Style the chunk name before each chunk.
+- Allow a --code-out-dir
+

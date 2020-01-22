@@ -13,7 +13,10 @@ install: tangle
 	go install
 
 test-setup: install
-	mkdir test-out
+	mkdir -p test-out
+
+clean:
+	rm -rf test-out main.html
 
 test-input: test-setup
 	~/go/bin/litgo --doc-out-dir test-out test/input.md

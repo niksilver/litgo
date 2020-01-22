@@ -477,6 +477,96 @@ func TestWriteChunks_OkayWithLineDirectiveIndents(t *testing.T) {
 
 }
 
+func TestWriteChunks_CodeOutDir(t *testing.T) {
+	// Test code that looks like this (with line numbers):
+	//
+	// ``` one.go 1
+	// Line 1.1   2
+	// @{Three}   3
+	// Line 1.3   4
+	// ```
+	// Gap line
+	// ``` two.go 7
+	// @{Three}   8
+	// Line 2.2   9
+	// ```
+	// Gap line
+	// ``` Three  12
+	// Line 3.1   13
+	// Line 3.2   14
+	// ```
+	// ``` one.go 16
+	// Line 1.4   17
+	// ```        18
+
+	oneExpected := `Line 1.1
+Line 3.1
+Line 3.2
+Line 1.3
+Line 1.4
+`
+	twoExpected := `Line 3.1
+Line 3.2
+Line 2.2
+`
+
+	top := []string{"one.go", "two.go"}
+	chunks := map[string]*chunk{
+		"one.go": &chunk{
+			defLines(1, 16),
+			[]chunkCont{
+				contLNumCode(2, "Line 1.1"),
+				contLNumCode(3, "@{Three}"),
+				contLNumCode(4, "Line 1.3"),
+				contLNumCode(17, "Line 1.4")},
+		},
+		"two.go": &chunk{
+			defLines(7),
+			[]chunkCont{
+				contLNumCode(8, "@{Three}"),
+				contLNumCode(9, "Line 2.2")},
+		},
+		"Three": &chunk{
+			defLines(12),
+			[]chunkCont{
+				contLNumCode(13, "Line 3.1"),
+				contLNumCode(14, "Line 3.2")},
+		},
+	}
+
+	d := newBuilderDoc(doc{
+		chunks:     chunks,
+		codeOutDir: "gen/src",
+	})
+	err := d.writeChunks(top, "", "")
+
+	if err != nil {
+		t.Errorf("Should not have produced an error, but got %q",
+			err.Error())
+	}
+
+	if len(d.outputs) != 2 {
+		t.Errorf("Should have two top chunks output, but got %d: %v",
+			len(d.outputs), reflect.ValueOf(d.outputs).MapKeys())
+	}
+
+	oneName := "gen/src/one.go"
+	if d.outputs[oneName] == nil {
+		t.Errorf("Chunk " + oneName + " did not have a Builder")
+	} else if d.outputs[oneName].String() != oneExpected {
+		t.Errorf("For chunk "+oneName+" expected\n%q\nbut got\n%q",
+			oneExpected, d.outputs[oneName].String())
+	}
+
+	twoName := "gen/src/two.go"
+	if d.outputs[twoName] == nil {
+		t.Errorf("Chunk " + twoName + " did not have a Builder")
+	} else if d.outputs[twoName].String() != twoExpected {
+		t.Errorf("For chunk "+twoName+" expected\n%q\nbut got\n%q",
+			twoExpected, d.outputs[twoName].String())
+	}
+}
+
 func TestLineDirective(t *testing.T) {
 	data := []struct {
 		dir    string
