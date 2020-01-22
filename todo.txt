@@ -27,7 +27,6 @@ Directives
 - Warn when encountering an unrecognised directive.
 
 I/O
-- Allow --out-dir as a shortcut for --doc-out-dir and --code-out-dir.
 
 Vim
 - Choose a markup editor to build on.
@@ -89,6 +88,7 @@ I/O
 - Write code to files
 - Write markup to input filename, but with an "html" suffix.
 - Write markup from stdin to "out.html".
+- Allow --out-dir as a shortcut for --doc-out-dir and --code-out-dir.
 
 Chunks
 - HTML code chunks have the language suffix for code highlighting

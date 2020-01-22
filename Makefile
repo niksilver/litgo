@@ -19,16 +19,16 @@ clean:
 	rm -rf test-out main.html
 
 test-input: test-setup
-	~/go/bin/litgo --doc-out-dir test-out test/input.md
+	~/go/bin/litgo --out-dir test-out test/input.md
 
 test-one-code-file: test-setup
-	~/go/bin/litgo --doc-out-dir test-out test/one-code-file.md
+	~/go/bin/litgo --out-dir test-out test/one-code-file.md
 
 test-two-code-files: test-setup
-	~/go/bin/litgo --doc-out-dir test-out test/two-code-files.md
+	~/go/bin/litgo --out-dir test-out test/two-code-files.md
 
 test-non-existent-file: test-setup
-	~/go/bin/litgo --doc-out-dir test-out test/no-such-file.md
+	~/go/bin/litgo --out-dir test-out test/no-such-file.md
 
 test-simple-book: test-setup
-	~/go/bin/litgo --book --doc-out-dir test-out test/simple-book.md
+	~/go/bin/litgo --book --out-dir test-out test/simple-book.md

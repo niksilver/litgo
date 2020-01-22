@@ -1371,7 +1371,8 @@ The command line is:
 
     cmd [--book[=true|false]] [--line-dir <ldir>]
         [--code-out-dir <codeoutdir>]
-        [--doc-out-dir <docoutdir>] <input-file>
+        [--doc-out-dir <docoutdir>]
+        [--out-dir <outdir>] <input-file>
 
       <input-file> can be - (or omit it) to indicate stdin.
 
@@ -1384,12 +1385,15 @@ The command line is:
           Default is the directory of the input file.
       <docoutdir> is the directory in which to write the documentation.
           Default is the directory of the input file.
+      <outdir> can be used as the output director for code and documentation, 
+          as a shortcut if <codeoutdir> and <docoutdir> are the same.
 
 --- Package level declarations +=
 var book bool
 var lDir string
 var codeOutDir string
 var docOutDir string
+var outDir string
 
 ---
 
@@ -1398,6 +1402,7 @@ flag.BoolVar(&book, "book", false, "If the input file is a book")
 flag.StringVar(&lDir, "line-dir", "", "Pattern for line directives")
 flag.StringVar(&codeOutDir, "code-out-dir", "", "Directory for code output")
 flag.StringVar(&docOutDir, "doc-out-dir", "", "Directory for documentation output")
+flag.StringVar(&outDir, "out-dir", "", "Directory for code and documentation output")
 ---
 
 --- Update the structs according to the command line
@@ -1418,11 +1423,21 @@ if book {
 
 d.lineDir = lDir
 
+// Use the "quick" out dir if code and doc out dirs aren't specified
+if codeOutDir == "" {
+    codeOutDir = outDir
+}
+if docOutDir == "" {
+    docOutDir = outDir
+}
+
+// Set the code out dir
 if codeOutDir == "" {
     codeOutDir = filepath.Dir(codeOutDir)
 }
 d.codeOutDir = codeOutDir
 
+// Set the doc out dir
 if docOutDir == "" {
     docOutDir = filepath.Dir(docOutDir)
 }

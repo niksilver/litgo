@@ -102,6 +102,7 @@ var book bool
 var lDir string
 var codeOutDir string
 var docOutDir string
+var outDir string
 
 // Functions
 
@@ -111,6 +112,7 @@ func init() {
 	flag.StringVar(&lDir, "line-dir", "", "Pattern for line directives")
 	flag.StringVar(&codeOutDir, "code-out-dir", "", "Directory for code output")
 	flag.StringVar(&docOutDir, "doc-out-dir", "", "Directory for documentation output")
+	flag.StringVar(&outDir, "out-dir", "", "Directory for code and documentation output")
 
 }
 
@@ -137,11 +139,21 @@ func main() {
 
 	d.lineDir = lDir
 
+	// Use the "quick" out dir if code and doc out dirs aren't specified
+	if codeOutDir == "" {
+		codeOutDir = outDir
+	}
+	if docOutDir == "" {
+		docOutDir = outDir
+	}
+
+	// Set the code out dir
 	if codeOutDir == "" {
 		codeOutDir = filepath.Dir(codeOutDir)
 	}
 	d.codeOutDir = codeOutDir
 
+	// Set the doc out dir
 	if docOutDir == "" {
 		docOutDir = filepath.Dir(docOutDir)
 	}
