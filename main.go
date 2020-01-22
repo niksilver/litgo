@@ -192,7 +192,7 @@ func main() {
 
 	// Write out the code files
 	top := topLevelChunks(d.lat)
-	err := d.writeChunks(top, d.lineDir, s.inName)
+	err := d.writeChunks(top, s.inName)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -612,7 +612,6 @@ func assertAllChunksDefined(chunks map[string]*chunk, lat lattice) error {
 
 func (d *doc) writeChunks(
 	top []string,
-	lineDir string,
 	fName string) error {
 
 	for _, name := range top {
@@ -622,7 +621,7 @@ func (d *doc) writeChunks(
 			return err
 		}
 		bw := bufio.NewWriter(wc)
-		err = d.writeChunk(name, bw, lineDir, "", fName)
+		err = d.writeChunk(name, bw, "", fName)
 		if err != nil {
 			wc.Close()
 			return err
@@ -646,7 +645,6 @@ func getWriteCloser(name string) (io.WriteCloser, error) {
 
 func (d *doc) writeChunk(name string,
 	w *bufio.Writer,
-	lineDir string,
 	indent string,
 	fName string) error {
 
@@ -656,11 +654,11 @@ func (d *doc) writeChunk(name string,
 		var err error
 		if ref := referredChunkName(code); ref != "" {
 			iPos := strings.Index(code, "@")
-			err = d.writeChunk(ref, w, lineDir, code[0:iPos]+indent, fName)
+			err = d.writeChunk(ref, w, code[0:iPos]+indent, fName)
 		} else {
 			lNum := cont.lNum
 			indentHere := initialWS(code)
-			dir := lineDirective(lineDir, indent+indentHere, fName, lNum)
+			dir := lineDirective(d.lineDir, indent+indentHere, fName, lNum)
 			_, err = w.WriteString(dir + indent + code + "\n")
 		}
 		if err != nil {

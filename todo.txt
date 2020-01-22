@@ -15,7 +15,6 @@ Chunks
   the code. Do this as a command line argument.
 
 Refactoring
-- Remove redundant lineDir arg from writeChunks() and writeChunk().
 
 Book and chapters
 - Handle several links to other chapter/book files on one line.
@@ -81,6 +80,7 @@ Refactoring
   for consistency and clarity.
 - proc, the line reader, is now a field of state.
 - fileReader is a field of state.
+- Remove redundant lineDir arg from writeChunks() and writeChunk().
 
 I/O
 - Read from a file specified by the command line

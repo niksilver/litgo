@@ -148,7 +148,7 @@ Line 2.2
 	}
 
 	d := newBuilderDoc(doc{chunks: chunks})
-	err := d.writeChunks(top, "", "")
+	err := d.writeChunks(top, "")
 
 	if err != nil {
 		t.Errorf("Should not have produced an error, but got %q",
@@ -222,7 +222,7 @@ func TestWriteChunks_ErrorWriting(t *testing.T) {
 	}
 
 	d := newBadDoc(doc{chunks: chunks})
-	err := d.writeChunks(top, "", "")
+	err := d.writeChunks(top, "")
 	if err == nil {
 		t.Errorf("Should have produced an error, did not")
 	}
@@ -281,7 +281,7 @@ func TestWriteChunks_IndentProperly(t *testing.T) {
 	}
 
 	d := newBuilderDoc(doc{chunks: chunks})
-	err := d.writeChunks(top, "", "")
+	err := d.writeChunks(top, "")
 
 	if err != nil {
 		t.Errorf("Should not have produced an error, but got %q",
@@ -359,8 +359,11 @@ Line 2.2
 		},
 	}
 
-	d := newBuilderDoc(doc{chunks: chunks})
-	err := d.writeChunks(top, "//line %f:%l", "test.lit")
+	d := newBuilderDoc(doc{
+		chunks:  chunks,
+		lineDir: "//line %f:%l",
+	})
+	err := d.writeChunks(top, "test.lit")
 
 	if err != nil {
 		t.Errorf("Should not have produced an error, but got %q",
@@ -433,8 +436,11 @@ func TestWriteChunks_OkayWithLineDirectiveIndents(t *testing.T) {
 
 	// Test it with an indent
 
-	d1 := newBuilderDoc(doc{chunks: chunks})
-	err1 := d1.writeChunks(top, "%i//line %f:%l", "test.lit")
+	d1 := newBuilderDoc(doc{
+		chunks:  chunks,
+		lineDir: "%i//line %f:%l",
+	})
+	err1 := d1.writeChunks(top, "test.lit")
 
 	if err1 != nil {
 		t.Errorf("With: Should not have produced an error, but got %q",
@@ -455,8 +461,11 @@ func TestWriteChunks_OkayWithLineDirectiveIndents(t *testing.T) {
 
 	// Test it without an indent
 
-	d2 := newBuilderDoc(doc{chunks: chunks})
-	err2 := d2.writeChunks(top, "//line %f:%l", "test.lit")
+	d2 := newBuilderDoc(doc{
+		chunks:  chunks,
+		lineDir: "//line %f:%l",
+	})
+	err2 := d2.writeChunks(top, "test.lit")
 
 	if err2 != nil {
 		t.Errorf("Without: Should not have produced an error, but got %q",
@@ -538,7 +547,7 @@ Line 2.2
 		chunks:     chunks,
 		codeOutDir: "gen/src",
 	})
-	err := d.writeChunks(top, "", "")
+	err := d.writeChunks(top, "")
 
 	if err != nil {
 		t.Errorf("Should not have produced an error, but got %q",
