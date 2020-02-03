@@ -8,7 +8,6 @@ Sections
 - Allow a manual link to a section
 
 Chunks
-- Make chunk starts linkable.
 - Make chunk references link to the first time that chunk is defined.
 - Add style sheets so the chunks format in the target language.
 - In the code output, allow a comment with the chunk name before
@@ -100,4 +99,5 @@ Chunks
   are now correct.
 - Style the chunk name before each chunk.
 - Allow a --code-out-dir
+- The first occurrence of a named chunk is linkable.
 

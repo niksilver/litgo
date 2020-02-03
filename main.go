@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 // Package level declarations
@@ -766,16 +767,20 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 		if sec, okay := d.secStarts[inName][lineNum]; okay {
 			if strings.HasPrefix(mdown, "#") {
 				mdown = strings.Repeat("#", len(sec.nums)) +
-					" <a name=\"" + sec.anchor() + "\"></a>" +
-					sec.toString()
+					" " + aName(sec.anchor()) + sec.toString()
 			} else if lineNum == 1 {
-				mdown = "<a name=\"" + sec.anchor() + "\"></a>\n" + mdown
+				mdown = aName(sec.anchor()) + "\n" + mdown
 			}
 		}
 
 		// Insert chunk name before start of chunk
 		if name, okay := d.chunkStarts[inName][lineNum]; okay {
-			b.WriteString("{.chunk-name}\n" + name + "\n\n")
+			anchor := ""
+			startInName, startLineNum := d.chunkStart(name)
+			if inName == startInName && lineNum == startLineNum {
+				anchor = aName(toSafeAlpha(name))
+			}
+			b.WriteString("{.chunk-name}\n" + anchor + name + "\n\n")
 		}
 
 		// Amend chunk starts to include coding language
@@ -813,6 +818,39 @@ func isInName(d *doc, link string) bool {
 
 func (s *section) anchor() string {
 	return "section-" + s.numsToString()
+}
+
+func aName(name string) string {
+	return "<a name=\"" + name + "\"></a>"
+}
+
+// chunkStart returns the input file and line number of where a chunk starts,
+// or zero values if there is no such chunk.
+func (d *doc) chunkStart(name string) (string, int) {
+	chunks, okay := d.chunks[name]
+	if !okay {
+		return "", 0
+	}
+
+	def := chunks.def
+	if len(def) == 0 {
+		return "", 0
+	}
+
+	return def[0].inName, def[0].line
+}
+
+// toSafeAlpha returns the string with all non-alphanumerics turned into "-"s.
+func toSafeAlpha(s string) string {
+	b := strings.Builder{}
+	for _, roon := range s {
+		if unicode.IsLetter(roon) || unicode.IsDigit(roon) {
+			b.WriteRune(roon)
+		} else {
+			b.WriteByte('-')
+		}
+	}
+	return b.String()
 }
 
 // topOf takes a chunk name and returns the top-most parent name

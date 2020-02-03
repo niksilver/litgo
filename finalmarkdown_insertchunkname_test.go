@@ -41,10 +41,10 @@ func TestFinalMarkdown_ChunkStart_ChunkNamesGiven(t *testing.T) {
 	}
 	expected := map[int]string{
 		3:  "{.chunk-name}",
-		4:  "Chunk one",
+		4:  "<a name=\"Chunk-one\"></a>Chunk one",
 		5:  "",
 		13: "{.chunk-name}",
-		14: "Chunk two",
+		14: "<a name=\"Chunk-two\"></a>Chunk two",
 		15: "",
 		20: "{.chunk-name}",
 		21: "Chunk one",
