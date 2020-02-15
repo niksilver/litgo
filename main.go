@@ -794,6 +794,13 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 			}
 		}
 
+		// In a chunk, link a chunk reference
+		if inChunk {
+			if refName := referredChunkName(mdown); refName != "" {
+				mdown = mdown + " // Link this chunk!"
+			}
+		}
+
 		b.WriteString(mdown + "\n")
 		// Include post-chunk reference if necessary
 		if ref, ok := d.chunkRefs[inName][lineNum]; ok {

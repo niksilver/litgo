@@ -1020,7 +1020,7 @@ references. We do that by going through the markdown line by line.
 Also, we want to [customise our HTML
 renderer](https://github.com/gomarkdown/markdown#customizing-markdown-parser).
 It should include an
-extension to allow block level attributes. This enables styling.
+extension to allow block level attributes. This enables us to style blocks.
 
 --- Functions +=
 func writeHTML(inName string, outName string, d *doc) error {
@@ -1063,6 +1063,7 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
         @{Amend section heading}
         @{Insert chunk name before start of chunk}
         @{Amend chunk starts to include coding language}
+        @{In a chunk, link a chunk reference}
         b.WriteString(mdown + "\n")
         @{Include post-chunk reference if necessary}
     }
@@ -1366,6 +1367,20 @@ func (s1 *section) less(s2 section) bool {
     return len(n1) < len(n2)
 }
 
+---
+
+
+@s Output the literate source: In a chunk, link any chunks referenced
+
+If we're outputting a chunk, and the current line references another chunk,
+then we want it to link to the first time that chunk appears.
+
+--- In a chunk, link a chunk reference
+if inChunk {
+    if refName := referredChunkName(mdown); refName != "" {
+        mdown = mdown + " // Link this chunk!"
+    }
+}
 ---
 
 
