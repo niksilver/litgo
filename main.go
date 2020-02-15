@@ -6,6 +6,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/ast"
+	"github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
 	"io"
 	"os"
@@ -724,9 +726,10 @@ func writeHTML(inName string, outName string, d *doc) error {
 	md := finalMarkdown(inName, d).String()
 
 	// Render the HTML, using a parser with an appropriate extension
+	// and a custom renderer (defined later, to link chunk refs in the code)
 	extensions := parser.CommonExtensions | parser.Attributes
 	parser := parser.NewWithExtensions(extensions)
-	output := markdown.ToHTML([]byte(md), parser, nil)
+	output := markdown.ToHTML([]byte(md), parser, customRenderer())
 
 	// Write the HTML
 	outFile, err := d.writeCloser(outName)
@@ -791,13 +794,6 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 			langs := re.FindStringSubmatch(top)
 			if langs != nil {
 				mdown += langs[0]
-			}
-		}
-
-		// In a chunk, link a chunk reference
-		if inChunk {
-			if refName := referredChunkName(mdown); refName != "" {
-				mdown = mdown + " // Link this chunk!"
 			}
 		}
 
@@ -981,6 +977,32 @@ func (s1 *section) less(s2 section) bool {
 	return len(n1) < len(n2)
 }
 
+func customRenderer() markdown.Renderer {
+	opts := html.RendererOptions{
+		Flags:          html.CommonFlags,
+		RenderNodeHook: codeBlockFixer,
+	}
+	return html.NewRenderer(opts)
+}
+
+func codeBlockFixer(w io.Writer, node ast.Node, entering bool) (status ast.WalkStatus, skip bool) {
+	// If it's a code block use our own rendering method
+	if cb, ok := node.(*ast.CodeBlock); ok {
+		renderChunk(w, cb)
+		return ast.GoToNext, true
+	}
+
+	// Carry on processing it
+	return ast.GoToNext, false
+}
+
+func renderChunk(w io.Writer, cb *ast.CodeBlock) {
+	preCode := fmt.Sprintf("<pre><code class=\"language-%s\">", cb.Info)
+	io.WriteString(w, preCode)
+	// TODO - Insert links where necessary
+	html.EscapeHTML(w, cb.Leaf.Literal)
+	io.WriteString(w, "</code></pre>")
+}
 func writeStylesheet(d *doc) error {
 	stylesheet := `
     .chunk-name {
