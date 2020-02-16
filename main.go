@@ -997,10 +997,19 @@ func codeBlockFixer(w io.Writer, node ast.Node, entering bool) (status ast.WalkS
 }
 
 func renderChunk(w io.Writer, cb *ast.CodeBlock) {
+	// Write the block opener
 	preCode := fmt.Sprintf("<pre><code class=\"language-%s\">", cb.Info)
 	io.WriteString(w, preCode)
+
+	// Escape the content, but into a string builder
+	b := strings.Builder{}
+	html.EscapeHTML(&b, cb.Leaf.Literal)
+
 	// TODO - Insert links where necessary
-	html.EscapeHTML(w, cb.Leaf.Literal)
+
+	io.WriteString(w, b.String())
+
+	// Write the block closer
 	io.WriteString(w, "</code></pre>")
 }
 func writeStylesheet(d *doc) error {
