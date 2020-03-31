@@ -39,7 +39,7 @@ func Test_RenderChunk_CodeBlockMarkup(t *testing.T) {
 	}
 
 	w := strings.Builder{}
-	renderChunk(&w, &cb)
+	renderChunk(&w, &cb, &d, "program.md")
 	out := w.String()
 
 	for _, sub := range expected {
@@ -90,7 +90,7 @@ func Test_RenderChunk_CodeBlockLinksChunkRefs(t *testing.T) {
 	}
 
 	w := strings.Builder{}
-	renderChunk(&w, &cb)
+	renderChunk(&w, &cb, &d, "program.md")
 	out := w.String()
 
 	for _, sub := range expected {
@@ -139,7 +139,7 @@ func Test_RenderChunk_EscapesHTML(t *testing.T) {
 	}
 
 	w := strings.Builder{}
-	renderChunk(&w, &cb)
+	renderChunk(&w, &cb, &d, "program.md")
 	out := w.String()
 
 	for _, sub := range expected {

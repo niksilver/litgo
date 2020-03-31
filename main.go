@@ -729,7 +729,7 @@ func writeHTML(inName string, outName string, d *doc) error {
 	// and a custom renderer (defined later, to link chunk refs in the code)
 	extensions := parser.CommonExtensions | parser.Attributes
 	parser := parser.NewWithExtensions(extensions)
-	output := markdown.ToHTML([]byte(md), parser, customRenderer())
+	output := markdown.ToHTML([]byte(md), parser, customRenderer(d, inName))
 
 	// Write the HTML
 	outFile, err := d.writeCloser(outName)
@@ -977,26 +977,30 @@ func (s1 *section) less(s2 section) bool {
 	return len(n1) < len(n2)
 }
 
-func customRenderer() markdown.Renderer {
+func customRenderer(d *doc, inName string) markdown.Renderer {
 	opts := html.RendererOptions{
 		Flags:          html.CommonFlags,
-		RenderNodeHook: codeBlockFixer,
+		RenderNodeHook: wrappedCodeBlockFixer(d, inName),
 	}
 	return html.NewRenderer(opts)
 }
 
-func codeBlockFixer(w io.Writer, node ast.Node, entering bool) (status ast.WalkStatus, skip bool) {
-	// If it's a code block use our own rendering method
-	if cb, ok := node.(*ast.CodeBlock); ok {
-		renderChunk(w, cb)
-		return ast.GoToNext, true
-	}
+func wrappedCodeBlockFixer(d *doc, inName string) func(w io.Writer, node ast.Node, entering bool) (status ast.WalkStatus, skip bool) {
+	// This is our code block fixer,
+	// but as a closure round our own values of d and inName
+	return func(w io.Writer, node ast.Node, entering bool) (status ast.WalkStatus, skip bool) {
+		// If it's a code block use our own rendering method
+		if cb, ok := node.(*ast.CodeBlock); ok {
+			renderChunk(w, cb, d, inName)
+			return ast.GoToNext, true
+		}
 
-	// Carry on processing it
-	return ast.GoToNext, false
+		// Carry on processing it
+		return ast.GoToNext, false
+	}
 }
 
-func renderChunk(w io.Writer, cb *ast.CodeBlock) {
+func renderChunk(w io.Writer, cb *ast.CodeBlock, d *doc, inName string) {
 	// Write the block opener
 	preCode := fmt.Sprintf("<pre><code class=\"language-%s\">", cb.Info)
 	io.WriteString(w, preCode)
