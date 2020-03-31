@@ -12,6 +12,8 @@ Chunks
 - Add style sheets so the chunks format in the target language.
 - In the code output, allow a comment with the chunk name before
   the code. Do this as a command line argument.
+- In func writeChunk, where it writes code[0:iPos] + indent, check
+  that shouldn't be indent + code[0:iPos].
 
 Refactoring
 

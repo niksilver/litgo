@@ -1411,12 +1411,22 @@ func renderChunk(w io.Writer, cb *ast.CodeBlock) {
     io.WriteString(w, preCode)
 
     // Escape the content, but into a string builder
-    b := strings.Builder{}
-    html.EscapeHTML(&b, cb.Leaf.Literal)
+    b1 := strings.Builder{}
+    html.EscapeHTML(&b1, cb.Leaf.Literal)
 
-    // TODO - Insert links where necessary
+    // TODO - Insert links where necessary [continue the code below...]
 
-    io.WriteString(w, b.String())
+    b2 := strings.Builder{}
+    sc := bufio.NewScanner(strings.NewReader(b1.String()))
+    for sc.Scan() {
+        codeLine := sc.Text()
+        if ref := referredChunkName(codeLine); ref != "" {
+            codeLine = "<<<" + ref + ">>>"
+        }
+        b2.WriteString(codeLine + "\n")
+    }
+
+    io.WriteString(w, b2.String())
 
     // Write the block closer
     io.WriteString(w, "</code></pre>")

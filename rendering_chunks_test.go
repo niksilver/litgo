@@ -51,6 +51,57 @@ func Test_RenderChunk_CodeBlockMarkup(t *testing.T) {
 
 }
 
+func Test_RenderChunk_CodeBlockLinksChunkRefs(t *testing.T) {
+	code := "10 LET A$='Hiya!'\n" +
+		"  @{Some later bit}\n" + // Should generate a link to section 1.2
+		"30 END\n"
+	data := map[string]string{
+		"program.md": "# Section one\n" +
+			"## Section onePone\n" +
+			"``` main.go\n" +
+			code +
+			"```\n" +
+			"## Section onePtwo\n" +
+			"``` Some later bit\n" +
+			"20 PRINT A$\n" +
+			"```\n",
+	}
+
+	s := newState()
+	s.setFirstInName("program.md")
+	s.reader = func(fName string) (io.ReadCloser, error) {
+		s.lineNum = 0
+		return stringReadCloser{strings.NewReader(data[fName])}, nil
+	}
+	d := newDoc()
+
+	firstPassForAll(&s, &d)
+	d.lat = compileLattice(d.chunks)
+
+	expected := []string{
+		`10 LET A$='Hiya!'`,
+		`  <a href="#???">@{Some later bit}</a>`,
+		`30 END`,
+	}
+	cb := ast.CodeBlock{
+		Leaf:     ast.Leaf{Literal: []byte(code)},
+		IsFenced: true,
+		Info:     []byte("go"),
+	}
+
+	w := strings.Builder{}
+	renderChunk(&w, &cb)
+	out := w.String()
+
+	for _, sub := range expected {
+		if !strings.Contains(out, sub) {
+			t.Errorf("Expected output to contain %q but it is\n%s",
+				sub, out)
+		}
+	}
+
+}
+
 func Test_RenderChunk_EscapesHTML(t *testing.T) {
 	code := "abc < def\n" +
 		"zxy > ijk\n" +
