@@ -53,22 +53,30 @@ func Test_RenderChunk_CodeBlockMarkup(t *testing.T) {
 
 func Test_RenderChunk_CodeBlockLinksChunkRefs(t *testing.T) {
 	code := "10 LET A$='Hiya!'\n" +
-		"  @{Some later bit}\n" + // Should generate a link to section 1.2
-		"30 END\n"
+		"  @{Later bit 1}\n" + // Should generate a link to section 1.2
+		"  @{Later bit 2}\n" + // Should generate a link to other file
+		"40 END\n"
 	data := map[string]string{
-		"program.md": "# Section one\n" +
+		"main.md": "* [Part 1](part1.md)\n" +
+			"* [Part 2](part2.md)\n",
+		"part1.md": "# Section one\n" +
 			"## Section onePone\n" +
 			"``` main.go\n" +
 			code +
 			"```\n" +
 			"## Section onePtwo\n" +
-			"``` Some later bit\n" +
+			"``` Later bit 1\n" +
 			"20 PRINT A$\n" +
+			"```\n",
+		"part2.md": "# Section two\n" +
+			"``` Later bit 2\n" +
+			"30 REM That was fun\n" +
 			"```\n",
 	}
 
 	s := newState()
-	s.setFirstInName("program.md")
+	s.setFirstInName("main.md")
+	s.book = "main.md"
 	s.reader = func(fName string) (io.ReadCloser, error) {
 		s.lineNum = 0
 		return stringReadCloser{strings.NewReader(data[fName])}, nil
@@ -80,8 +88,9 @@ func Test_RenderChunk_CodeBlockLinksChunkRefs(t *testing.T) {
 
 	expected := []string{
 		`10 LET A$='Hiya!'`,
-		`  <a href="#???">@{Some later bit}</a>`,
-		`30 END`,
+		`  <a href="#section-1.2">@{Later bit 1}</a>`,
+		`  <a href="part2.html#section-2">@{Later bit 2}</a>`,
+		`40 END`,
 	}
 	cb := ast.CodeBlock{
 		Leaf:     ast.Leaf{Literal: []byte(code)},
@@ -90,7 +99,7 @@ func Test_RenderChunk_CodeBlockLinksChunkRefs(t *testing.T) {
 	}
 
 	w := strings.Builder{}
-	renderChunk(&w, &cb, &d, "program.md")
+	renderChunk(&w, &cb, &d, "part1.md")
 	out := w.String()
 
 	for _, sub := range expected {

@@ -6,9 +6,10 @@ Sections
 - Add a directive for including the contents list
 - Warning when a section jumps a level (e.g. 1 to 3, or nothing to 2)
 - Allow a manual link to a section
+- BUG: Fix bug where "Added to in..." links to .md files instead of .html
+  files. See "make test-two-code-files" for demonstration.
 
 Chunks
-- Make chunk references link to the first time that chunk is defined.
 - Add style sheets so the chunks format in the target language.
 - In the code output, allow a comment with the chunk name before
   the code. Do this as a command line argument.
@@ -102,4 +103,5 @@ Chunks
 - Style the chunk name before each chunk.
 - Allow a --code-out-dir
 - The first occurrence of a named chunk is linkable.
+- Make chunk references link to the first time that chunk is defined.
 

@@ -1279,7 +1279,7 @@ func addedToChunkRef(inName string, d *doc, ref chunkRef) string {
 func sectionsAsEnglish(inName string, secs []section) string {
     list := ""
     for i, sec := range secs {
-        list += sec.link(inName)
+        list += sec.markdownLink(inName)
         if i < len(secs)-2 {
             list += ", "
         } else if i == len(secs)-2 {
@@ -1295,7 +1295,7 @@ func sectionsAsEnglish(inName string, secs []section) string {
     return prefix + list
 }
 
-func (s *section) link(hereInName string) string {
+func (s *section) markdownLink(hereInName string) string {
     fName, err := filepath.Rel(filepath.Dir(hereInName), s.inName)
     if err != nil {
         fName = "!!!" + err.Error() + "!!!"
@@ -1398,7 +1398,10 @@ func customRenderer(d *doc, inName string) markdown.Renderer {
     return html.NewRenderer(opts)
 }
 
-func wrappedCodeBlockFixer(d *doc, inName string) func(w io.Writer, node ast.Node, entering bool) (status ast.WalkStatus, skip bool) {
+func wrappedCodeBlockFixer(
+        d *doc,
+        inName string,
+    ) func(w io.Writer, node ast.Node, entering bool) (status ast.WalkStatus, skip bool) {
     // This is our code block fixer,
     // but as a closure round our own values of d and inName
     return func(w io.Writer, node ast.Node, entering bool) (status ast.WalkStatus, skip bool) {
@@ -1428,12 +1431,14 @@ func renderChunk(w io.Writer, cb *ast.CodeBlock, d *doc, inName string) {
     sc := bufio.NewScanner(strings.NewReader(b1.String()))
     for sc.Scan() {
         codeLine := sc.Text()
-        if ref := referredChunkName(codeLine); ref != "" {
-            codeLine = "<<<" + ref + ">>>"
+        if chName := referredChunkName(codeLine); chName != "" {
             // TODO - If we can get the section of the chunk, we can
             // use a function a bit like
             // func (s *section) link(hereInName string)
             // to create the link.
+            startIndex := strings.Index(codeLine, "@{")
+            prefix := codeLine[0:startIndex]
+            codeLine = prefix + htmlLink(chName, d, inName, "@{" + chName + "}")
         }
         b2.WriteString(codeLine + "\n")
     }
@@ -1443,6 +1448,24 @@ func renderChunk(w io.Writer, cb *ast.CodeBlock, d *doc, inName string) {
     // Write the block closer
     io.WriteString(w, "</code></pre>")
 }
+
+func htmlLink(chName string, d *doc, hereInName string, text string) string {
+    chunk, ok1 := d.chunks[chName]
+    if !ok1 {
+        return "!!!Cannot link chunk '" + chName + "'!!!"
+    }
+    def := chunk.def[0]
+    outName, ok2 := d.outNames[def.inName]
+    if !ok2 {
+        return "!!!No output file for input file '" + def.inName + "'!!!"
+    }
+    if hereInName == def.inName {
+        // Don't specify the other file in the anchor if it's this file
+        outName = ""
+    }
+    return `<a href="` + outName + `#` + def.sec.anchor() + `">` + text + `</a>`
+}
+
 ---
 
 
