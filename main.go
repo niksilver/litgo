@@ -760,6 +760,11 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 		chunkChanged(&inChunk, mdown)
 		// Re-link chapters and the book
 		foundInName := markdownLink(mdown)
+		if foundInName == "" {
+			fmt.Printf("NO : %s\n", mdown)
+		} else {
+			fmt.Printf("YES: %s // %s\n", mdown, foundInName)
+		}
 		normFoundInName := filepath.Clean(filepath.Join(filepath.Dir(inName), foundInName))
 		if !inChunk && foundInName != "" && isInName(d, normFoundInName) {
 			idx := strings.Index(mdown, foundInName)
