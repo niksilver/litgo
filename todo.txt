@@ -11,8 +11,6 @@ Chunks
 - Add style sheets so the chunks format in the target language.
 - In the code output, allow a comment with the chunk name before
   the code. Do this as a command line argument.
-- In func writeChunk, where it writes code[0:iPos] + indent, check
-  that shouldn't be indent + code[0:iPos].
 
 Refactoring
 
@@ -72,7 +70,7 @@ Sections
   - A new chapter file should be linkable as the section that was
     current at the end of the previous chapter file.
 - Link from each section reference to the section
-- BUG: Fix bug where "Added to in..." links to .md files instead of .html
+- Bug fix: Fix bug where "Added to in..." links to .md files instead of .html
   files. See "make test-two-code-files" for demonstration.
 
 Refactoring
@@ -104,4 +102,5 @@ Chunks
 - Allow a --code-out-dir
 - The first occurrence of a named chunk is linkable.
 - Make chunk references link to the first time that chunk is defined.
+- Bug fix: Indenting sometimes wasn't quite correct.
 

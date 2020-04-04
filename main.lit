@@ -926,7 +926,7 @@ func (d *doc) writeChunk(name string,
         var err error
         if ref := referredChunkName(code); ref != "" {
             iPos := strings.Index(code, "@")
-            err = d.writeChunk(ref, w, code[0:iPos] + indent, fName)
+            err = d.writeChunk(ref, w, indent + code[0:iPos], fName)
         } else {
             lNum := cont.lNum
             indentHere := initialWS(code)

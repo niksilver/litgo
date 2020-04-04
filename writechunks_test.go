@@ -235,12 +235,12 @@ func TestWriteChunks_IndentProperly(t *testing.T) {
 	//   Line 1.1   2
 	//   @{Two}     3  Indent Two by two spaces
 	//   Line 1.3   4
-	//   @{Three}   5  Indent Three by two spaces where here
+	//   @{Three}   5  Indent Three by two spaces here
 	// ```
 	// Gap line
 	// ``` Two      8
 	// Line 2.1     9
-	//   @{Three}   10 Indent Three by two more spaces where here
+	//   @{Three}   10 Indent Three by one tab
 	// Line 2.2     11
 	// ```
 	// Another gap
@@ -250,7 +250,7 @@ func TestWriteChunks_IndentProperly(t *testing.T) {
 
 	expected := `  Line 1.1
   Line 2.1
-    Line 3.1
+  ` + "\t" + `Line 3.1
   Line 2.2
   Line 1.3
   Line 3.1
@@ -270,7 +270,7 @@ func TestWriteChunks_IndentProperly(t *testing.T) {
 			defLines(8),
 			[]chunkCont{
 				contLNumCode(9, "Line 2.1"),
-				contLNumCode(10, "  @{Three}"),
+				contLNumCode(10, "\t@{Three}"),
 				contLNumCode(11, "Line 2.2")},
 		},
 		"Three": &chunk{
