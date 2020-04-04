@@ -1018,6 +1018,9 @@ For the inner task we want to take the markdown and render it as HTML.
 However, we first want to amend the markdown (to create "final" markdown).
 This includes, for example, adding section numbers and post-chunk
 references. We do that by going through the markdown line by line.
+Before writing each line to the string builder we also need to rewrite
+any links to `.md` input files, because they now need to link to their
+corresponding output files.
 
 Also, we want to [customise our HTML
 renderer](https://github.com/gomarkdown/markdown#customizing-markdown-parser).
@@ -1062,7 +1065,7 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
         lineNum++
         mdown := sc.Text()
         chunkChanged(&inChunk, mdown)
-        @{Re-link chapters and the book}
+        @{Rewrite markdown file links}
         @{Amend section heading}
         @{Insert chunk name before start of chunk}
         @{Amend chunk starts to include coding language}
@@ -1075,7 +1078,7 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 ---
 
 
-@s Output the literate source: Re-linking chapters and the book
+@s Output the literate source: Rewriting markdown file links
 
 In our original markdown there may be references to other literate
 source files as `.md` documents. We'll need to update those links
@@ -1083,21 +1086,30 @@ to go to the correct `.html` files, part of which is noting that
 such a link is written relative to the current input file, but will
 be recorded originally relative to the book file.
 
---- Re-link chapters and the book
-foundInName := markdownLink(mdown)
-if foundInName == "" {
-    fmt.Printf("NO : %s\n", mdown)
-} else {
-    fmt.Printf("YES: %s // %s\n", mdown, foundInName)
-}
-normFoundInName := filepath.Clean(filepath.Join(filepath.Dir(inName), foundInName))
-if !inChunk && foundInName != "" && isInName(d, normFoundInName) {
-    idx := strings.Index(mdown, foundInName)
-    mdown = mdown[0:idx] + simpleOutName(foundInName) + mdown[idx+len(foundInName):]
-}
+--- Rewrite markdown file links
+mdown = rewriteMarkdownLinks(mdown, d, inChunk, inName)
 ---
 
 --- Functions +=
+func rewriteMarkdownLinks(mdown string, d *doc, inChunk bool, inName string) string {
+    mdown2 := ""
+    for mdown != mdown2 {
+        mdown2 = mdown
+        mdown = rewriteOneMarkdownLink(mdown2, d, inChunk, inName)
+    }
+    return mdown
+}
+
+func rewriteOneMarkdownLink(mdown string, d *doc, inChunk bool, inName string) string {
+    foundInName := markdownLink(mdown)
+    normFoundInName := filepath.Clean(filepath.Join(filepath.Dir(inName), foundInName))
+    if !inChunk && foundInName != "" && isInName(d, normFoundInName) {
+        idx := strings.Index(mdown, foundInName)
+        mdown = mdown[0:idx] + simpleOutName(foundInName) + mdown[idx+len(foundInName):]
+    }
+    return mdown
+}
+
 func isInName(d *doc, link string) bool {
     for inName, _ := range d.markdown {
         if inName == link {
@@ -1249,8 +1261,10 @@ in its own paragraph.
 --- Include post-chunk reference if necessary
 if ref, ok := d.chunkRefs[inName][lineNum]; ok {
     str1 := addedToChunkRef(inName, d, ref)
+    str1 = rewriteMarkdownLinks(str1, d, inChunk, inName)
     b.WriteString(str1)
     str2 := usedInChunkRef(inName, d, ref)
+    str2 = rewriteMarkdownLinks(str2, d, inChunk, inName)
     b.WriteString(str2)
 }
 ---

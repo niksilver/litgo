@@ -6,8 +6,6 @@ Sections
 - Add a directive for including the contents list
 - Warning when a section jumps a level (e.g. 1 to 3, or nothing to 2)
 - Allow a manual link to a section
-- BUG: Fix bug where "Added to in..." links to .md files instead of .html
-  files. See "make test-two-code-files" for demonstration.
 
 Chunks
 - Add style sheets so the chunks format in the target language.
@@ -19,7 +17,6 @@ Chunks
 Refactoring
 
 Book and chapters
-- Handle several links to other chapter/book files on one line.
 
 Directives
 - Add a dummy "ignore" directive just to make sure line numbers
@@ -61,6 +58,7 @@ Book and chapters
   - Don't amend links to markdown files if initial input file isn't a book.
   - Ensure amended chapter links retain their relative directory prefix.
   - Don't amend something that looks like a link but is in a chunk.
+- Handle several links to other chapter/book files on one line.
 
 Sections
 - Track current section
@@ -74,6 +72,8 @@ Sections
   - A new chapter file should be linkable as the section that was
     current at the end of the previous chapter file.
 - Link from each section reference to the section
+- BUG: Fix bug where "Added to in..." links to .md files instead of .html
+  files. See "make test-two-code-files" for demonstration.
 
 Refactoring
 - Put the lattice into the state.

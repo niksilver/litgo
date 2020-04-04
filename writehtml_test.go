@@ -13,17 +13,21 @@ func TestWriteHTML_PostChunkRefsLinkToHTML(t *testing.T) {
 			"``` Chunk one\n" +
 			"chunkone(1)\n" +
 			"```\n",
-		// Added to in section 1.1
-		"ch1/first.md": "## Section one p one\n" +
+		// Added to in section 2 (but we won't check this output file)
+		"ch1/first.md": "# Section two\n" +
 			"``` Chunk one\n" +
 			"chunkonepone(1.1)\n" +
 			"```\n" +
 			// Added to in section 1
-			"# Section two\n" +
+			// Used in sections 2.1 and 3
+			"## Section two p one\n" +
 			"``` Chunk two\n" +
 			"@{Chunk one}\n" +
+			"```\n" +
+			"# Section three\n" +
+			"``` Chunk three\n" +
+			"@{Chunk one}\n" +
 			"````\n",
-		// Used in sections 1 and 1.1
 	}
 
 	s := newState()
@@ -51,17 +55,17 @@ func TestWriteHTML_PostChunkRefsLinkToHTML(t *testing.T) {
 
 	expected := map[string]string{
 		"Added to in": `book.html#section-1"`,
-		"Used in":     `first.html#section-1"`,
-		"Used in se":  `first.html#section-1.1"`,
+		"Used in":     `first.html#section-2.1"`,
+		"Used in se":  `first.html#section-3"`,
 	}
 
 	for seek, exp := range expected {
 		found := false
-		for idx, line := range outStrs {
+		for _, line := range outStrs {
 			if strings.Contains(line, seek) {
 				found = true
 				if !strings.Contains(line, exp) {
-					t.Errorf("Found line %d, '%s', with '%s' but it doesn't contain '%s'", idx+1, line, seek, exp)
+					t.Errorf("Found '%s', in '%s' but it doesn't contain '%s'", seek, line, exp)
 				}
 			}
 		}

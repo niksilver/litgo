@@ -758,18 +758,8 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 		lineNum++
 		mdown := sc.Text()
 		chunkChanged(&inChunk, mdown)
-		// Re-link chapters and the book
-		foundInName := markdownLink(mdown)
-		if foundInName == "" {
-			fmt.Printf("NO : %s\n", mdown)
-		} else {
-			fmt.Printf("YES: %s // %s\n", mdown, foundInName)
-		}
-		normFoundInName := filepath.Clean(filepath.Join(filepath.Dir(inName), foundInName))
-		if !inChunk && foundInName != "" && isInName(d, normFoundInName) {
-			idx := strings.Index(mdown, foundInName)
-			mdown = mdown[0:idx] + simpleOutName(foundInName) + mdown[idx+len(foundInName):]
-		}
+		// Rewrite markdown file links
+		mdown = rewriteMarkdownLinks(mdown, d, inChunk, inName)
 
 		// Amend section heading
 		if sec, okay := d.secStarts[inName][lineNum]; okay {
@@ -806,13 +796,34 @@ func finalMarkdown(inName string, d *doc) *strings.Builder {
 		// Include post-chunk reference if necessary
 		if ref, ok := d.chunkRefs[inName][lineNum]; ok {
 			str1 := addedToChunkRef(inName, d, ref)
+			str1 = rewriteMarkdownLinks(str1, d, inChunk, inName)
 			b.WriteString(str1)
 			str2 := usedInChunkRef(inName, d, ref)
+			str2 = rewriteMarkdownLinks(str2, d, inChunk, inName)
 			b.WriteString(str2)
 		}
 
 	}
 	return &b
+}
+
+func rewriteMarkdownLinks(mdown string, d *doc, inChunk bool, inName string) string {
+	mdown2 := ""
+	for mdown != mdown2 {
+		mdown2 = mdown
+		mdown = rewriteOneMarkdownLink(mdown2, d, inChunk, inName)
+	}
+	return mdown
+}
+
+func rewriteOneMarkdownLink(mdown string, d *doc, inChunk bool, inName string) string {
+	foundInName := markdownLink(mdown)
+	normFoundInName := filepath.Clean(filepath.Join(filepath.Dir(inName), foundInName))
+	if !inChunk && foundInName != "" && isInName(d, normFoundInName) {
+		idx := strings.Index(mdown, foundInName)
+		mdown = mdown[0:idx] + simpleOutName(foundInName) + mdown[idx+len(foundInName):]
+	}
+	return mdown
 }
 
 func isInName(d *doc, link string) bool {
